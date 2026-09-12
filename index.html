@@ -6,468 +6,466 @@
 <title>JIMMY — Bad Decisions, Great Stories</title>
 
 <style>
-  :root{
-    --bg:#111318;
-    --panel:#1c2028;
-    --text:#f5f5f5;
-    --muted:#b9c0cc;
-    --accent:#f0b44d;
-    --danger:#e36b6b;
-    --ok:#70c18b;
-  }
+:root{
+  --bg:#111318;
+  --panel:#1c2028;
+  --text:#f5f5f5;
+  --muted:#b9c0cc;
+  --accent:#f0b44d;
+  --danger:#e36b6b;
+  --ok:#70c18b;
+}
 
-  *{
-    box-sizing:border-box;
-    -webkit-tap-highlight-color:transparent;
-  }
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
 
-  html,
-  body{
-    margin:0;
-    width:100%;
-    height:100%;
-    background:var(--bg);
-    color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    overflow:hidden;
-  }
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  overflow:hidden;
+}
 
-  body{
-    display:flex;
-    align-items:stretch;
-    justify-content:center;
-  }
+body{
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+}
 
-  #app{
-    width:min(100vw,980px);
-    height:100dvh;
-    max-height:none;
-    display:flex;
-    flex-direction:column;
-    background:linear-gradient(#171b22,#0f1116);
-  }
+#app{
+  width:min(100vw,980px);
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(#171b22,#0f1116);
+}
 
+header{
+  flex:0 0 auto;
+  padding:10px 14px 8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.title{
+  font-weight:950;
+  letter-spacing:.08em;
+  font-size:clamp(20px,4vw,32px);
+}
+
+.subtitle{
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:.05em;
+}
+
+#hud{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-weight:750;
+  font-size:12px;
+  text-align:right;
+}
+
+#alert{
+  min-width:92px;
+  text-align:center;
+  color:#17130a;
+  background:var(--accent);
+  border-radius:999px;
+  padding:5px 8px;
+  font-weight:950;
+  opacity:0;
+  transition:opacity .2s;
+}
+
+#stage{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  background:#20303b;
+}
+
+#overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  background:rgba(9,11,15,.69);
+  backdrop-filter:blur(4px);
+  overflow:auto;
+}
+
+.card{
+  width:min(700px,96%);
+  max-height:96%;
+  overflow:auto;
+  background:rgba(27,31,39,.97);
+  border:1px solid #3a414f;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+
+.card h1,
+.card h2,
+.card h3{
+  margin:0 0 8px;
+}
+
+.card p{
+  color:#d5d9e0;
+  line-height:1.35;
+  margin:8px 0;
+}
+
+.location{
+  font-size:11px;
+  letter-spacing:.13em;
+  color:var(--accent);
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.modes{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:14px 0;
+}
+
+button{
+  appearance:none;
+  border:0;
+  border-radius:12px;
+  padding:12px 14px;
+  font:inherit;
+  font-weight:850;
+  background:#303745;
+  color:white;
+  cursor:pointer;
+}
+
+button.primary{
+  background:var(--accent);
+  color:#17130a;
+}
+
+button:active{
+  transform:translateY(1px);
+}
+
+.small{
+  font-size:11px;
+  color:var(--muted);
+}
+
+#controls{
+  flex:0 0 auto;
+  padding:7px 9px calc(7px + env(safe-area-inset-bottom));
+  display:grid;
+  grid-template-columns:1fr 1.15fr 1fr;
+  gap:8px;
+  background:#11151b;
+  border-top:1px solid #2a303a;
+}
+
+#controls button{
+  min-height:52px;
+  font-size:14px;
+  touch-action:manipulation;
+}
+
+#jump{
+  background:#dde3eb;
+  color:#15171b;
+}
+
+#send{
+  background:var(--accent);
+  color:#17130a;
+}
+
+#brake{
+  background:#3a4251;
+}
+
+.meter{
+  height:8px;
+  background:#343a45;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:4px;
+}
+
+.meter>div{
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,#d8d8d8,#f0b44d,#e36b6b);
+}
+
+.quote{
+  font-size:18px;
+  font-weight:850;
+  line-height:1.25;
+  margin:12px 0;
+  padding:12px;
+  border-left:4px solid var(--accent);
+  background:#141820;
+  border-radius:0 10px 10px 0;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  margin:10px 0;
+}
+
+.stat{
+  background:#141820;
+  padding:8px;
+  border-radius:9px;
+}
+
+.stat b{
+  display:block;
+  font-size:17px;
+}
+
+.result-layout{
+  display:block;
+}
+
+.scoreboard{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.board{
+  background:#141820;
+  border-radius:12px;
+  padding:12px;
+}
+
+.board h3{
+  color:var(--accent);
+}
+
+.board-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:5px 0;
+  border-bottom:1px solid #252b35;
+  font-size:13px;
+}
+
+.board-row:last-child{
+  border-bottom:0;
+}
+
+@media(max-width:600px){
   header{
-    flex:0 0 auto;
-    padding:14px 16px 10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
+    padding:6px 9px 5px;
   }
 
   .title{
-    font-weight:900;
-    letter-spacing:.08em;
-    font-size:clamp(22px,4vw,34px);
+    font-size:19px;
   }
 
   .subtitle{
-    font-size:12px;
-    color:var(--muted);
-    letter-spacing:.05em;
+    font-size:8px;
   }
 
   #hud{
-    display:flex;
-    gap:14px;
-    font-weight:700;
-    font-size:13px;
-    text-align:right;
+    gap:7px;
+    font-size:10px;
   }
 
-  #stage{
-    position:relative;
-    flex:1 1 auto;
-    min-height:0;
-    overflow:hidden;
-  }
-
-  canvas{
-    display:block;
-    width:100%;
-    height:100%;
-    background:#20303b;
-  }
-
-  #overlay{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px;
-    background:rgba(9,11,15,.68);
-    backdrop-filter:blur(4px);
-    overflow:auto;
+  #alert{
+    min-width:72px;
+    font-size:9px;
+    padding:4px 6px;
   }
 
   .card{
-    width:min(640px,94%);
-    max-height:92%;
-    overflow:auto;
-    background:rgba(27,31,39,.96);
-    border:1px solid #3a414f;
-    border-radius:18px;
-    padding:22px;
-    box-shadow:0 18px 50px rgba(0,0,0,.45);
-  }
-
-  .card h1,
-  .card h2{
-    margin:0 0 10px;
+    padding:13px;
   }
 
   .card p{
-    color:#d5d9e0;
-    line-height:1.45;
-  }
-
-  .modes{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    margin:18px 0;
-  }
-
-  button{
-    appearance:none;
-    border:0;
-    border-radius:14px;
-    padding:14px 16px;
-    font:inherit;
-    font-weight:800;
-    background:#303745;
-    color:white;
-    cursor:pointer;
-  }
-
-  button.primary{
-    background:var(--accent);
-    color:#17130a;
-  }
-
-  button.danger{
-    background:var(--danger);
-    color:#1a0b0b;
-  }
-
-  button:active{
-    transform:translateY(1px);
-  }
-
-  .small{
-    font-size:12px;
-    color:var(--muted);
-  }
-
-  #controls{
-    flex:0 0 auto;
-    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-    display:grid;
-    grid-template-columns:1fr 1.15fr 1fr;
-    gap:8px;
-    background:#11151b;
-    border-top:1px solid #2a303a;
-  }
-
-  #controls button{
-    min-height:54px;
-    font-size:15px;
-    touch-action:manipulation;
-  }
-
-  #jump{
-    background:#dde3eb;
-    color:#15171b;
-  }
-
-  #send{
-    background:var(--accent);
-    color:#17130a;
-  }
-
-  #brake{
-    background:#3a4251;
-  }
-
-  .meter{
-    height:9px;
-    background:#343a45;
-    border-radius:999px;
-    overflow:hidden;
-    margin-top:4px;
-  }
-
-  .meter > div{
-    height:100%;
-    width:0;
-    background:linear-gradient(90deg,#d8d8d8,#f0b44d,#e36b6b);
+    font-size:13px;
   }
 
   .quote{
-    font-size:20px;
-    font-weight:800;
-    line-height:1.3;
-    margin:18px 0;
-    padding:16px;
-    border-left:4px solid var(--accent);
-    background:#141820;
-    border-radius:0 12px 12px 0;
+    font-size:15px;
+    padding:9px;
+    margin:8px 0;
   }
 
   .stats{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin:12px 0;
+    gap:5px;
   }
 
   .stat{
-    background:#141820;
-    padding:10px;
-    border-radius:10px;
+    padding:6px;
+    font-size:11px;
   }
 
   .stat b{
-    display:block;
-    font-size:18px;
+    font-size:15px;
+  }
+
+  .modes{
+    gap:7px;
+    margin:9px 0;
+  }
+
+  .modes button{
+    padding:10px 7px;
+  }
+
+  .scoreboard{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(orientation:landscape) and (max-height:500px){
+  header{
+    padding:3px 9px;
+  }
+
+  .subtitle{
+    display:none;
+  }
+
+  .title{
+    font-size:16px;
+  }
+
+  #hud{
+    font-size:9px;
+    gap:6px;
+  }
+
+  #alert{
+    font-size:8px;
+    padding:3px 5px;
+  }
+
+  #controls{
+    padding:4px 7px calc(4px + env(safe-area-inset-bottom));
+  }
+
+  #controls button{
+    min-height:36px;
+    font-size:11px;
+    padding:5px;
+  }
+
+  .card{
+    width:97%;
+    max-width:930px;
+    max-height:96%;
+    overflow:hidden;
+    padding:8px 11px;
+  }
+
+  .card p{
+    margin:3px 0;
+    font-size:10.5px;
+    line-height:1.16;
+  }
+
+  .card h1{
+    font-size:20px;
+  }
+
+  .card h2{
+    font-size:17px;
+  }
+
+  .location{
+    font-size:8px;
+    margin-bottom:3px;
   }
 
   .result-layout{
-    display:block;
+    display:grid;
+    grid-template-columns:1.12fr 1fr;
+    gap:9px;
   }
 
-  .result-main,
-  .result-side{
-    min-width:0;
+  .quote{
+    font-size:12px;
+    margin:4px 0;
+    padding:6px 7px;
   }
 
-  @media (max-height:620px){
-    header{
-      padding:8px 12px;
-    }
-
-    .subtitle{
-      display:none;
-    }
-
-    #controls button{
-      min-height:50px;
-    }
-
-    .card{
-      padding:16px;
-    }
+  .stats{
+    margin:0 0 4px;
+    gap:4px;
   }
 
-  @media (max-width:600px){
-    header{
-      flex:0 0 auto;
-      padding:7px 10px 6px;
-    }
-
-    .title{
-      font-size:20px;
-    }
-
-    .subtitle{
-      font-size:9px;
-    }
-
-    #hud{
-      gap:8px;
-      font-size:11px;
-    }
-
-    #stage{
-      flex:1 1 auto;
-      min-height:0;
-      overflow:hidden;
-    }
-
-    #overlay{
-      padding:10px;
-      align-items:center;
-    }
-
-    .card{
-      width:96%;
-      max-height:96%;
-      padding:14px;
-      border-radius:14px;
-    }
-
-    .card h1{
-      font-size:26px;
-    }
-
-    .card h2{
-      font-size:21px;
-    }
-
-    .card p{
-      margin:8px 0;
-      line-height:1.3;
-      font-size:14px;
-    }
-
-    .quote{
-      font-size:16px;
-      margin:10px 0;
-      padding:10px;
-    }
-
-    .stats{
-      gap:6px;
-      margin:8px 0;
-    }
-
-    .stat{
-      padding:7px;
-      font-size:12px;
-    }
-
-    .stat b{
-      font-size:16px;
-    }
-
-    .modes{
-      gap:8px;
-      margin:10px 0;
-    }
-
-    .modes button{
-      padding:11px 8px;
-    }
+  .stat{
+    padding:4px 6px;
+    font-size:9px;
   }
 
-  @media (orientation:landscape) and (max-height:500px){
-    header{
-      padding:3px 10px;
-    }
-
-    .subtitle{
-      display:none;
-    }
-
-    .title{
-      font-size:17px;
-    }
-
-    #hud{
-      font-size:10px;
-      gap:8px;
-    }
-
-    #controls{
-      padding:4px 8px calc(4px + env(safe-area-inset-bottom));
-    }
-
-    #controls button{
-      min-height:38px;
-      font-size:12px;
-      padding:6px 8px;
-    }
-
-    #overlay{
-      padding:6px;
-      align-items:center;
-      overflow:hidden;
-    }
-
-    .card{
-      width:97%;
-      max-width:920px;
-      max-height:96%;
-      overflow:hidden;
-      padding:9px 12px;
-      border-radius:12px;
-    }
-
-    .card h1{
-      font-size:20px;
-      margin-bottom:5px;
-    }
-
-    .card h2{
-      font-size:18px;
-      margin-bottom:4px;
-    }
-
-    .card p{
-      margin:4px 0;
-      font-size:11px;
-      line-height:1.2;
-    }
-
-    .small{
-      font-size:9px;
-    }
-
-    .result-layout{
-      display:grid;
-      grid-template-columns:1.15fr 1fr;
-      gap:10px;
-      align-items:start;
-    }
-
-    .result-main,
-    .result-side{
-      min-width:0;
-    }
-
-    .quote{
-      font-size:13px;
-      line-height:1.18;
-      margin:5px 0 0;
-      padding:7px 8px;
-      border-left-width:3px;
-    }
-
-    .stats{
-      grid-template-columns:1fr 1fr;
-      gap:4px;
-      margin:0 0 4px;
-    }
-
-    .stat{
-      padding:5px 7px;
-      font-size:10px;
-    }
-
-    .stat b{
-      font-size:13px;
-    }
-
-    .modes{
-      margin:5px 0 0;
-      gap:6px;
-    }
-
-    .modes button{
-      padding:7px 8px;
-      font-size:11px;
-      border-radius:9px;
-    }
-
-    .landscape-foot{
-      margin-top:4px !important;
-      font-size:9px !important;
-    }
-
-    .start-copy{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      align-items:start;
-    }
-
-    .start-copy .modes{
-      grid-column:1 / -1;
-      margin:4px 0;
-    }
+  .stat b{
+    font-size:12px;
   }
+
+  .modes{
+    margin:4px 0;
+    gap:5px;
+  }
+
+  .modes button{
+    padding:6px 7px;
+    font-size:10px;
+  }
+
+  .small{
+    font-size:8px;
+  }
+
+  .scoreboard{
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+  }
+
+  .board{
+    padding:7px;
+  }
+
+  .board h3{
+    font-size:12px;
+  }
+
+  .board-row{
+    font-size:9px;
+    padding:3px 0;
+  }
+}
 </style>
 </head>
 
@@ -475,135 +473,119 @@
 
 <div id="app">
 
-  <header>
+<header>
+  <div>
+    <div class="title">JIMMY</div>
+    <div class="subtitle">BAD DECISIONS. GREAT STORIES.</div>
+  </div>
+
+  <div id="hud">
+    <div id="alert">WILDLIFE</div>
+
     <div>
-      <div class="title">JIMMY</div>
-      <div class="subtitle">BAD DECISIONS. GREAT STORIES.</div>
+      Score
+      <span id="score">0</span>
     </div>
 
-    <div id="hud">
-      <div>
-        Score
-        <span id="score">0</span>
-      </div>
-
-      <div>
-        Jimmy Meter
-        <div class="meter">
-          <div id="meterFill"></div>
-        </div>
+    <div>
+      Jimmy Meter
+      <div class="meter">
+        <div id="meterFill"></div>
       </div>
     </div>
-  </header>
-
-  <div id="stage">
-    <canvas id="game"></canvas>
-
-    <div id="overlay">
-      <div class="card" id="card"></div>
-    </div>
   </div>
+</header>
 
-  <div id="controls">
-    <button id="brake">BRAKE</button>
-    <button id="jump">JUMP</button>
-    <button id="send">SEND IT</button>
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <div id="overlay">
+    <div class="card" id="card"></div>
   </div>
+</div>
+
+<div id="controls">
+  <button id="brake">BRAKE</button>
+  <button id="jump">JUMP</button>
+  <button id="send">SEND IT</button>
+</div>
 
 </div>
 
 <script>
 (() => {
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const overlay = document.getElementById('overlay');
-const card = document.getElementById('card');
-const scoreEl = document.getElementById('score');
-const meterFill = document.getElementById('meterFill');
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay');
+const card=document.getElementById('card');
+const scoreEl=document.getElementById('score');
+const meterFill=document.getElementById('meterFill');
+const alertEl=document.getElementById('alert');
 
-let W=900,H=500;
-
-function resize(){
-  const r=canvas.getBoundingClientRect();
-  const dpr=Math.min(window.devicePixelRatio || 1,2);
-
-  canvas.width=Math.max(600,Math.floor(r.width*dpr));
-  canvas.height=Math.max(300,Math.floor(r.height*dpr));
-
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  W=r.width;
-  H=r.height;
-
-  if(player && player.onGround){
-    player.y=groundY(player.x)-player.h;
-  }
-}
-
-addEventListener('resize',resize);
-
-if(window.visualViewport){
-  window.visualViewport.addEventListener('resize',resize);
-}
-
-const modeData={
-  snow:{
-    name:'Snowboard',
-    ground:'#e8eef4',
-    sky:'#8eb5cf',
-    dark:'#597d96',
-    obstacles:['tree','rock','kicker']
-  },
-
-  bike:{
-    name:'Mountain Bike',
-    ground:'#8b6748',
-    sky:'#8cb6c4',
-    dark:'#42616f',
-    obstacles:['tree','rock','drop']
-  }
-};
-
+let W=900;
+let H=500;
 let mode='snow';
 let running=false;
 let ended=false;
-
 let score=0;
 let meter=0;
 let speed=6;
-let t=0;
 let runTime=0;
-
+let world=0;
 let obstacles=[];
 let particles=[];
+let terrain=[];
+let nextSpawn=620;
+let wildlifeUsed=false;
+let braking=false;
+let sendIt=false;
+let closeCalls=0;
+let airTime=0;
+let totalAir=0;
+let maxMeter=0;
+let injuryHistory=[];
 
 let player={
   x:130,
   y:0,
   vy:0,
-  w:34,
-  h:48,
+  w:36,
+  h:52,
   onGround:true,
   rot:0
 };
 
-let braking=false;
-let sendIt=false;
+const modeData={
 
-let closeCalls=0;
-let airTime=0;
-let maxAir=0;
-let totalAir=0;
-let injuryHistory=[];
+  snow:{
+    name:'Snowboard',
+    place:'BIG BEAR',
+    tag:'JIMBRO CONDITIONS: QUESTIONABLE',
+    sky1:'#78a7c5',
+    sky2:'#c8d8e5',
+    ground:'#eef3f7',
+    dark:'#537287',
+    obstacles:['tree','rock','kicker']
+  },
+
+  bike:{
+    name:'Mountain Bike',
+    place:'ORANGE COUNTY',
+    tag:'TRAIL ETIQUETTE: OPTIONAL',
+    sky1:'#8bb6c9',
+    sky2:'#d7b47d',
+    ground:'#9a704b',
+    dark:'#536b58',
+    obstacles:['rock','log','drop']
+  }
+};
 
 const lines=[
   "This is probably not the right time to tell this story.",
   "I was specifically asked not to bring this up.",
-  "I have a theory about hot tubs and liability waivers.",
   "You know what? I'm going to say it anyway.",
   "The doctor said six weeks. He didn't say six weeks of what.",
-  "Technically, I've only been banned from one ski lodge.",
   "I can explain. I probably shouldn't, but I can.",
   "Everyone got real quiet, so I assume I made my point.",
   "Before anybody overreacts, there's context.",
@@ -620,38 +602,187 @@ const injuries=[
   "Ego intact. Everything else under review"
 ];
 
-function groundY(x){
-  return H*0.76
-    + Math.sin((x+t*speed)*0.012)*8
-    + Math.sin((x+t*speed)*0.004)*18;
+function resize(){
+
+  const r=canvas.getBoundingClientRect();
+  const dpr=Math.min(devicePixelRatio||1,2);
+
+  canvas.width=Math.max(
+    600,
+    Math.floor(r.width*dpr)
+  );
+
+  canvas.height=Math.max(
+    300,
+    Math.floor(r.height*dpr)
+  );
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  W=r.width;
+  H=r.height;
+
+  if(player && player.onGround){
+    player.y=groundY(player.x)-player.h;
+  }
+}
+
+addEventListener('resize',resize);
+
+if(window.visualViewport){
+  visualViewport.addEventListener(
+    'resize',
+    resize
+  );
+}
+
+function rand(a,b){
+  return a+Math.random()*(b-a);
+}
+
+function buildTerrain(){
+
+  terrain=[];
+
+  let y=.74;
+
+  for(let x=0;x<14000;x+=80){
+
+    const difficulty=
+      Math.min(
+        1,
+        x/7000
+      );
+
+    let delta=
+      rand(-.025,.025)
+      +
+      (
+        mode==='bike'
+          ? rand(-.012,.012)
+          : 0
+      );
+
+    if(
+      Math.random()
+      <
+      .09+difficulty*.08
+    ){
+      delta+=rand(-.06,.06);
+    }
+
+    y=Math.max(
+      .56,
+      Math.min(
+        .82,
+        y+delta
+      )
+    );
+
+    terrain.push({
+      x,
+      y
+    });
+  }
+}
+
+function terrainNorm(wx){
+
+  if(!terrain.length){
+    return .74;
+  }
+
+  let i=Math.floor(wx/80);
+
+  i=Math.max(
+    0,
+    Math.min(
+      terrain.length-2,
+      i
+    )
+  );
+
+  const a=terrain[i];
+  const b=terrain[i+1];
+
+  const u=
+    (wx-a.x)
+    /
+    (b.x-a.x);
+
+  const s=
+    u*u*(3-2*u);
+
+  return a.y+(b.y-a.y)*s;
+}
+
+function groundY(screenX){
+
+  return H*
+    terrainNorm(
+      world+screenX
+    );
+}
+
+function updateHUD(){
+
+  scoreEl.textContent=
+    Math.floor(score);
+
+  meterFill.style.width=
+    meter+'%';
+
+  maxMeter=
+    Math.max(
+      maxMeter,
+      meter
+    );
 }
 
 function resetGame(){
+
   score=0;
   meter=0;
   speed=6;
-  t=0;
   runTime=0;
+  world=0;
 
   obstacles=[];
   particles=[];
 
+  nextSpawn=520;
+  wildlifeUsed=false;
   closeCalls=0;
   airTime=0;
-  maxAir=0;
   totalAir=0;
+  maxMeter=0;
+
+  buildTerrain();
 
   player={
-    x:Math.min(140,W*.18),
+    x:Math.min(
+      140,
+      W*.18
+    ),
     y:0,
     vy:0,
-    w:34,
-    h:48,
+    w:36,
+    h:52,
     onGround:true,
     rot:0
   };
 
-  player.y=groundY(player.x)-player.h;
+  player.y=
+    groundY(player.x)
+    -
+    player.h;
 
   ended=false;
   running=true;
@@ -660,81 +791,446 @@ function resetGame(){
 }
 
 function startScreen(){
+
   running=false;
+
   overlay.style.display='flex';
 
   card.innerHTML=`
     <h1>JIMMY</h1>
 
-    <div class="start-copy">
-      <p>
-        He has experience, confidence, old injuries,
-        and absolutely no evidence that any of those
-        things should slow him down.
-      </p>
+    <p>
+      He has experience, confidence, old injuries,
+      and absolutely no evidence that any of those
+      things should slow him down.
+    </p>
 
-      <p>
-        <b>How to play:</b>
-        Jump obstacles. Brake when wisdom briefly takes over.
-        Hold <b>SEND IT</b> to go faster, score more,
-        and make choices Jimmy's orthopedist would oppose.
-      </p>
+    <div class="modes">
 
-      <div class="modes">
-        <button class="primary" id="snowMode">SNOWBOARD</button>
-        <button class="primary" id="bikeMode">MOUNTAIN BIKE</button>
-      </div>
+      <button class="primary" id="snowMode">
+        BIG BEAR
+        <br>
+        <span class="small">SNOWBOARD</span>
+      </button>
 
-      <p class="small">
-        The Jimmy Meter rewards speed, airtime and near misses.
-        A full meter is impressive right up until it isn't.
-      </p>
+      <button class="primary" id="bikeMode">
+        ORANGE COUNTY
+        <br>
+        <span class="small">MOUNTAIN BIKE</span>
+      </button>
+
     </div>
+
+    <p>
+      <b>How to play:</b>
+      Jump terrain and hazards.
+      Brake when wisdom briefly takes over.
+      Hold <b>SEND IT</b> for speed,
+      airtime and decisions Jimmy's orthopedist
+      would oppose.
+    </p>
+
+    <div class="modes">
+      <button id="scoresBtn">SCOREBOARD</button>
+      <button id="howBtn">JIMMY RULES</button>
+    </div>
+
+    <p class="small">
+      Rare wildlife encounters may occur.
+      This has not improved Jimmy's judgment.
+    </p>
   `;
 
-  document.getElementById('snowMode').onclick=()=>begin('snow');
-  document.getElementById('bikeMode').onclick=()=>begin('bike');
+  document.getElementById('snowMode')
+    .onclick=()=>begin('snow');
+
+  document.getElementById('bikeMode')
+    .onclick=()=>begin('bike');
+
+  document.getElementById('scoresBtn')
+    .onclick=showScoreboard;
+
+  document.getElementById('howBtn')
+    .onclick=()=>{
+
+      alert(
+        'BRAKE: reduce speed before technical terrain. '+
+        'JUMP: clear obstacles and catch airtime. '+
+        'SEND IT: more speed, more score, more consequences.'
+      );
+    };
 }
 
 function begin(m){
+
   mode=m;
+
   overlay.style.display='none';
+
   resize();
+
   resetGame();
 }
 
+function saveRecord(){
+
+  const key=
+    'crashingJimmyScoresV2';
+
+  let all={
+    snow:{
+      best:0,
+      air:0,
+      close:0,
+      meter:0,
+      runs:0
+    },
+
+    bike:{
+      best:0,
+      air:0,
+      close:0,
+      meter:0,
+      runs:0
+    }
+  };
+
+  try{
+
+    all=Object.assign(
+      all,
+      JSON.parse(
+        localStorage.getItem(key)
+        ||
+        '{}'
+      )
+    );
+
+    all.snow=Object.assign(
+      {
+        best:0,
+        air:0,
+        close:0,
+        meter:0,
+        runs:0
+      },
+      all.snow||{}
+    );
+
+    all.bike=Object.assign(
+      {
+        best:0,
+        air:0,
+        close:0,
+        meter:0,
+        runs:0
+      },
+      all.bike||{}
+    );
+
+  }catch(e){}
+
+  const r=all[mode];
+
+  r.best=
+    Math.max(
+      r.best,
+      Math.floor(score)
+    );
+
+  r.air=
+    Math.max(
+      r.air,
+      totalAir
+    );
+
+  r.close=
+    Math.max(
+      r.close,
+      closeCalls
+    );
+
+  r.meter=
+    Math.max(
+      r.meter,
+      Math.round(maxMeter)
+    );
+
+  r.runs=
+    (r.runs||0)+1;
+
+  localStorage.setItem(
+    key,
+    JSON.stringify(all)
+  );
+
+  return all;
+}
+
+function loadRecords(){
+
+  const key=
+    'crashingJimmyScoresV2';
+
+  try{
+
+    const raw=
+      JSON.parse(
+        localStorage.getItem(key)
+        ||
+        '{}'
+      );
+
+    return {
+
+      snow:Object.assign(
+        {
+          best:0,
+          air:0,
+          close:0,
+          meter:0,
+          runs:0
+        },
+        raw.snow||{}
+      ),
+
+      bike:Object.assign(
+        {
+          best:0,
+          air:0,
+          close:0,
+          meter:0,
+          runs:0
+        },
+        raw.bike||{}
+      )
+    };
+
+  }catch(e){
+
+    return {
+
+      snow:{
+        best:0,
+        air:0,
+        close:0,
+        meter:0,
+        runs:0
+      },
+
+      bike:{
+        best:0,
+        air:0,
+        close:0,
+        meter:0,
+        runs:0
+      }
+    };
+  }
+}
+
+function showScoreboard(){
+
+  const r=loadRecords();
+
+  overlay.style.display='flex';
+
+  card.innerHTML=`
+    <h2>SCOREBOARD</h2>
+
+    <p class="small">
+      Stored on this device for now.
+      Online leaderboard comes later.
+    </p>
+
+    <div class="scoreboard">
+
+      ${boardHTML(
+        'BIG BEAR',
+        r.snow
+      )}
+
+      ${boardHTML(
+        'ORANGE COUNTY',
+        r.bike
+      )}
+
+    </div>
+
+    <div class="modes">
+
+      <button
+        class="primary"
+        id="backBtn"
+      >
+        BACK TO JIMMY
+      </button>
+
+      <button id="wipeBtn">
+        RESET SCORES
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById('backBtn')
+    .onclick=startScreen;
+
+  document
+    .getElementById('wipeBtn')
+    .onclick=()=>{
+
+      localStorage.removeItem(
+        'crashingJimmyScoresV2'
+      );
+
+      showScoreboard();
+    };
+}
+
+function boardHTML(name,r){
+
+  return `
+    <div class="board">
+
+      <h3>${name}</h3>
+
+      <div class="board-row">
+        <span>Best score</span>
+        <b>${Math.floor(r.best)}</b>
+      </div>
+
+      <div class="board-row">
+        <span>Best airtime</span>
+        <b>${r.air.toFixed(1)}s</b>
+      </div>
+
+      <div class="board-row">
+        <span>Most close calls</span>
+        <b>${r.close}</b>
+      </div>
+
+      <div class="board-row">
+        <span>Highest Jimmy Meter</span>
+        <b>${r.meter}%</b>
+      </div>
+
+      <div class="board-row">
+        <span>Runs</span>
+        <b>${r.runs}</b>
+      </div>
+
+    </div>
+  `;
+}
+
 function spawnObstacle(){
-  const types=modeData[mode].obstacles;
-  const type=types[Math.floor(Math.random()*types.length)];
+
+  const d=modeData[mode];
+
+  const special=
+    !wildlifeUsed
+    &&
+    runTime>10
+    &&
+    Math.random()<.12;
+
+  let type;
+
+  if(special){
+
+    type=
+      mode==='bike'
+        ? 'lion'
+        : 'bear';
+
+    wildlifeUsed=true;
+
+  }else{
+
+    type=
+      d.obstacles[
+        Math.floor(
+          Math.random()*
+          d.obstacles.length
+        )
+      ];
+  }
 
   let o={
-    x:W+40,
+    wx:world+W+80,
     type,
-    w:34,
-    h:50,
+    w:38,
+    h:42,
     hit:false,
-    passed:false
+    passed:false,
+    vx:0
   };
 
   if(type==='rock'){
-    o.w=36;
+    o.w=38;
     o.h=24;
   }
 
-  if(type==='kicker' || type==='drop'){
-    o.w=56;
-    o.h=22;
+  if(
+    type==='kicker'
+    ||
+    type==='drop'
+  ){
+    o.w=58;
+    o.h=24;
+  }
+
+  if(type==='log'){
+    o.w=46;
+    o.h=15;
+  }
+
+  if(type==='lion'){
+    o.w=58;
+    o.h=30;
+    o.vx=-70;
+  }
+
+  if(type==='bear'){
+    o.w=48;
+    o.h=54;
+    o.vx=-18;
   }
 
   obstacles.push(o);
+
+  nextSpawn=
+    world
+    +
+    rand(420,650)
+    -
+    (meter*1.5);
 }
 
 function jump(){
-  if(!running || !player.onGround) return;
 
-  player.vy=sendIt ? -13.8 : -12.2;
+  if(
+    !running
+    ||
+    !player.onGround
+  ){
+    return;
+  }
+
+  player.vy=
+    sendIt
+      ? -13.8
+      : -12.1;
+
   player.onGround=false;
-  meter=Math.min(100,meter+3);
+
+  meter=
+    Math.min(
+      100,
+      meter+3
+    );
 }
 
 function setBrake(v){
@@ -747,141 +1243,260 @@ function setSend(v){
 
 document
   .getElementById('jump')
-  .addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    jump();
-  });
+  .addEventListener(
+    'pointerdown',
+    e=>{
 
-for(const [id,setter] of [
-  ['brake',setBrake],
-  ['send',setSend]
-]){
-  const b=document.getElementById(id);
+      e.preventDefault();
 
-  b.addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    setter(true);
-  });
+      jump();
+    }
+  );
 
-  b.addEventListener('pointerup',e=>{
-    e.preventDefault();
-    setter(false);
-  });
+for(
+  const [id,setter]
+  of
+  [
+    ['brake',setBrake],
+    ['send',setSend]
+  ]
+){
 
-  b.addEventListener('pointercancel',()=>{
-    setter(false);
-  });
+  const b=
+    document.getElementById(id);
 
-  b.addEventListener('pointerleave',()=>{
-    setter(false);
-  });
+  b.addEventListener(
+    'pointerdown',
+    e=>{
+
+      e.preventDefault();
+
+      setter(true);
+    }
+  );
+
+  b.addEventListener(
+    'pointerup',
+    e=>{
+
+      e.preventDefault();
+
+      setter(false);
+    }
+  );
+
+  b.addEventListener(
+    'pointercancel',
+    ()=>{
+      setter(false);
+    }
+  );
+
+  b.addEventListener(
+    'pointerleave',
+    ()=>{
+      setter(false);
+    }
+  );
 }
 
-addEventListener('keydown',e=>{
-  if(e.code==='Space' || e.code==='ArrowUp'){
-    jump();
-  }
+addEventListener(
+  'keydown',
+  e=>{
 
-  if(e.code==='ArrowLeft'){
-    braking=true;
-  }
+    if(
+      e.code==='Space'
+      ||
+      e.code==='ArrowUp'
+    ){
+      jump();
+    }
 
-  if(e.code==='ArrowRight'){
-    sendIt=true;
-  }
-});
+    if(
+      e.code==='ArrowLeft'
+    ){
+      braking=true;
+    }
 
-addEventListener('keyup',e=>{
-  if(e.code==='ArrowLeft'){
-    braking=false;
+    if(
+      e.code==='ArrowRight'
+    ){
+      sendIt=true;
+    }
   }
+);
 
-  if(e.code==='ArrowRight'){
-    sendIt=false;
+addEventListener(
+  'keyup',
+  e=>{
+
+    if(
+      e.code==='ArrowLeft'
+    ){
+      braking=false;
+    }
+
+    if(
+      e.code==='ArrowRight'
+    ){
+      sendIt=false;
+    }
   }
-});
-
-function updateHUD(){
-  scoreEl.textContent=Math.floor(score);
-  meterFill.style.width=meter+'%';
-}
+);
 
 function crash(o){
+
   running=false;
   ended=true;
 
   const injury=
     injuries[
-      Math.floor(Math.random()*injuries.length)
+      Math.floor(
+        Math.random()*
+        injuries.length
+      )
     ];
 
   injuryHistory.push(injury);
 
-  for(let i=0;i<28;i++){
+  for(let i=0;i<34;i++){
+
     particles.push({
       x:player.x+player.w/2,
       y:player.y+player.h/2,
-      vx:(Math.random()-.5)*10,
-      vy:(Math.random()-.8)*9,
-      life:40+Math.random()*35
+      vx:rand(-6,6),
+      vy:rand(-8,2),
+      life:rand(38,72)
     });
   }
 
   let spins=0;
 
-  const crashAnim=setInterval(()=>{
-    drawScene();
+  const timer=
+    setInterval(
+      ()=>{
 
-    player.rot+=.3;
-    player.x+=3;
-    player.y+=3;
+        drawScene();
 
-    drawPlayer();
-    drawParticles();
+        player.rot+=.34;
+        player.x+=3;
+        player.y+=3;
 
-    spins++;
+        drawPlayer();
+        drawParticles();
 
-    if(spins>26){
-      clearInterval(crashAnim);
-      showResults(true,injury);
-    }
-  },30);
+        if(++spins>24){
+
+          clearInterval(timer);
+
+          showResults(
+            true,
+            injury,
+            o.type
+          );
+        }
+
+      },
+      30
+    );
 }
 
 function finish(){
+
   running=false;
   ended=true;
-  showResults(false,null);
+
+  showResults(
+    false,
+    null,
+    null
+  );
 }
 
-function showResults(crashed,injury){
+function showResults(
+  crashed,
+  injury,
+  hitType
+){
+
   const quote=
     lines[
-      Math.floor(Math.random()*lines.length)
+      Math.floor(
+        Math.random()*
+        lines.length
+      )
     ];
 
-  const risk=Math.round(meter);
+  const risk=
+    Math.round(meter);
 
   const scoreFinal=
     Math.floor(
-      score+(crashed?0:750)
+      score
+      +
+      (
+        crashed
+          ? 0
+          : 900
+      )
     );
 
+  score=scoreFinal;
+
+  saveRecord();
+
   overlay.style.display='flex';
+
   card.scrollTop=0;
 
+  const wildlife=
+    hitType==='lion'
+    ||
+    hitType==='bear';
+
   card.innerHTML=`
+
+    <div class="location">
+      ${modeData[mode].place}
+      —
+      ${modeData[mode].tag}
+    </div>
+
     <h2>
-      ${crashed?'RUN TERMINATED':'JIMMY LIVES'}
+      ${
+        crashed
+          ? 'RUN TERMINATED'
+          : 'JIMMY LIVES'
+      }
     </h2>
 
     <div class="result-layout">
 
-      <div class="result-main">
+      <div>
 
         <div class="quote">
           “${quote}”
         </div>
+
+        ${
+          wildlife
+          ?
+          `
+          <p>
+            <b>Wildlife report:</b>
+
+            ${
+              hitType==='lion'
+              ?
+              'Mountain lion encounter. Jimmy would like it noted that he was technically ahead for part of it.'
+              :
+              'Black bear encounter. The bear declined to comment.'
+            }
+          </p>
+          `
+          :
+          ''
+        }
 
         ${
           crashed
@@ -913,7 +1528,7 @@ function showResults(crashed,injury){
 
       </div>
 
-      <div class="result-side">
+      <div>
 
         <div class="stats">
 
@@ -941,7 +1556,10 @@ function showResults(crashed,injury){
 
         <div class="modes">
 
-          <button class="primary" id="again">
+          <button
+            class="primary"
+            id="again"
+          >
             ONE MORE RUN
           </button>
 
@@ -951,139 +1569,220 @@ function showResults(crashed,injury){
 
         </div>
 
-        <p class="small landscape-foot">
-          Lifetime documented incidents this session:
-          ${injuryHistory.length}
-        </p>
+        <div class="modes">
+
+          <button id="scoreboardBtn">
+            SCOREBOARD
+          </button>
+
+          <button id="shareBtn">
+            DECLARE VICTORY
+          </button>
+
+        </div>
 
       </div>
 
     </div>
   `;
 
-  score=scoreFinal;
   updateHUD();
 
-  document.getElementById('again').onclick=()=>{
-    overlay.style.display='none';
-    resize();
-    resetGame();
-  };
+  document
+    .getElementById('again')
+    .onclick=()=>{
 
-  document.getElementById('menu').onclick=startScreen;
+      overlay.style.display='none';
+
+      resize();
+
+      resetGame();
+    };
+
+  document
+    .getElementById('menu')
+    .onclick=startScreen;
+
+  document
+    .getElementById('scoreboardBtn')
+    .onclick=showScoreboard;
+
+  document
+    .getElementById('shareBtn')
+    .onclick=()=>{
+
+      const text=
+        `JIMMY ${modeData[mode].place}: `+
+        `${scoreFinal} points, `+
+        `${closeCalls} close calls, `+
+        `${totalAir.toFixed(1)}s airtime.`;
+
+      if(navigator.share){
+
+        navigator.share({
+          title:'Crashing Jimmy',
+          text
+        }).catch(()=>{});
+
+      }else{
+
+        navigator.clipboard
+          ?.writeText(text);
+      }
+    };
 }
 
 function update(dt){
-  if(!running) return;
 
-  runTime+=dt;
-  t+=dt*60;
-
-  const targetSpeed=
-    braking
-      ? 3.8
-      : sendIt
-        ? 9.2
-        : 6.2+meter*.018;
-
-  speed+=(targetSpeed-speed)*.05;
-
-  if(sendIt){
-    meter=Math.min(
-      100,
-      meter+dt*4.5
-    );
-
-    score+=dt*38;
-
-  }else if(braking){
-    meter=Math.max(
-      0,
-      meter-dt*5.5
-    );
-
-  }else{
-    meter=Math.max(
-      0,
-      meter-dt*1.2
-    );
+  if(!running){
+    return;
   }
 
-  score+=dt*12*speed/6;
+  runTime+=dt;
 
-  if(
-    Math.random()
-      <
-    dt*(0.55+speed*.035)
-    &&
-    (
-      obstacles.length===0
-      ||
-      obstacles[obstacles.length-1].x<W-220
-    )
-  ){
+  const target=
+    braking
+      ? 3.7
+      : sendIt
+        ? 9.3
+        : 6.1+meter*.018;
+
+  speed+=
+    (target-speed)
+    *.06;
+
+  world+=
+    speed*
+    60*
+    dt;
+
+  if(sendIt){
+
+    meter=
+      Math.min(
+        100,
+        meter+dt*4.7
+      );
+
+    score+=dt*42;
+
+  }else if(braking){
+
+    meter=
+      Math.max(
+        0,
+        meter-dt*5.8
+      );
+
+  }else{
+
+    meter=
+      Math.max(
+        0,
+        meter-dt*1.15
+      );
+  }
+
+  score+=
+    dt*
+    12*
+    speed/
+    6;
+
+  if(world>nextSpawn){
     spawnObstacle();
   }
 
   const gy=
-    groundY(player.x)-player.h;
+    groundY(player.x)
+    -
+    player.h;
 
   if(!player.onGround){
+
     player.vy+=28*dt;
+
     player.y+=player.vy;
 
     airTime+=dt;
     totalAir+=dt;
 
-    maxAir=Math.max(
-      maxAir,
-      airTime
-    );
-
     player.rot+=
       sendIt
-        ? .06
+        ? .065
         : .025;
 
     if(player.y>=gy){
+
       player.y=gy;
+
       player.vy=0;
+
       player.onGround=true;
+
       player.rot=0;
 
-      if(airTime>.45){
-        score+=Math.floor(
-          airTime
-          *280
-          *(1+meter/100)
-        );
+      if(airTime>.4){
 
-        meter=Math.min(
-          100,
-          meter+airTime*7
-        );
+        score+=
+          Math.floor(
+            airTime
+            *
+            300
+            *
+            (1+meter/100)
+          );
+
+        meter=
+          Math.min(
+            100,
+            meter+airTime*7
+          );
       }
 
       airTime=0;
     }
 
   }else{
+
     player.y=gy;
   }
 
+  let wildlifeNear=false;
+
   for(const o of obstacles){
-    o.x-=speed*60*dt;
+
+    o.wx+=o.vx*dt;
+
+    const sx=
+      o.wx-world;
 
     const oy=
-      groundY(o.x)-o.h;
+      groundY(sx)
+      -
+      o.h;
+
+    if(
+      (
+        o.type==='lion'
+        ||
+        o.type==='bear'
+      )
+      &&
+      sx<W*.78
+      &&
+      sx>player.x+70
+    ){
+      wildlifeNear=true;
+    }
 
     const px1=player.x+5;
     const px2=player.x+player.w-5;
-    const py1=player.y+8;
+    const py1=player.y+7;
     const py2=player.y+player.h-4;
 
-    const ox1=o.x;
-    const ox2=o.x+o.w;
+    const ox1=sx;
+    const ox2=sx+o.w;
     const oy1=oy;
     const oy2=oy+o.h;
 
@@ -1098,45 +1797,80 @@ function update(dt){
       &&
       py1<oy2
     ){
+
       o.hit=true;
+
       crash(o);
+
       return;
     }
 
     if(
       !o.passed
       &&
-      o.x+o.w<player.x
+      sx+o.w<player.x
     ){
+
       o.passed=true;
 
       const clearance=
         Math.abs(
-          (player.y+player.h)-oy
+          (player.y+player.h)
+          -
+          oy
         );
 
-      if(clearance<25){
+      if(clearance<26){
+
         closeCalls++;
 
-        meter=Math.min(
-          100,
-          meter+8
-        );
+        meter=
+          Math.min(
+            100,
+            meter+8
+          );
 
         score+=180;
 
       }else{
+
         score+=80;
+      }
+
+      if(
+        o.type==='lion'
+        ||
+        o.type==='bear'
+      ){
+
+        score+=750;
+
+        meter=
+          Math.min(
+            100,
+            meter+18
+          );
       }
     }
   }
 
+  alertEl.textContent=
+    mode==='bike'
+      ? 'MOUNTAIN LION'
+      : 'BLACK BEAR';
+
+  alertEl.style.opacity=
+    wildlifeNear
+      ? '1'
+      : '0';
+
   obstacles=
     obstacles.filter(
-      o=>o.x>-100
+      o=>
+        o.wx-world>-120
     );
 
-  if(runTime>42){
+  if(runTime>45){
     finish();
   }
 
@@ -1144,16 +1878,29 @@ function update(dt){
 }
 
 function drawScene(){
-  const d=modeData[mode];
 
-  ctx.clearRect(
+  const d=
+    modeData[mode];
+
+  const g=
+    ctx.createLinearGradient(
+      0,
+      0,
+      0,
+      H
+    );
+
+  g.addColorStop(
     0,
-    0,
-    W,
-    H
+    d.sky1
   );
 
-  ctx.fillStyle=d.sky;
+  g.addColorStop(
+    1,
+    d.sky2
+  );
+
+  ctx.fillStyle=g;
 
   ctx.fillRect(
     0,
@@ -1163,14 +1910,16 @@ function drawScene(){
   );
 
   ctx.globalAlpha=.22;
+
   ctx.fillStyle=d.dark;
 
   for(let i=0;i<7;i++){
+
     const x=
       (
         i*190
         -
-        (t*speed*.09)%190
+        (world*.12)%190
       )
       -80;
 
@@ -1178,23 +1927,25 @@ function drawScene(){
 
     ctx.moveTo(
       x,
-      H*.63
+      H*.62
     );
 
     ctx.lineTo(
       x+100,
-      H*.28
+      H*.25
     );
 
     ctx.lineTo(
-      x+210,
-      H*.63
+      x+215,
+      H*.62
     );
 
     ctx.fill();
   }
 
   ctx.globalAlpha=1;
+
+  drawScenery(d);
 
   ctx.beginPath();
 
@@ -1206,8 +1957,9 @@ function drawScene(){
   for(
     let x=0;
     x<=W+20;
-    x+=18
+    x+=14
   ){
+
     ctx.lineTo(
       x,
       groundY(x)
@@ -1222,6 +1974,7 @@ function drawScene(){
   ctx.closePath();
 
   ctx.fillStyle=d.ground;
+
   ctx.fill();
 
   for(const o of obstacles){
@@ -1229,18 +1982,87 @@ function drawScene(){
   }
 }
 
+function drawScenery(d){
+
+  if(mode==='snow'){
+
+    ctx.fillStyle=
+      'rgba(255,255,255,.28)';
+
+    for(let i=0;i<24;i++){
+
+      const x=
+        (
+          i*83
+          -
+          (world*.38)%83
+        );
+
+      ctx.fillRect(
+        x,
+        (i*37)%
+        Math.max(
+          80,
+          H*.55
+        ),
+        2,
+        2
+      );
+    }
+
+  }else{
+
+    ctx.fillStyle=
+      'rgba(50,74,47,.35)';
+
+    for(let i=0;i<15;i++){
+
+      const x=
+        (
+          i*120
+          -
+          (world*.22)%120
+        );
+
+      const y=
+        H*.6
+        +
+        ((i%3)*9);
+
+      ctx.beginPath();
+
+      ctx.arc(
+        x,
+        y,
+        10,
+        0,
+        Math.PI*2
+      );
+
+      ctx.fill();
+    }
+  }
+}
+
 function drawObstacle(o){
+
+  const x=
+    o.wx-world;
+
   const y=
-    groundY(o.x)-o.h;
+    groundY(x)
+    -
+    o.h;
 
   if(o.type==='tree'){
+
     ctx.fillStyle='#5b3b2a';
 
     ctx.fillRect(
-      o.x+13,
-      y+15,
+      x+14,
+      y+17,
       8,
-      o.h-15
+      o.h-17
     );
 
     ctx.fillStyle='#234e38';
@@ -1248,50 +2070,81 @@ function drawObstacle(o){
     ctx.beginPath();
 
     ctx.moveTo(
-      o.x+17,
-      y-10
+      x+18,
+      y-12
     );
 
     ctx.lineTo(
-      o.x-7,
-      y+34
+      x-9,
+      y+35
     );
 
     ctx.lineTo(
-      o.x+42,
-      y+34
+      x+45,
+      y+35
     );
 
     ctx.fill();
 
   }else if(o.type==='rock'){
+
     ctx.fillStyle='#6e7479';
 
     ctx.beginPath();
 
     ctx.moveTo(
-      o.x,
+      x,
       y+o.h
     );
 
     ctx.lineTo(
-      o.x+8,
+      x+8,
       y+4
     );
 
     ctx.lineTo(
-      o.x+28,
+      x+29,
       y
     );
 
     ctx.lineTo(
-      o.x+o.w,
+      x+o.w,
       y+o.h
     );
 
     ctx.fill();
 
-  }else{
+  }else if(o.type==='log'){
+
+    ctx.fillStyle='#65452f';
+
+    ctx.fillRect(
+      x,
+      y+5,
+      o.w,
+      10
+    );
+
+    ctx.fillStyle='#3e2a1f';
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x+o.w,
+      y+10,
+      6,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+  }else if(
+    o.type==='kicker'
+    ||
+    o.type==='drop'
+  ){
+
     ctx.fillStyle=
       mode==='snow'
         ? '#c8d5df'
@@ -1300,25 +2153,145 @@ function drawObstacle(o){
     ctx.beginPath();
 
     ctx.moveTo(
-      o.x,
+      x,
       y+o.h
     );
 
     ctx.lineTo(
-      o.x+o.w,
+      x+o.w,
       y
     );
 
     ctx.lineTo(
-      o.x+o.w,
+      x+o.w,
       y+o.h
     );
 
     ctx.fill();
+
+  }else if(o.type==='lion'){
+
+    ctx.fillStyle='#b78b55';
+
+    ctx.fillRect(
+      x+10,
+      y+10,
+      34,
+      14
+    );
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x+46,
+      y+12,
+      9,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillRect(
+      x+9,
+      y+21,
+      5,
+      13
+    );
+
+    ctx.fillRect(
+      x+34,
+      y+21,
+      5,
+      13
+    );
+
+    ctx.strokeStyle='#b78b55';
+
+    ctx.lineWidth=4;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      x+12,
+      y+13
+    );
+
+    ctx.quadraticCurveTo(
+      x-8,
+      y+4,
+      x+2,
+      y-5
+    );
+
+    ctx.stroke();
+
+  }else if(o.type==='bear'){
+
+    ctx.fillStyle='#3c2a20';
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x+23,
+      y+27,
+      20,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x+34,
+      y+10,
+      13,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x+28,
+      y+1,
+      5,
+      0,
+      Math.PI*2
+    );
+
+    ctx.arc(
+      x+41,
+      y+1,
+      5,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillRect(
+      x+10,
+      y+40,
+      7,
+      14
+    );
+
+    ctx.fillRect(
+      x+29,
+      y+40,
+      7,
+      14
+    );
   }
 }
 
 function drawPlayer(){
+
   ctx.save();
 
   ctx.translate(
@@ -1326,35 +2299,40 @@ function drawPlayer(){
     player.y+player.h/2
   );
 
-  ctx.rotate(player.rot);
+  ctx.rotate(
+    player.rot
+  );
 
   ctx.lineWidth=4;
+
   ctx.strokeStyle='#171a20';
+
   ctx.fillStyle='#f0b44d';
 
   ctx.beginPath();
 
   ctx.arc(
     0,
-    -16,
+    -17,
     8,
     0,
     Math.PI*2
   );
 
   ctx.fill();
+
   ctx.stroke();
 
   ctx.beginPath();
 
   ctx.moveTo(
     0,
-    -8
+    -9
   );
 
   ctx.lineTo(
     -2,
-    12
+    13
   );
 
   ctx.stroke();
@@ -1367,8 +2345,12 @@ function drawPlayer(){
   );
 
   ctx.lineTo(
-    13,
-    6
+    sendIt
+      ? 16
+      : 12,
+    sendIt
+      ? 1
+      : 7
   );
 
   ctx.stroke();
@@ -1377,53 +2359,57 @@ function drawPlayer(){
 
   ctx.moveTo(
     -2,
-    11
+    12
   );
 
   ctx.lineTo(
     -14,
-    23
+    24
   );
 
   ctx.moveTo(
     -2,
-    11
+    12
   );
 
   ctx.lineTo(
     14,
-    22
+    23
   );
 
   ctx.stroke();
 
   if(mode==='snow'){
+
     ctx.lineWidth=5;
+
     ctx.strokeStyle='#2b3038';
 
     ctx.beginPath();
 
     ctx.moveTo(
-      -24,
-      25
+      -25,
+      26
     );
 
     ctx.lineTo(
-      26,
-      25
+      28,
+      26
     );
 
     ctx.stroke();
 
   }else{
+
     ctx.lineWidth=3;
+
     ctx.strokeStyle='#232831';
 
     ctx.beginPath();
 
     ctx.arc(
       -15,
-      24,
+      25,
       11,
       0,
       Math.PI*2
@@ -1434,8 +2420,8 @@ function drawPlayer(){
     ctx.beginPath();
 
     ctx.arc(
-      18,
-      24,
+      19,
+      25,
       11,
       0,
       Math.PI*2
@@ -1447,22 +2433,22 @@ function drawPlayer(){
 
     ctx.moveTo(
       -15,
-      24
+      25
     );
 
     ctx.lineTo(
       0,
-      8
+      9
     );
 
     ctx.lineTo(
-      18,
-      24
+      19,
+      25
     );
 
     ctx.lineTo(
       -15,
-      24
+      25
     );
 
     ctx.stroke();
@@ -1472,14 +2458,19 @@ function drawPlayer(){
 }
 
 function drawParticles(){
+
   for(const p of particles){
+
     ctx.globalAlpha=
       Math.max(
         0,
         p.life/70
       );
 
-    ctx.fillStyle='#f0b44d';
+    ctx.fillStyle=
+      mode==='snow'
+        ? '#fff'
+        : '#d6ad79';
 
     ctx.fillRect(
       p.x,
@@ -1490,7 +2481,9 @@ function drawParticles(){
 
     p.x+=p.vx;
     p.y+=p.vy;
+
     p.vy+=.35;
+
     p.life--;
   }
 
@@ -1502,9 +2495,11 @@ function drawParticles(){
     );
 }
 
-let last=performance.now();
+let last=
+  performance.now();
 
 function loop(now){
+
   const dt=
     Math.min(
       .033,
@@ -1517,9 +2512,16 @@ function loop(now){
     update(dt);
   }
 
-  if(!ended || running){
+  if(
+    !ended
+    ||
+    running
+  ){
+
     drawScene();
+
     drawPlayer();
+
     drawParticles();
   }
 
@@ -1527,7 +2529,11 @@ function loop(now){
 }
 
 resize();
+
+buildTerrain();
+
 startScreen();
+
 requestAnimationFrame(loop);
 
 })();
