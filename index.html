@@ -234,6 +234,15 @@
     font-size:18px;
   }
 
+  .result-layout{
+    display:block;
+  }
+
+  .result-main,
+  .result-side{
+    min-width:0;
+  }
+
   @media (max-height:620px){
     header{
       padding:8px 12px;
@@ -335,7 +344,7 @@
 
   @media (orientation:landscape) and (max-height:500px){
     header{
-      padding:4px 10px;
+      padding:3px 10px;
     }
 
     .subtitle{
@@ -343,53 +352,120 @@
     }
 
     .title{
-      font-size:18px;
+      font-size:17px;
     }
 
     #hud{
       font-size:10px;
+      gap:8px;
     }
 
     #controls{
-      padding:5px 8px calc(5px + env(safe-area-inset-bottom));
+      padding:4px 8px calc(4px + env(safe-area-inset-bottom));
     }
 
     #controls button{
-      min-height:40px;
-      font-size:13px;
-      padding:7px;
+      min-height:38px;
+      font-size:12px;
+      padding:6px 8px;
+    }
+
+    #overlay{
+      padding:6px;
+      align-items:center;
+      overflow:hidden;
     }
 
     .card{
-      max-height:94%;
-      padding:10px 14px;
+      width:97%;
+      max-width:920px;
+      max-height:96%;
+      overflow:hidden;
+      padding:9px 12px;
+      border-radius:12px;
+    }
+
+    .card h1{
+      font-size:20px;
+      margin-bottom:5px;
+    }
+
+    .card h2{
+      font-size:18px;
+      margin-bottom:4px;
     }
 
     .card p{
-      margin:5px 0;
-      font-size:12px;
+      margin:4px 0;
+      font-size:11px;
+      line-height:1.2;
+    }
+
+    .small{
+      font-size:9px;
+    }
+
+    .result-layout{
+      display:grid;
+      grid-template-columns:1.15fr 1fr;
+      gap:10px;
+      align-items:start;
+    }
+
+    .result-main,
+    .result-side{
+      min-width:0;
     }
 
     .quote{
-      font-size:14px;
-      margin:6px 0;
-      padding:7px;
+      font-size:13px;
+      line-height:1.18;
+      margin:5px 0 0;
+      padding:7px 8px;
+      border-left-width:3px;
     }
 
     .stats{
-      margin:6px 0;
+      grid-template-columns:1fr 1fr;
+      gap:4px;
+      margin:0 0 4px;
     }
 
     .stat{
-      padding:5px;
+      padding:5px 7px;
+      font-size:10px;
     }
 
     .stat b{
-      font-size:14px;
+      font-size:13px;
     }
 
     .modes{
-      margin:6px 0;
+      margin:5px 0 0;
+      gap:6px;
+    }
+
+    .modes button{
+      padding:7px 8px;
+      font-size:11px;
+      border-radius:9px;
+    }
+
+    .landscape-foot{
+      margin-top:4px !important;
+      font-size:9px !important;
+    }
+
+    .start-copy{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      align-items:start;
+    }
+
+    .start-copy .modes{
+      grid-column:1 / -1;
+      margin:4px 0;
     }
   }
 </style>
@@ -551,7 +627,6 @@ function groundY(x){
 }
 
 function resetGame(){
-
   score=0;
   meter=0;
   speed=6;
@@ -585,36 +660,36 @@ function resetGame(){
 }
 
 function startScreen(){
-
   running=false;
-
   overlay.style.display='flex';
 
   card.innerHTML=`
     <h1>JIMMY</h1>
 
-    <p>
-      He has experience, confidence, old injuries,
-      and absolutely no evidence that any of those
-      things should slow him down.
-    </p>
+    <div class="start-copy">
+      <p>
+        He has experience, confidence, old injuries,
+        and absolutely no evidence that any of those
+        things should slow him down.
+      </p>
 
-    <div class="modes">
-      <button class="primary" id="snowMode">SNOWBOARD</button>
-      <button class="primary" id="bikeMode">MOUNTAIN BIKE</button>
+      <p>
+        <b>How to play:</b>
+        Jump obstacles. Brake when wisdom briefly takes over.
+        Hold <b>SEND IT</b> to go faster, score more,
+        and make choices Jimmy's orthopedist would oppose.
+      </p>
+
+      <div class="modes">
+        <button class="primary" id="snowMode">SNOWBOARD</button>
+        <button class="primary" id="bikeMode">MOUNTAIN BIKE</button>
+      </div>
+
+      <p class="small">
+        The Jimmy Meter rewards speed, airtime and near misses.
+        A full meter is impressive right up until it isn't.
+      </p>
     </div>
-
-    <p>
-      <b>How to play:</b>
-      Jump obstacles. Brake when wisdom briefly takes over.
-      Hold <b>SEND IT</b> to go faster, score more,
-      and make choices Jimmy's orthopedist would oppose.
-    </p>
-
-    <p class="small">
-      The Jimmy Meter rewards speed, airtime and near misses.
-      A full meter is impressive right up until it isn't.
-    </p>
   `;
 
   document.getElementById('snowMode').onclick=()=>begin('snow');
@@ -622,20 +697,14 @@ function startScreen(){
 }
 
 function begin(m){
-
   mode=m;
-
   overlay.style.display='none';
-
   resize();
-
   resetGame();
 }
 
 function spawnObstacle(){
-
   const types=modeData[mode].obstacles;
-
   const type=types[Math.floor(Math.random()*types.length)];
 
   let o={
@@ -661,13 +730,10 @@ function spawnObstacle(){
 }
 
 function jump(){
-
   if(!running || !player.onGround) return;
 
   player.vy=sendIt ? -13.8 : -12.2;
-
   player.onGround=false;
-
   meter=Math.min(100,meter+3);
 }
 
@@ -690,7 +756,6 @@ for(const [id,setter] of [
   ['brake',setBrake],
   ['send',setSend]
 ]){
-
   const b=document.getElementById(id);
 
   b.addEventListener('pointerdown',e=>{
@@ -713,11 +778,7 @@ for(const [id,setter] of [
 }
 
 addEventListener('keydown',e=>{
-
-  if(
-    e.code==='Space' ||
-    e.code==='ArrowUp'
-  ){
+  if(e.code==='Space' || e.code==='ArrowUp'){
     jump();
   }
 
@@ -731,7 +792,6 @@ addEventListener('keydown',e=>{
 });
 
 addEventListener('keyup',e=>{
-
   if(e.code==='ArrowLeft'){
     braking=false;
   }
@@ -742,14 +802,11 @@ addEventListener('keyup',e=>{
 });
 
 function updateHUD(){
-
   scoreEl.textContent=Math.floor(score);
-
   meterFill.style.width=meter+'%';
 }
 
 function crash(o){
-
   running=false;
   ended=true;
 
@@ -761,7 +818,6 @@ function crash(o){
   injuryHistory.push(injury);
 
   for(let i=0;i<28;i++){
-
     particles.push({
       x:player.x+player.w/2,
       y:player.y+player.h/2,
@@ -774,7 +830,6 @@ function crash(o){
   let spins=0;
 
   const crashAnim=setInterval(()=>{
-
     drawScene();
 
     player.rot+=.3;
@@ -787,25 +842,19 @@ function crash(o){
     spins++;
 
     if(spins>26){
-
       clearInterval(crashAnim);
-
       showResults(true,injury);
     }
-
   },30);
 }
 
 function finish(){
-
   running=false;
   ended=true;
-
   showResults(false,null);
 }
 
 function showResults(crashed,injury){
-
   const quote=
     lines[
       Math.floor(Math.random()*lines.length)
@@ -819,7 +868,6 @@ function showResults(crashed,injury){
     );
 
   overlay.style.display='flex';
-
   card.scrollTop=0;
 
   card.innerHTML=`
@@ -827,90 +875,98 @@ function showResults(crashed,injury){
       ${crashed?'RUN TERMINATED':'JIMMY LIVES'}
     </h2>
 
-    <div class="quote">
-      “${quote}”
+    <div class="result-layout">
+
+      <div class="result-main">
+
+        <div class="quote">
+          “${quote}”
+        </div>
+
+        ${
+          crashed
+          ?
+          `
+          <p>
+            <b>Diagnosis:</b>
+            ${injury}.
+          </p>
+
+          <p>
+            <b>Jimmy's assessment:</b>
+            “I can probably ride tomorrow.”
+          </p>
+          `
+          :
+          `
+          <p>
+            <b>Medical outcome:</b>
+            Suspiciously intact.
+          </p>
+
+          <p>
+            <b>Jimmy's assessment:</b>
+            “We should do one more.”
+          </p>
+          `
+        }
+
+      </div>
+
+      <div class="result-side">
+
+        <div class="stats">
+
+          <div class="stat">
+            <span>Score</span>
+            <b>${scoreFinal}</b>
+          </div>
+
+          <div class="stat">
+            <span>Jimmy Meter</span>
+            <b>${risk}%</b>
+          </div>
+
+          <div class="stat">
+            <span>Close calls</span>
+            <b>${closeCalls}</b>
+          </div>
+
+          <div class="stat">
+            <span>Airtime</span>
+            <b>${totalAir.toFixed(1)} sec</b>
+          </div>
+
+        </div>
+
+        <div class="modes">
+
+          <button class="primary" id="again">
+            ONE MORE RUN
+          </button>
+
+          <button id="menu">
+            CHANGE SPORT
+          </button>
+
+        </div>
+
+        <p class="small landscape-foot">
+          Lifetime documented incidents this session:
+          ${injuryHistory.length}
+        </p>
+
+      </div>
+
     </div>
-
-    <div class="stats">
-
-      <div class="stat">
-        <span>Score</span>
-        <b>${scoreFinal}</b>
-      </div>
-
-      <div class="stat">
-        <span>Jimmy Meter</span>
-        <b>${risk}%</b>
-      </div>
-
-      <div class="stat">
-        <span>Close calls</span>
-        <b>${closeCalls}</b>
-      </div>
-
-      <div class="stat">
-        <span>Airtime</span>
-        <b>${totalAir.toFixed(1)} sec</b>
-      </div>
-
-    </div>
-
-    ${
-      crashed
-      ?
-      `
-      <p>
-        <b>Diagnosis:</b>
-        ${injury}.
-      </p>
-
-      <p>
-        <b>Jimmy's assessment:</b>
-        “I can probably ride tomorrow.”
-      </p>
-      `
-      :
-      `
-      <p>
-        <b>Medical outcome:</b>
-        Suspiciously intact.
-      </p>
-
-      <p>
-        <b>Jimmy's assessment:</b>
-        “We should do one more.”
-      </p>
-      `
-    }
-
-    <div class="modes">
-
-      <button class="primary" id="again">
-        ONE MORE RUN
-      </button>
-
-      <button id="menu">
-        CHANGE SPORT
-      </button>
-
-    </div>
-
-    <p class="small">
-      Lifetime documented incidents this session:
-      ${injuryHistory.length}
-    </p>
   `;
 
   score=scoreFinal;
-
   updateHUD();
 
   document.getElementById('again').onclick=()=>{
-
     overlay.style.display='none';
-
     resize();
-
     resetGame();
   };
 
@@ -918,11 +974,9 @@ function showResults(crashed,injury){
 }
 
 function update(dt){
-
   if(!running) return;
 
   runTime+=dt;
-
   t+=dt*60;
 
   const targetSpeed=
@@ -935,7 +989,6 @@ function update(dt){
   speed+=(targetSpeed-speed)*.05;
 
   if(sendIt){
-
     meter=Math.min(
       100,
       meter+dt*4.5
@@ -944,14 +997,12 @@ function update(dt){
     score+=dt*38;
 
   }else if(braking){
-
     meter=Math.max(
       0,
       meter-dt*5.5
     );
 
   }else{
-
     meter=Math.max(
       0,
       meter-dt*1.2
@@ -978,9 +1029,7 @@ function update(dt){
     groundY(player.x)-player.h;
 
   if(!player.onGround){
-
     player.vy+=28*dt;
-
     player.y+=player.vy;
 
     airTime+=dt;
@@ -997,14 +1046,12 @@ function update(dt){
         : .025;
 
     if(player.y>=gy){
-
       player.y=gy;
       player.vy=0;
       player.onGround=true;
       player.rot=0;
 
       if(airTime>.45){
-
         score+=Math.floor(
           airTime
           *280
@@ -1021,12 +1068,10 @@ function update(dt){
     }
 
   }else{
-
     player.y=gy;
   }
 
   for(const o of obstacles){
-
     o.x-=speed*60*dt;
 
     const oy=
@@ -1053,11 +1098,8 @@ function update(dt){
       &&
       py1<oy2
     ){
-
       o.hit=true;
-
       crash(o);
-
       return;
     }
 
@@ -1066,7 +1108,6 @@ function update(dt){
       &&
       o.x+o.w<player.x
     ){
-
       o.passed=true;
 
       const clearance=
@@ -1075,7 +1116,6 @@ function update(dt){
         );
 
       if(clearance<25){
-
         closeCalls++;
 
         meter=Math.min(
@@ -1086,7 +1126,6 @@ function update(dt){
         score+=180;
 
       }else{
-
         score+=80;
       }
     }
@@ -1105,7 +1144,6 @@ function update(dt){
 }
 
 function drawScene(){
-
   const d=modeData[mode];
 
   ctx.clearRect(
@@ -1125,11 +1163,9 @@ function drawScene(){
   );
 
   ctx.globalAlpha=.22;
-
   ctx.fillStyle=d.dark;
 
   for(let i=0;i<7;i++){
-
     const x=
       (
         i*190
@@ -1172,7 +1208,6 @@ function drawScene(){
     x<=W+20;
     x+=18
   ){
-
     ctx.lineTo(
       x,
       groundY(x)
@@ -1187,7 +1222,6 @@ function drawScene(){
   ctx.closePath();
 
   ctx.fillStyle=d.ground;
-
   ctx.fill();
 
   for(const o of obstacles){
@@ -1196,12 +1230,10 @@ function drawScene(){
 }
 
 function drawObstacle(o){
-
   const y=
     groundY(o.x)-o.h;
 
   if(o.type==='tree'){
-
     ctx.fillStyle='#5b3b2a';
 
     ctx.fillRect(
@@ -1233,7 +1265,6 @@ function drawObstacle(o){
     ctx.fill();
 
   }else if(o.type==='rock'){
-
     ctx.fillStyle='#6e7479';
 
     ctx.beginPath();
@@ -1261,7 +1292,6 @@ function drawObstacle(o){
     ctx.fill();
 
   }else{
-
     ctx.fillStyle=
       mode==='snow'
         ? '#c8d5df'
@@ -1289,7 +1319,6 @@ function drawObstacle(o){
 }
 
 function drawPlayer(){
-
   ctx.save();
 
   ctx.translate(
@@ -1369,9 +1398,7 @@ function drawPlayer(){
   ctx.stroke();
 
   if(mode==='snow'){
-
     ctx.lineWidth=5;
-
     ctx.strokeStyle='#2b3038';
 
     ctx.beginPath();
@@ -1389,9 +1416,7 @@ function drawPlayer(){
     ctx.stroke();
 
   }else{
-
     ctx.lineWidth=3;
-
     ctx.strokeStyle='#232831';
 
     ctx.beginPath();
@@ -1447,9 +1472,7 @@ function drawPlayer(){
 }
 
 function drawParticles(){
-
   for(const p of particles){
-
     ctx.globalAlpha=
       Math.max(
         0,
@@ -1482,7 +1505,6 @@ function drawParticles(){
 let last=performance.now();
 
 function loop(now){
-
   const dt=
     Math.min(
       .033,
@@ -1496,11 +1518,8 @@ function loop(now){
   }
 
   if(!ended || running){
-
     drawScene();
-
     drawPlayer();
-
     drawParticles();
   }
 
@@ -1508,9 +1527,7 @@ function loop(now){
 }
 
 resize();
-
 startScreen();
-
 requestAnimationFrame(loop);
 
 })();
