@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v51</title>
+<title>JIMMY — Fast Lines, Great Stories — v55</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -67,6 +67,7 @@ button:active{transform:translateY(1px)}
 .scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.board{background:#141820;border-radius:11px;padding:10px}.board h3{color:var(--accent)}
 .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #282e36;font-size:11px}.row:last-child{border:0}
 .run-rating{margin:7px 0;padding:8px 10px;border:1px solid #3d4652;border-radius:10px;background:#151a21}.run-rating b{color:var(--accent);font-size:15px;letter-spacing:.06em}.run-rating span{display:block;margin-top:2px;font-size:10px;color:#cbd1d8}
+.share-card{position:relative;overflow:hidden;margin:8px 0;padding:16px;border:1px solid #f2b84b66;border-radius:14px;background:linear-gradient(145deg,#202a34,#11161c 62%);box-shadow:inset 0 1px #ffffff12,0 12px 28px #0005}.share-card:before{content:'';position:absolute;right:-34px;top:-44px;width:150px;height:150px;border:18px solid #f2b84b18;border-radius:50%}.share-card:after{content:'';position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(165deg,transparent 47%,#315f8366 48% 61%,#1d354766 62%);pointer-events:none}.share-brand{position:relative;z-index:1;font-size:10px;font-weight:950;letter-spacing:.16em;color:#f2b84b}.share-headline{position:relative;z-index:1;margin:5px 0 10px;font-size:22px;font-weight:950;line-height:1}.share-badges{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.share-badge{padding:8px 6px;border:1px solid #ffffff18;border-radius:9px;background:#090c10aa;text-align:center;font-size:8px;color:#bfc7cf}.share-badge b{display:block;margin-top:2px;color:#fff;font-size:13px}.share-link{position:relative;z-index:1;margin-top:11px;font-size:9px;font-weight:800;color:#dbe4eb}.share-actions{display:grid;grid-template-columns:1.2fr 1fr;gap:8px}.share-status{min-height:16px;margin:5px 0 0;text-align:center;font-size:9px;color:#cbd1d8}
 @media(max-width:600px){
  header{padding:calc(5px + env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 5px max(8px,env(safe-area-inset-left));display:grid;grid-template-columns:auto 1fr;align-items:start;gap:4px 8px}
  header>div:first-child{padding-top:2px}.title{font-size:17px;line-height:1}.subtitle{font-size:6.5px;margin-top:2px;white-space:nowrap}
@@ -108,12 +109,12 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v52';
+const BUILD_VERSION='v55';
 document.documentElement.dataset.build=BUILD_VERSION;
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay'),card=$('card');
 const scoreEl=$('score'),speedEl=$('speed'),meterFill=$('meterFill'),alertEl=$('alert'),sectionEl=$('section'),brakeBtn=$('brake'),jumpBtn=$('jump'),sendBtn=$('send'),flowValue=$('flowValue'),flowFill=$('flowFill'),audioBtn=$('audioBtn'),rideStateValue=$('rideStateValue'),ratingHud=$('ratingHud'),ratingValue=$('ratingValue'),signatureTrack=$('signatureTrack'),signatureName=$('signatureName'),signatureProgress=$('signatureProgress');
 let W=900,H=500,mode='snow',running=false,ended=false,score=0,meter=0,speed=6,runTime=0,world=0;
-let terrain=[],terrainFeatures=[],obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,maintenanceUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
+let terrain=[],terrainFeatures=[],complexBounds=[],obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,maintenanceUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
 let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,lastRatingTier=0,lastSignatureProgress='';
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
 let animClock=0,landingSquash=0,wheelSpin=0;
@@ -193,7 +194,7 @@ function resize(){
 addEventListener('resize',resize);if(visualViewport)visualViewport.addEventListener('resize',resize);
 
 function buildTerrain(){
- terrain=[];terrainFeatures=[];
+ terrain=[];terrainFeatures=[];complexBounds=[];
  let y=mode==='snow'?.72:.74;
 
  // Base terrain keeps the world organic, while authored complexes below create readable course identity.
@@ -316,6 +317,17 @@ function buildTerrain(){
   connector+=rand(1900,2700);
  }
  terrainFeatures.sort((a,b)=>a.x-b.x);
+ // v55 mobile QA/performance: cache authored-complex envelopes once per terrain build.
+ // Previously baseTerrainNorm() rebuilt each complex group with Array.filter() during every
+ // terrain sample, which multiplied work across collision, slope, drawing, and resize calls.
+ const byComplex=new Map();
+ for(const f of terrainFeatures){
+  if(!f.complex||f.complexId===undefined)continue;
+  let b=byComplex.get(f.complexId);
+  if(!b){b={id:f.complexId,start:f.x,end:f.x+f.width};byComplex.set(f.complexId,b)}
+  else{b.start=Math.min(b.start,f.x);b.end=Math.max(b.end,f.x+f.width)}
+ }
+ complexBounds=[...byComplex.values()].sort((a,b)=>a.start-b.start);
 }
 function rawBaseTerrainNorm(wx){
  if(!terrain.length)return .74;
@@ -328,13 +340,10 @@ function baseTerrainNorm(wx){
  // phrases a clean run-in, readable feature sequence, and predictable run-out.
  const raw=rawBaseTerrainNorm(wx);
  let active=null;
- for(const f of terrainFeatures){
-  if(!f.complex||f.complexId===undefined)continue;
-  if(!active||f.complexId!==active.id){
-   const group=terrainFeatures.filter(g=>g.complex&&g.complexId===f.complexId);
-   const start=Math.min(...group.map(g=>g.x)),end=Math.max(...group.map(g=>g.x+g.width));
-   if(wx>=start-300&&wx<=end+360){active={id:f.complexId,start,end};break}
-  }
+ // v55: use cached complex bounds in this hot path. Geometry is identical; only lookup cost changes.
+ for(const b of complexBounds){
+  if(wx<b.start-300)break;
+  if(wx<=b.end+360){active=b;break}
  }
  if(!active)return raw;
  const aX=active.start-300,bX=active.end+360;
@@ -648,11 +657,17 @@ function spawn(){
  obstacles.push(o);
  if(encounter)stageEncounter(o,spawnWx,f,lineChoice);
  if(maintenance)stageMaintenanceEncounter(o,spawnWx,f,lineChoice);
- // FAST LINE asks for more frequent decisions; staged encounters get extra recovery room so choreography stays fair on a phone screen.
+ // v53 fairness fix: every new obstacle reserves enough world distance for one full jump arc,
+ // touchdown, and a brief grounded reaction window before another mandatory jump can arrive.
+ // The reserve grows with speed so SEND IT stays difficult without producing impossible back-to-back hazards.
  const staged=encounter||maintenance;
- const minGap=staged?800:(f&&f.complex?(lineChoice==='fast'?430:lineChoice==='control'?535:470):420);
- const maxGap=staged?980:(f&&f.complex?(lineChoice==='fast'?635:lineChoice==='control'?790:720):670);
- nextSpawn=world+rand(minGap,maxGap)-meter*(staged?.2:(lineChoice==='control'?.45:1.2))
+ const nominalAirSeconds=1.10;       // conservative manual-jump flight window
+ const groundedReactionSeconds=.42; // enough time to land, read, and press JUMP again on mobile
+ const recoveryGap=speed*60*(nominalAirSeconds+groundedReactionSeconds);
+ const lineBuffer=f&&f.complex?(lineChoice==='fast'?55:lineChoice==='control'?135:95):75;
+ const minGap=Math.max(staged?900:720,recoveryGap+lineBuffer+(staged?210:0));
+ const maxGap=minGap+(staged?260:220);
+ nextSpawn=world+rand(minGap,maxGap)
 }
 function jump(){if(running&&player.onGround){
  ensureAudio();sfx('jump');jumpBtn.classList.add('active');setTimeout(()=>jumpBtn.classList.remove('active'),120);
@@ -985,7 +1000,22 @@ function results(crashed,injury,hit){
  <div><div class="run-rating">MASTERY <b>${title}</b><span>${signature.complete&&rating.tier>=3?'Signature objective plus a LEGENDARY run.':'Raise the run rating and clear the Signature objective to advance.'}</span></div><div class="run-rating">RUN RATING <b>${rating.name}</b><span>${rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${signature.name}</b><span>${signature.complete?'CLEARED · +'+signature.reward+' points':signature.progress}</span></div><div class="stats"><div class="stat">Score<b>${final}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div></div>
  <div class="secondary"><button id="again">ONE MORE RUN</button><button id="menu">CHANGE SPORT</button></div><div class="secondary"><button id="scoreBtn">SCOREBOARD</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
  $('again').onclick=()=>{overlay.style.display='none';resize();reset()};$('menu').onclick=start;$('scoreBtn').onclick=showScores;
- $('share').onclick=()=>{let text=`JIMMY ${MODES[mode].name}: ${final} points, ${title} mastery, ${rating.name} run rating, ${closeCalls} close calls, ${totalAir.toFixed(1)}s airtime, x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)} best flow, ${bestMasteryStreak}-line mastery streak, ${fastLineClears} fast-line clears, ${controlLineClears} control-line clears, ${signature.name} ${signature.complete?'cleared':'open'}.`;if(navigator.share)navigator.share({title:'Crashing Jimmy',text}).catch(()=>{});else navigator.clipboard?.writeText(text)}
+ $('share').onclick=()=>showShareCard({crashed,injury,hit,final,title,rating,signature});
+}
+function showShareCard(run){
+ const playUrl='https://hoopstetter.github.io/CrashingJimmy/';
+ const flow='x'+(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2);
+ card.innerHTML=`<div class="share-card"><div class="share-brand">JIMMY · FAST LINES. GREAT STORIES.</div><div class="share-headline">${MODES[mode].name}<br>${run.title}</div><div class="share-badges"><div class="share-badge">SCORE<b>${run.final}</b></div><div class="share-badge">RUN RATING<b>${run.rating.name}</b></div><div class="share-badge">BEST FLOW<b>${flow}</b></div><div class="share-badge">AIRTIME<b>${totalAir.toFixed(1)}s</b></div><div class="share-badge">CLOSE CALLS<b>${closeCalls}</b></div><div class="share-badge">SIGNATURE<b>${run.signature.complete?'CLEARED':'OPEN'}</b></div></div><div class="share-link">Think you can beat it? Play at hoopstetter.github.io/CrashingJimmy/</div></div><div class="share-actions"><button id="shareNow">SHARE THIS RUN</button><button id="shareBack">BACK TO RESULTS</button></div><p class="share-status" id="shareStatus">Shares a clean achievement summary and a direct link to the game.</p>`;
+ $('shareBack').onclick=()=>results(run.crashed,run.injury,run.hit);
+ $('shareNow').onclick=async()=>{
+  const text=`JIMMY — ${MODES[mode].name}\n${run.title} mastery · ${run.rating.name} run\n${run.final} points · ${flow} best flow · ${totalAir.toFixed(1)}s airtime\n${run.signature.name}: ${run.signature.complete?'CLEARED':'OPEN'}\n\nThink you can beat it?`;
+  const status=$('shareStatus');
+  try{
+   if(navigator.share){await navigator.share({title:'JIMMY — '+MODES[mode].name,text,url:playUrl});status.textContent='Run shared.'}
+   else if(navigator.clipboard){await navigator.clipboard.writeText(text+'\n'+playUrl);status.textContent='Achievement and game link copied.'}
+   else{status.textContent='Sharing is not available in this browser.'}
+  }catch(e){if(e&&e.name!=='AbortError')status.textContent='Sharing did not complete. Try again or use a browser with sharing enabled.'}
+ };
 }
 
 function mountain(color,base,amp,p,detail=0){
