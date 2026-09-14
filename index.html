@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v49</title>
+<title>JIMMY — Fast Lines, Great Stories — v51</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -108,12 +108,12 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v49';
+const BUILD_VERSION='v52';
 document.documentElement.dataset.build=BUILD_VERSION;
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d'),overlay=$('overlay'),card=$('card');
 const scoreEl=$('score'),speedEl=$('speed'),meterFill=$('meterFill'),alertEl=$('alert'),sectionEl=$('section'),brakeBtn=$('brake'),jumpBtn=$('jump'),sendBtn=$('send'),flowValue=$('flowValue'),flowFill=$('flowFill'),audioBtn=$('audioBtn'),rideStateValue=$('rideStateValue'),ratingHud=$('ratingHud'),ratingValue=$('ratingValue'),signatureTrack=$('signatureTrack'),signatureName=$('signatureName'),signatureProgress=$('signatureProgress');
 let W=900,H=500,mode='snow',running=false,ended=false,score=0,meter=0,speed=6,runTime=0,world=0;
-let terrain=[],terrainFeatures=[],obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
+let terrain=[],terrainFeatures=[],obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,maintenanceUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
 let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,lastRatingTier=0,lastSignatureProgress='';
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
 let animClock=0,landingSquash=0,wheelSpin=0;
@@ -469,13 +469,13 @@ function start(){
  </div>
  <p><b>Read the terrain. Choose the line.</b> Brake for control. Jump when the terrain gives you something. Terrain arrives in linked lines: mogul chutes, banked traverses and park features; ridge/berm/rock-garden and ledge-stair sequences; and neighborhood descents with speed bumps, sweepers and terraced street drops. Commit with SEND IT for a faster, rougher version of the line, or BRAKE/SET THE LINE for a smoother controlled route. Match the landing transition to carry speed. Hold <b>SEND IT</b> when the line opens up.</p>
  <div class="secondary"><button id="scores">SCOREBOARD</button><button id="rules">JIMMY RULES</button></div>
- <p class="small">Big Bear may include black bears. Orange County may include mountain lions. Rare staged traffic encounters are telegraphed early and now react once Jimmy closes in: skiers commit, hikers check up, and SoCal pedestrians may hesitate or drift.<br><span style="opacity:.58">BUILD ${BUILD_VERSION}</span></p>`;
+ <p class="small">Big Bear may include black bears. Orange County may include mountain lions. Rare staged traffic encounters are telegraphed early and react once Jimmy closes in. A separate rare operations encounter can also appear: a groomer crossing at Big Bear, trail-crew cart in Orange County, or an active driveway vehicle in SoCal.<br><span style="opacity:.58">BUILD ${BUILD_VERSION}</span></p>`;
  $('snowMode').onclick=()=>begin('snow');$('bikeMode').onclick=()=>begin('bike');$('boardMode').onclick=()=>begin('board');$('scores').onclick=showScores;
- $('rules').onclick=()=>alert('BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
+ $('rules').onclick=()=>alert('Each sport has its own persistent mastery title, built from your best run rating and Signature clear. BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
 }
 function begin(m){mode=m;ensureAudio();tone(330,.07,'triangle',.025,90);overlay.style.display='none';resize();reset()}
 function reset(){
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=500;wildlifeUsed=false;eventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';signatureAwarded=false;stability=100;stabilityCueReady=true;buildTerrain();
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=500;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';signatureAwarded=false;stability=100;stabilityCueReady=true;buildTerrain();
  player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;physicsCue='';physicsCueTimer=0;ended=false;running=true;hud()
 }
 function hud(){scoreEl.textContent=Math.floor(score);speedEl.textContent=Math.round(speed*4.8)+' mph';meterFill.style.width=meter+'%';maxMeter=Math.max(maxMeter,meter);const mult=1+Math.max(0,flowChain-1)*.25;flowValue.textContent='x'+mult.toFixed(2);flowValue.style.opacity=flowChain?1:.6;flowFill.style.width=(flowChain?Math.max(0,Math.min(100,flowTimer/4.25*100)):0)+'%';let rs='CRUISE';if(!player.onGround)rs=airLineSet>.35?'SET AIR':'AIR';else if(braking)rs=lineSetReady?'LINE SET':brakeHold<.34?'SPEED CHECK':'BRAKING';else if(sendIt)rs='SEND IT';else if(lineSet>.18)rs='SETTING';rideStateValue.textContent=rs;const rr=runRating();ratingValue.textContent=rr.name;ratingHud.className='tier'+rr.tier;if(running&&rr.tier>lastRatingTier){lastRatingTier=rr.tier;if(rr.tier>0){physicsCue=rr.name+' RUN';physicsCueTimer=1.05;sfx('rating')}}const sig=signatureChallenge();signatureName.textContent=sig.name;signatureProgress.textContent=sig.complete?'CLEARED · +'+sig.reward:sig.progress;signatureTrack.classList.toggle('cleared',sig.complete||signatureAwarded);if(lastSignatureProgress&&sig.progress!==lastSignatureProgress&&!sig.complete){signatureTrack.classList.remove('pulse');void signatureTrack.offsetWidth;signatureTrack.classList.add('pulse');setTimeout(()=>signatureTrack.classList.remove('pulse'),300)}lastSignatureProgress=sig.progress;}
@@ -484,6 +484,15 @@ const key='crashingJimmyScoresV4';
 function blank(){return{best:0,air:0,close:0,meter:0,flow:0,mastery:0,sections:0,fast:0,control:0,rating:0,signature:0,runs:0}}
 function records(){let r={};try{r=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){};return{snow:Object.assign(blank(),r.snow||{}),bike:Object.assign(blank(),r.bike||{}),board:Object.assign(blank(),r.board||{})}}
 const RATING_NAMES=['OPEN','DIALED','PINNED','LEGENDARY'];
+const MASTERY_TITLES={
+ snow:['NEW TRACKS','EDGE TECHNICIAN','MOUNTAIN READER','BIG BEAR DIALED','MOUNTAIN IQ'],
+ bike:['TRAIL REGULAR','BERM TECHNICIAN','FLOW RIDER','OC DIALED','TRAIL FLOW'],
+ board:['HILL READER','TRUCKS DIALED','STREET SPECIALIST','SOCAL DIALED','STREET NERVE']
+};
+function masteryTitle(m,ratingTier,signatureCleared){
+ const tier=Math.max(0,Math.min(3,ratingTier||0));
+ return MASTERY_TITLES[m][signatureCleared&&tier>=3?4:tier];
+}
 function runRating(){
  let tier=0,why='Build a cleaner, faster complete run.';
  if(mode==='snow'){
@@ -523,9 +532,9 @@ function checkSignatureChallenge(){
  }
 }
 function save(){let a=records(),r=a[mode],rating=runRating();r.best=Math.max(r.best,Math.floor(score));r.air=Math.max(r.air,totalAir);r.close=Math.max(r.close,closeCalls);r.meter=Math.max(r.meter,Math.round(maxMeter));r.flow=Math.max(r.flow,bestFlowChain);r.mastery=Math.max(r.mastery,bestMasteryStreak);r.sections=Math.max(r.sections,masteredSections);r.fast=Math.max(r.fast,fastLineClears);r.control=Math.max(r.control,controlLineClears);r.rating=Math.max(r.rating,rating.tier);r.signature=Math.max(r.signature||0,signatureAwarded?1:0);r.runs++;localStorage.setItem(key,JSON.stringify(a))}
-function board(name,r){return `<div class="board"><h3>${name}</h3><div class="row"><span>Best score</span><b>${r.best}</b></div><div class="row"><span>Best airtime</span><b>${r.air.toFixed(1)}s</b></div><div class="row"><span>Close calls</span><b>${r.close}</b></div><div class="row"><span>Jimmy Meter</span><b>${r.meter}%</b></div><div class="row"><span>Best flow</span><b>x${(1+Math.max(0,r.flow-1)*.25).toFixed(2)}</b></div><div class="row"><span>Best line streak</span><b>${r.mastery}</b></div><div class="row"><span>Most mastered lines</span><b>${r.sections}</b></div><div class="row"><span>Fast-line clears</span><b>${r.fast}</b></div><div class="row"><span>Control-line clears</span><b>${r.control}</b></div><div class="row"><span>Best run rating</span><b>${RATING_NAMES[r.rating||0]}</b></div><div class="row"><span>Signature run</span><b>${r.signature?'CLEARED':'OPEN'}</b></div><div class="row"><span>Runs</span><b>${r.runs}</b></div></div>`}
+function board(name,r,m){return `<div class="board"><h3>${name}</h3><div class="row"><span>Mastery title</span><b>${masteryTitle(m,r.rating,r.signature)}</b></div><div class="row"><span>Best score</span><b>${r.best}</b></div><div class="row"><span>Best airtime</span><b>${r.air.toFixed(1)}s</b></div><div class="row"><span>Close calls</span><b>${r.close}</b></div><div class="row"><span>Jimmy Meter</span><b>${r.meter}%</b></div><div class="row"><span>Best flow</span><b>x${(1+Math.max(0,r.flow-1)*.25).toFixed(2)}</b></div><div class="row"><span>Best line streak</span><b>${r.mastery}</b></div><div class="row"><span>Most mastered lines</span><b>${r.sections}</b></div><div class="row"><span>Fast-line clears</span><b>${r.fast}</b></div><div class="row"><span>Control-line clears</span><b>${r.control}</b></div><div class="row"><span>Best run rating</span><b>${RATING_NAMES[r.rating||0]}</b></div><div class="row"><span>Signature run</span><b>${r.signature?'CLEARED':'OPEN'}</b></div><div class="row"><span>Runs</span><b>${r.runs}</b></div></div>`}
 function showScores(){
- let r=records();overlay.style.display='flex';card.innerHTML=`<h2>SCOREBOARD</h2><p class="small">Stored on this device for now.</p><div class="scoreboard">${board('BIG BEAR',r.snow)}${board('ORANGE COUNTY',r.bike)}${board('SOCAL STREETS',r.board)}</div><div class="secondary"><button id="back">BACK TO JIMMY</button><button id="wipe">RESET SCORES</button></div>`;
+ let r=records();overlay.style.display='flex';card.innerHTML=`<h2>SCOREBOARD</h2><p class="small">Stored on this device for now.</p><div class="scoreboard">${board('BIG BEAR',r.snow,'snow')}${board('ORANGE COUNTY',r.bike,'bike')}${board('SOCAL STREETS',r.board,'board')}</div><div class="secondary"><button id="back">BACK TO JIMMY</button><button id="wipe">RESET SCORES</button></div>`;
  $('back').onclick=start;$('wipe').onclick=()=>{localStorage.removeItem(key);showScores()}
 }
 
@@ -553,7 +562,7 @@ function contextualHazards(kind,lineChoice){
 function eventProp(type,wx,sectionKind,lineChoice){
  const base={wx,type,w:44,h:50,hit:false,passed:false,vx:0,event:false,wildlife:false,decor:true,sectionKind,lineChoice};
  Object.assign(base,{
-  slowzone:{w:52,h:48},trailwarning:{w:58,h:48},slalomsign:{w:62,h:44}
+  slowzone:{w:52,h:48},trailwarning:{w:58,h:48},slalomsign:{w:62,h:44},workzone:{w:58,h:46},trailwork:{w:62,h:46},drivewayout:{w:68,h:44}
  }[type]||{});
  return base;
 }
@@ -569,6 +578,28 @@ function stageEncounter(primary,spawnWx,f,lineChoice){
   const companionType=primary.type==='streetfreeze'?'pedestrian':'streetfreeze';
   const companion={wx:spawnWx+150,type:companionType,w:companionType==='streetfreeze'?30:32,h:companionType==='streetfreeze'?58:56,hit:false,passed:false,vx:companionType==='streetfreeze'?0:-12,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:1,reacted:false,reactionTimer:0,baseVx:companionType==='streetfreeze'?0:-12};
   obstacles.push(companion);
+ }
+}
+function stageMaintenanceEncounter(primary,spawnWx,f,lineChoice){
+ // v51: one rare operations encounter per run adds a deliberate, environment-specific moving hazard.
+ // Each one is announced early with a non-colliding sign so it reads as a line-choice problem, not a surprise hit.
+ const kind=f?f.kind:null;
+ if(mode==='snow')obstacles.push(eventProp('workzone',spawnWx-205,kind,lineChoice));
+ else if(mode==='bike')obstacles.push(eventProp('trailwork',spawnWx-205,kind,lineChoice));
+ else obstacles.push(eventProp('drivewayout',spawnWx-215,kind,lineChoice));
+}
+function updateMaintenanceBehavior(o,sx,dt){
+ if(!o.maintenance||o.decor)return;
+ const gap=sx-(player.x+player.w);
+ if(gap<350&&gap>85&&!o.reacted){
+  o.reacted=true;o.reactionTimer=.85;o.baseVx=o.vx;
+  if(o.type==='snowcat')o.vx=-42;       // groomer commits into the corridor
+  else if(o.type==='trailcart')o.vx=-18;// trail crew eases the cart toward the edge
+  else if(o.type==='utilityvan')o.vx=-58;// van noses farther out of the driveway
+ }
+ if(o.reactionTimer>0){
+  o.reactionTimer=Math.max(0,o.reactionTimer-dt);
+  if(o.reactionTimer===0)o.vx=o.baseVx;
  }
 }
 function updateEncounterBehavior(o,sx,dt){
@@ -597,27 +628,31 @@ function spawn(){
  const f=currentFeature(spawnWx);
  const lineChoice=f&&f.complexId!==undefined?lineChoices[f.complexId]:null;
  const pool=contextualHazards(f?f.kind:null,lineChoice);
- // Each run can contain one rare wildlife encounter and one separate staged human/traffic event.
+ // Each run can contain one rare wildlife encounter, one staged human/traffic event, and one operations encounter.
  const wildlife=d.wild&&!wildlifeUsed&&runTime>12&&Math.random()<.065;
  const encounter=!wildlife&&d.event&&!eventUsed&&runTime>8&&Math.random()<.10;
- let type=wildlife?d.wild:encounter?d.event:pool[Math.floor(Math.random()*pool.length)];
+ const maintenance=!wildlife&&!encounter&&!maintenanceUsed&&runTime>16&&Math.random()<.075;
+ let type=wildlife?d.wild:encounter?d.event:maintenance?(mode==='snow'?'snowcat':mode==='bike'?'trailcart':'utilityvan'):pool[Math.floor(Math.random()*pool.length)];
  if(mode==='board'&&encounter)type=Math.random()<.48?'streetfreeze':'pedestrian';
  if(wildlife)wildlifeUsed=true;
  if(encounter)eventUsed=true;
- let o={wx:spawnWx,type,w:38,h:42,hit:false,passed:false,vx:0,event:encounter,wildlife,sectionKind:f?f.kind:null,lineChoice,variant:0,reacted:false,reactionTimer:0,baseVx:0};
+ if(maintenance)maintenanceUsed=true;
+ let o={wx:spawnWx,type,w:38,h:42,hit:false,passed:false,vx:0,event:encounter,wildlife,maintenance,sectionKind:f?f.kind:null,lineChoice,variant:0,reacted:false,reactionTimer:0,baseVx:0};
  Object.assign(o,{
   rock:{w:38,h:24},kicker:{w:58,h:24},drop:{w:58,h:24},log:{w:46,h:15},lion:{w:58,h:30,vx:-70},bear:{w:48,h:54,vx:-18},streetfreeze:{w:30,h:58,vx:0},pedestrian:{w:32,h:56,vx:-18},
   snowgun:{w:34,h:48},parkrail:{w:66,h:20},trailpost:{w:24,h:46},roots:{w:58,h:12},trashcan:{w:30,h:40},roadpatch:{w:64,h:7},
-  skier:{w:38,h:54,vx:-38},hiker:{w:30,h:54,vx:-28},car:{w:86,h:38,vx:-92},
+  skier:{w:38,h:54,vx:-38},hiker:{w:30,h:54,vx:-28},car:{w:86,h:38,vx:-92},snowcat:{w:108,h:48,vx:-22},trailcart:{w:74,h:42,vx:-10},utilityvan:{w:98,h:48,vx:-34},
   cone:{w:24,h:34},pothole:{w:52,h:8},curb:{w:55,h:12}
  }[type]||{});
+ if(maintenance)o.baseVx=o.vx;
  obstacles.push(o);
  if(encounter)stageEncounter(o,spawnWx,f,lineChoice);
- // FAST LINE asks for more frequent decisions; CONTROL LINE gives deliberate recovery room.
- // Staged encounters always earn an extra recovery gap so their two-beat choreography stays fair on a phone screen.
- const minGap=encounter?760:(f&&f.complex?(lineChoice==='fast'?430:lineChoice==='control'?535:470):420);
- const maxGap=encounter?930:(f&&f.complex?(lineChoice==='fast'?635:lineChoice==='control'?790:720):670);
- nextSpawn=world+rand(minGap,maxGap)-meter*(encounter?.25:(lineChoice==='control'?.45:1.2))
+ if(maintenance)stageMaintenanceEncounter(o,spawnWx,f,lineChoice);
+ // FAST LINE asks for more frequent decisions; staged encounters get extra recovery room so choreography stays fair on a phone screen.
+ const staged=encounter||maintenance;
+ const minGap=staged?800:(f&&f.complex?(lineChoice==='fast'?430:lineChoice==='control'?535:470):420);
+ const maxGap=staged?980:(f&&f.complex?(lineChoice==='fast'?635:lineChoice==='control'?790:720):670);
+ nextSpawn=world+rand(minGap,maxGap)-meter*(staged?.2:(lineChoice==='control'?.45:1.2))
 }
 function jump(){if(running&&player.onGround){
  ensureAudio();sfx('jump');jumpBtn.classList.add('active');setTimeout(()=>jumpBtn.classList.remove('active'),120);
@@ -889,7 +924,7 @@ function update(dt){
  let nearLabel='';
  for(const o of obstacles){
   let sx=o.wx-world;
-  updateEncounterBehavior(o,sx,dt);
+  updateEncounterBehavior(o,sx,dt);updateMaintenanceBehavior(o,sx,dt);
   o.wx+=o.vx*dt;sx=o.wx-world;let oy=groundY(sx)-o.h;
   if(sx<W*.82&&sx>player.x+70){
    if(o.type==='lion')nearLabel='MOUNTAIN LION';
@@ -897,11 +932,17 @@ function update(dt){
    else if(o.type==='skier')nearLabel='SKIER AHEAD';
    else if(o.type==='hiker')nearLabel='HIKER AHEAD';
    else if(o.type==='car')nearLabel='CAR AHEAD';
+   else if(o.type==='snowcat')nearLabel='GROOMER CROSSING';
+   else if(o.type==='trailcart')nearLabel='TRAIL CREW AHEAD';
+   else if(o.type==='utilityvan')nearLabel='DRIVEWAY VEHICLE';
    else if(o.type==='streetfreeze')nearLabel='FROZEN PEDESTRIAN';
    else if(o.type==='pedestrian')nearLabel='PEDESTRIAN DRIFT';
    else if(o.type==='slowzone')nearLabel='SLOW ZONE';
    else if(o.type==='trailwarning')nearLabel='TRAIL TRAFFIC';
    else if(o.type==='slalomsign')nearLabel='HUMAN SLALOM';
+   else if(o.type==='workzone')nearLabel='MOUNTAIN OPS';
+   else if(o.type==='trailwork')nearLabel='TRAIL WORK';
+   else if(o.type==='drivewayout')nearLabel='ACTIVE DRIVEWAY';
    else if(o.type==='parkrail')nearLabel='PARK RAIL';
    else if(o.type==='roots')nearLabel='ROOTS';
    else if(o.type==='roadpatch')nearLabel='ROAD PATCH';
@@ -913,6 +954,7 @@ function update(dt){
    if(clear<26){closeCalls++;meter=Math.min(100,meter+8);skillAward(180,'CLOSE CALL')}else score+=80;
    if(o.wildlife){meter=Math.min(100,meter+18);skillAward(750,'WILDLIFE ENCOUNTER');physicsCueTimer=1.05}
    else if(o.event){meter=Math.min(100,meter+10);skillAward(mode==='board'?360:300,mode==='board'?'HUMAN SLALOM':'THREAD THE NEEDLE');physicsCueTimer=.9}
+   else if(o.maintenance){meter=Math.min(100,meter+12);skillAward(420,mode==='snow'?'OPS CROSSING':mode==='bike'?'TRAIL CREW LINE':'DRIVEWAY GAP');physicsCueTimer=.95}
   }
  }
 
@@ -936,14 +978,14 @@ function crash(o){
 }
 function finish(){running=false;ended=true;results(false,null,null)}
 function results(crashed,injury,hit){
- let q=quotes[Math.floor(Math.random()*quotes.length)],final=Math.floor(score+(crashed?0:900));score=final;let rating=runRating(),signature=signatureChallenge();save();overlay.style.display='flex';
+ let q=quotes[Math.floor(Math.random()*quotes.length)],final=Math.floor(score+(crashed?0:900));score=final;let rating=runRating(),signature=signatureChallenge(),title=masteryTitle(mode,rating.tier,signature.complete);save();overlay.style.display='flex';
  let landingNote=hit==='landing'?'Bad landing angle. Physics requested a correction.':hit==='edgewash'?'Too much edge load through the transition. A speed check or earlier line set would hold it.':hit==='frontload'?'The front end overloaded through the transition. Set the line or trim speed before it.':hit==='wobble'?'The trucks ran out of composure before Jimmy did. Brake before the transition and release cleanly.':null;
  card.innerHTML=`<div class="location">${MODES[mode].name} — ${MODES[mode].tag}</div><h2>${crashed?'RUN TERMINATED':'JIMMY LIVES'}</h2>
  <div class="result-layout"><div><div class="quote">“${q}”</div>${crashed?`<p><b>Diagnosis:</b> ${injury}.</p>${landingNote?`<p><b>Terrain report:</b> ${landingNote}</p>`:''}<p><b>Jimmy:</b> “I know what happened. I can fix that.”</p>`:`<p><b>Medical outcome:</b> Suspiciously intact.</p><p><b>Jimmy:</b> “That line has more in it.”</p>`}</div>
- <div><div class="run-rating">RUN RATING <b>${rating.name}</b><span>${rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${signature.name}</b><span>${signature.complete?'CLEARED · +'+signature.reward+' points':signature.progress}</span></div><div class="stats"><div class="stat">Score<b>${final}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div></div>
+ <div><div class="run-rating">MASTERY <b>${title}</b><span>${signature.complete&&rating.tier>=3?'Signature objective plus a LEGENDARY run.':'Raise the run rating and clear the Signature objective to advance.'}</span></div><div class="run-rating">RUN RATING <b>${rating.name}</b><span>${rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${signature.name}</b><span>${signature.complete?'CLEARED · +'+signature.reward+' points':signature.progress}</span></div><div class="stats"><div class="stat">Score<b>${final}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div></div>
  <div class="secondary"><button id="again">ONE MORE RUN</button><button id="menu">CHANGE SPORT</button></div><div class="secondary"><button id="scoreBtn">SCOREBOARD</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
  $('again').onclick=()=>{overlay.style.display='none';resize();reset()};$('menu').onclick=start;$('scoreBtn').onclick=showScores;
- $('share').onclick=()=>{let text=`JIMMY ${MODES[mode].name}: ${final} points, ${rating.name} run rating, ${closeCalls} close calls, ${totalAir.toFixed(1)}s airtime, x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)} best flow, ${bestMasteryStreak}-line mastery streak, ${fastLineClears} fast-line clears, ${controlLineClears} control-line clears, ${signature.name} ${signature.complete?'cleared':'open'}.`;if(navigator.share)navigator.share({title:'Crashing Jimmy',text}).catch(()=>{});else navigator.clipboard?.writeText(text)}
+ $('share').onclick=()=>{let text=`JIMMY ${MODES[mode].name}: ${final} points, ${title} mastery, ${rating.name} run rating, ${closeCalls} close calls, ${totalAir.toFixed(1)}s airtime, x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)} best flow, ${bestMasteryStreak}-line mastery streak, ${fastLineClears} fast-line clears, ${controlLineClears} control-line clears, ${signature.name} ${signature.complete?'cleared':'open'}.`;if(navigator.share)navigator.share({title:'Crashing Jimmy',text}).catch(()=>{});else navigator.clipboard?.writeText(text)}
 }
 
 function mountain(color,base,amp,p,detail=0){
@@ -1237,6 +1279,60 @@ function texture(){
  }
 }
 
+function terrainFeatureMaterialPass(){
+ // v50 environment graphics: feature-aware surface treatment makes authored terrain readable before Jimmy reaches it.
+ // Purely visual: no collision, physics, scoring, or obstacle changes.
+ ctx.save();
+ const start=Math.max(0,Math.floor(world/28)*28),end=world+W+56;
+ for(let wx=start;wx<end;wx+=28){
+  const f=currentFeature(wx);if(!f)continue;
+  const x=wx-world;if(x<-40||x>W+40)continue;
+  const y=groundY(x),choice=f.complex&&f.complexId!==undefined?lineChoices[f.complexId]:null;
+  const fast=choice==='fast',control=choice==='control';
+  if(mode==='snow'){
+   if(['rollers','bankwave'].includes(f.kind)){
+    ctx.strokeStyle=fast?'rgba(72,112,143,.30)':control?'rgba(105,143,164,.20)':'rgba(91,129,151,.23)';ctx.lineWidth=1.15;
+    ctx.beginPath();ctx.moveTo(x-10,y+9);ctx.quadraticCurveTo(x,y+5,x+11,y+9);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x-7,y+14);ctx.quadraticCurveTo(x+2,y+10,x+12,y+14);ctx.stroke();
+   }else if(f.kind==='moguls'){
+    ctx.fillStyle='rgba(86,118,139,.14)';ctx.beginPath();ctx.ellipse(x+2,y+12,12,3.2,-.18,0,Math.PI*2);ctx.fill();
+   }else if(['ramp','tabletop'].includes(f.kind)){
+    ctx.strokeStyle='rgba(62,132,190,.42)';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(x-11,y+4);ctx.lineTo(x+11,y+5);ctx.stroke();
+    if(((wx-f.x)/28|0)%5===0){ctx.fillStyle='rgba(45,105,164,.38)';ctx.fillRect(x-2,y+1,4,7)}
+   }else if(['steep','crest','drop'].includes(f.kind)){
+    ctx.strokeStyle='rgba(74,102,121,.18)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-8,y+5);ctx.lineTo(x+10,y+11);ctx.stroke();
+   }
+  }else if(mode==='bike'){
+   if(['rockgarden','ledge'].includes(f.kind)){
+    ctx.fillStyle=fast?'rgba(87,66,47,.42)':'rgba(102,78,55,.32)';
+    ctx.beginPath();ctx.moveTo(x-8,y+7);ctx.lineTo(x-2,y+1);ctx.lineTo(x+7,y+3);ctx.lineTo(x+11,y+9);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(219,170,111,.22)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-3,y+2);ctx.lineTo(x+5,y+5);ctx.stroke();
+   }else if(['gully'].includes(f.kind)){
+    ctx.fillStyle='rgba(61,45,34,.20)';ctx.beginPath();ctx.ellipse(x,y+10,15,3.5,0,0,Math.PI*2);ctx.fill();
+   }else if(f.kind==='berm'){
+    ctx.strokeStyle=control?'rgba(213,171,112,.42)':'rgba(187,139,86,.34)';ctx.lineWidth=2.1;ctx.beginPath();ctx.moveTo(x-12,y+7);ctx.quadraticCurveTo(x,y+2,x+12,y+8);ctx.stroke();
+   }else if(['ramp','drop'].includes(f.kind)){
+    ctx.strokeStyle='rgba(222,175,111,.34)';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x-9,y+5);ctx.lineTo(x+9,y+7);ctx.stroke();
+   }
+  }else{
+   if(f.kind==='speedbump'){
+    ctx.fillStyle='rgba(242,190,55,.58)';ctx.fillRect(x-9,y+4,18,3);
+    ctx.fillStyle='rgba(239,235,222,.48)';ctx.fillRect(x-3,y+4,6,3);
+   }else if(['driveway','streetsteps'].includes(f.kind)){
+    ctx.strokeStyle='rgba(214,214,207,.30)';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y+2);ctx.lineTo(x+8,y+15);ctx.stroke();
+    if(f.kind==='streetsteps'){ctx.strokeStyle='rgba(42,46,49,.28)';ctx.beginPath();ctx.moveTo(x-11,y+9);ctx.lineTo(x+11,y+9);ctx.stroke()}
+   }else if(['dip','crest'].includes(f.kind)){
+    ctx.strokeStyle='rgba(37,41,44,.24)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-10,y+8);ctx.lineTo(x+10,y+11);ctx.stroke();
+   }else if(['sweep','hill'].includes(f.kind)){
+    ctx.strokeStyle=fast?'rgba(255,215,105,.40)':'rgba(230,230,224,.18)';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x-12,y+16);ctx.lineTo(x+12,y+15);ctx.stroke();
+   }else if(f.kind==='ramp'){
+    ctx.fillStyle='rgba(198,198,190,.24)';ctx.fillRect(x-10,y+4,20,4);
+   }
+  }
+ }
+ ctx.restore();
+}
+
 function dynamicAtmospherePass(){
  // v43 environment-graphics pass: moving atmospheric detail that reinforces place and speed without affecting gameplay.
  ctx.save();
@@ -1309,7 +1405,7 @@ function drawScene(){
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();texture();terrainContactShadows();obstacles.forEach(drawObstacle);foregroundDepth();dynamicAtmospherePass()
+ ctx.fillStyle=gg;ctx.fill();texture();terrainFeatureMaterialPass();terrainContactShadows();obstacles.forEach(drawObstacle);foregroundDepth();dynamicAtmospherePass()
 }
 function drawObstacle(o){
  let x=o.wx-world,y=groundY(x)-o.h;
@@ -1373,6 +1469,18 @@ function drawObstacle(o){
   if(freeze){ctx.fillStyle='#2d3338';ctx.fillRect(-9,0,18,5)}
   else{ctx.fillStyle='#8c5b3f';ctx.beginPath();ctx.arc(2,2,8,Math.PI,Math.PI*2);ctx.fill()}
   ctx.restore();
+ }
+ else if(o.type==='workzone'||o.type==='trailwork'||o.type==='drivewayout'){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle=o.type==='trailwork'?'#d7c08b':'#f0b74c';ctx.fillRect(5,5,o.w-10,23);ctx.strokeStyle='#31363b';ctx.lineWidth=2.5;ctx.strokeRect(5,5,o.w-10,23);ctx.fillStyle='#252a2e';ctx.font='900 7px system-ui';ctx.textAlign='center';ctx.fillText(o.type==='workzone'?'OPS CROSSING':o.type==='trailwork'?'TRAIL WORK':'DRIVEWAY',o.w/2,19);ctx.strokeStyle='#5c646b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(13,28);ctx.lineTo(9,o.h);ctx.moveTo(o.w-13,28);ctx.lineTo(o.w-9,o.h);ctx.stroke();ctx.restore();
+ }
+ else if(o.type==='snowcat'){
+  ctx.fillStyle='#d39b2f';ctx.fillRect(x+13,y+9,76,28);ctx.fillStyle='#333a40';ctx.fillRect(x+48,y,35,18);ctx.fillStyle='#91aab8';ctx.fillRect(x+53,y+3,25,11);ctx.fillStyle='#22272b';ctx.beginPath();ctx.roundRect(x+4,y+32,96,14,7);ctx.fill();ctx.strokeStyle='#555e65';ctx.lineWidth=3;for(let i=14;i<92;i+=18){ctx.beginPath();ctx.moveTo(x+i,y+34);ctx.lineTo(x+i+7,y+44);ctx.stroke()}ctx.fillStyle='#c5c9cc';ctx.fillRect(x+91,y+20,17,4);
+ }
+ else if(o.type==='trailcart'){
+  ctx.fillStyle='#6a4a31';ctx.fillRect(x+10,y+16,42,18);ctx.strokeStyle='#31363a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+48,y+18);ctx.lineTo(x+70,y+7);ctx.stroke();ctx.fillStyle='#25292c';ctx.beginPath();ctx.arc(x+18,y+37,8,0,Math.PI*2);ctx.arc(x+48,y+37,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c99863';ctx.fillRect(x+19,y+11,25,7);
+ }
+ else if(o.type==='utilityvan'){
+  ctx.fillStyle='#e2e0d7';ctx.fillRect(x+8,y+12,78,30);ctx.fillStyle='#cbc8be';ctx.fillRect(x+58,y+4,28,17);ctx.fillStyle='#8fa9b5';ctx.fillRect(x+62,y+7,18,10);ctx.fillStyle='#22272a';ctx.beginPath();ctx.arc(x+24,y+43,8,0,Math.PI*2);ctx.arc(x+71,y+43,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c47b3d';ctx.fillRect(x+2,y+30,8,7);
  }
  else if(o.type==='car'){
   ctx.fillStyle='#39434a';ctx.fillRect(x+10,y+11,66,24);ctx.fillStyle='#56646d';ctx.beginPath();ctx.moveTo(x+24,y+11);ctx.lineTo(x+35,y);ctx.lineTo(x+61,y);ctx.lineTo(x+72,y+11);ctx.closePath();ctx.fill();ctx.fillStyle='#a8c2cf';ctx.fillRect(x+37,y+3,20,8);ctx.fillStyle='#171b1e';ctx.beginPath();ctx.arc(x+24,y+36,8,0,Math.PI*2);ctx.arc(x+66,y+36,8,0,Math.PI*2);ctx.fill();
