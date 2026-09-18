@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v149</title>
+<title>JIMMY — Fast Lines, Great Stories — v150</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -256,13 +256,13 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v149';
+const BUILD_VERSION='v150';
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
 const BUILD_META=Object.freeze({
- version:'v149',parent:'v148',episode:'Bryan Control Layout',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',audience:'all + Jim',
+ version:'v150',parent:'v149',episode:'Input + Opening Run Hotfix',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',audience:'all + Jim',
  environments:['Big Bear','Orange County','SoCal'],cameos:[],privateVariant:true,
- tags:['controls','button order','jump restart','ergonomics','jim cut'],
- summary:'Bryan-requested control order: SEND IT, BRAKE, JUMP. Double-tap JUMP is now the quick restart during a crash.'
+ tags:['hotfix','jump','museum','opening runway','controls','jim cut'],
+ summary:'Fixes Version Museum click handling, makes controls immediately take over from the location intro, and gives Jimmy a safer opening runway before the first generated hazard.'
 });
 const BUILD_CATALOG=Object.freeze([
  {version:'v110',episode:'Expert Transfer Complexes',edition:'canonical',visibility:'public',cameos:[],tags:['terrain','expert transfer','ramps']},
@@ -276,6 +276,7 @@ const BUILD_CATALOG=Object.freeze([
  {version:'v146',episode:'Version Museum Foundation',edition:'canonical',visibility:'public',cameos:[],tags:['museum','archive','metadata','search','version history']},
  {version:'v147',episode:"Jim's Cut: Fourth Wall",edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['jim cut','fourth wall','private variant','jim']},
  {version:'v148',episode:'Section Atmosphere Signatures',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['environment graphics','section atmosphere','place identity','jim cut']},
+ {version:'v149',episode:'Bryan Control Layout',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['controls','button order','jump restart','ergonomics','jim cut']},
  BUILD_META
 ]);
 window.CRASHN_JIMMY_BUILD_META=BUILD_META;
@@ -297,7 +298,7 @@ let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clea
 // v74 Props/Hazards/Events: short location-opening vehicle arrival cinematic.
 let introActive=false,introStarted=0,lorePropUsed=false,signatureFilmerUsed=false,expertSpotterUsed=false,lastPostJumpTap=0,crashSceneSerial=0,lineShotCardTimer=0;
 let lastNamedSectionCue='';
-const INTRO_DURATION=3.6;
+const INTRO_DURATION=3.6; // any gameplay control now skips the intro and starts riding immediately
 
 let audioOn=true,audioCtx=null,lastToneAt=0,noiseBuffer=null;
 // v147 JIM'S CUT: unlisted feature gate. This is privacy by URL obscurity, not authentication.
@@ -1166,7 +1167,7 @@ function start(){
  <div class="secondary"><button id="scores">SCOREBOARD</button><button id="museum">VERSION MUSEUM</button><button id="retro">RETRO JIMMY · OFF</button><button id="rules">JIMMY RULES</button></div>
  ${JIM_CUT_REPLAY?`<button class="jc-replay" id="jimCutReplay">REPLAY FOURTH WALL</button>`:''}
  <p class="small">Big Bear may include black bears. Orange County may include mountain lions. Rare staged traffic encounters are telegraphed early and react once Jimmy closes in. A separate rare operations encounter can also appear: a groomer crossing at Big Bear, trail-crew cart in Orange County, or an active driveway vehicle in SoCal.<br><span style="opacity:.58">BUILD ${BUILD_VERSION}${JIM_CUT_ENABLED?' · JIM CUT ARMED':''}</span></p>`;
- $('snowMode').onclick=()=>begin('snow');$('bikeMode').onclick=()=>begin('bike');$('boardMode').onclick=()=>begin('board');$('scores').onclick=showScores;$('museum').onclick=showMuseum; if($('jimCutReplay'))$('jimCutReplay').onclick=()=>showJimCutScene(true); $('retro').onclick=()=>{retroSnow=!retroSnow;$('retro').textContent='RETRO JIMMY · '+(retroSnow?'ON':'OFF');$('snowMode').querySelector('span:last-child').textContent=retroSnow?"SNOWBOARD · '93 KIT":'SNOWBOARD'};
+ $('snowMode').onclick=()=>begin('snow');$('bikeMode').onclick=()=>begin('bike');$('boardMode').onclick=()=>begin('board');$('scores').onclick=showScores;$('museum').onclick=()=>showMuseum(); if($('jimCutReplay'))$('jimCutReplay').onclick=()=>showJimCutScene(true); $('retro').onclick=()=>{retroSnow=!retroSnow;$('retro').textContent='RETRO JIMMY · '+(retroSnow?'ON':'OFF');$('snowMode').querySelector('span:last-child').textContent=retroSnow?"SNOWBOARD · '93 KIT":'SNOWBOARD'};
  $('rules').onclick=()=>alert('Each sport has its own persistent mastery title, built from your best run rating and Signature clear. LINECRAFT is persistent course IQ: surface reads, line shots, expert transfers and clear-line reads all count, but the upper ranks require variety instead of farming one event. BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
 }
 function begin(m){mode=m;appEl.classList.remove('postrun');ensureAudio();overlay.style.display='none';resize();reset()}
@@ -1175,10 +1176,17 @@ function startLocationIntro(){
  introActive=true;introStarted=performance.now();running=false;
  signatureTrack.style.display='none';
 }
+function activateRunFromIntro(){
+ // v150 blocker hotfix: controls are visible during the location intro, so the first real input
+ // must immediately hand control to the player instead of being silently ignored.
+ if(!introActive)return false;
+ introActive=false;running=true;signatureTrack.style.display='block';last=performance.now();hud();
+ return true;
+}
 function reset(){
  signatureTrack.style.display='none';
  runIntro();
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=500;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
  player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();startLocationIntro()
 }
 function postGameJumpRestart(){
@@ -1309,6 +1317,7 @@ function renderMuseumResults(query=''){
  host.innerHTML=`<div class="museum-empty"><b>NO MATCHING BUILDS YET</b><br>${label?`Nothing indexed for “${label}” yet. `:''}Future cameo builds can register names like Forbie, Kurt, Bryan or Moustache Jim here and immediately become searchable.</div>`;
 }
 function showMuseum(initialQuery=''){
+ if(typeof initialQuery!=='string')initialQuery='';
  card.className='card';overlay.style.display='flex';
  const cameoCount=BUILD_CATALOG.reduce((n,e)=>n+(e.cameos||[]).length,0);
  card.innerHTML=`<div class="location">CRASH'N JIMMY ARCHIVE</div><h2>VERSION MUSEUM</h2><p class="museum-note">Search milestone builds by version, feature, edition or cameo. This is the metadata foundation for preserved episodes, Jim-only cuts and future playable archive builds.</p><div class="museum-summary"><div class="museum-chip">INDEXED<b>${BUILD_CATALOG.length}</b></div><div class="museum-chip">LATEST<b>${BUILD_VERSION}</b></div><div class="museum-chip">CAMEOS<b>${cameoCount}</b></div></div><div class="museum-search"><input id="museumQuery" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="v117, ramps, Forbie…" value="${(initialQuery||'').replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}"><button id="museumGo">SEARCH</button></div><div id="museumResults" class="museum-results"></div><p class="museum-note"><b>Archive status:</b> metadata is searchable now. Historical HTML snapshots will become directly launchable once the repository archive/index is added. No old build is falsely presented as playable yet.</p><button id="museumBack">BACK TO JIMMY</button>`;
@@ -1596,6 +1605,7 @@ function spawn(){
  nextSpawn=world+rand(minGap,maxGap)
 }
 function jump(){
+ activateRunFromIntro();
  const now=performance.now();
 
  // v79 coyote-pop: terrain can naturally lift Jimmy just before the player's JUMP press.
@@ -1685,7 +1695,7 @@ function releaseBrakeTechnique(){
  }
  braking=false;brakeHold=0;
 }
-bindHold(brakeBtn,v=>{if(v&&!braking){sfx('brake');brakeHold=0;braking=true}else if(!v)releaseBrakeTechnique()});bindHold(sendBtn,v=>{if(v&&!sendIt)sfx('send');sendIt=v});
+bindHold(brakeBtn,v=>{if(v)activateRunFromIntro();if(v&&!braking){sfx('brake');brakeHold=0;braking=true}else if(!v)releaseBrakeTechnique()});bindHold(sendBtn,v=>{if(v)activateRunFromIntro();if(v&&!sendIt)sfx('send');sendIt=v});
 // v71 desktop QA: keyboard controls mirror the three touch controls without changing mobile behavior.
 // W / Up / Space = Jump, S / Down / A / Left = Brake, D / Right = Send It.
 const heldKeys=new Set();
@@ -1693,6 +1703,7 @@ const jumpKeys=new Set(['KeyW','ArrowUp','Space']);
 const brakeKeys=new Set(['KeyS','ArrowDown','KeyA','ArrowLeft']);
 const sendKeys=new Set(['KeyD','ArrowRight']);
 function keyControl(code,down,repeat=false){
+ if(down&&introActive&&(jumpKeys.has(code)||brakeKeys.has(code)||sendKeys.has(code)))activateRunFromIntro();
  if(jumpKeys.has(code)){
   if(down&&!repeat&&!heldKeys.has(code)){
    heldKeys.add(code);jumpBtn.classList.add('active');
@@ -3456,19 +3467,25 @@ function dynamicAtmospherePass(){
  ctx.restore();
 }
 
+const VISUAL_PASS_ERRORS=new Set();
+function safeVisualPass(name,fn){
+ try{fn()}catch(err){
+  if(!VISUAL_PASS_ERRORS.has(name)){VISUAL_PASS_ERRORS.add(name);console.warn('Crash\'n Jimmy visual pass disabled:',name,err)}
+ }
+}
 function drawScene(){
  let d=MODES[mode],g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,d.sky1);g.addColorStop(1,d.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);skyAtmosphere();
  if(mode==='snow'){mountain('#7897aa',H*.48,82,.028,.2);mountain('#607d91',H*.56,62,.06,1.4);mountain('#4c6779',H*.64,42,.105,2.2)}
  else if(mode==='bike'){mountain('#99947b',H*.49,72,.025,.5);mountain('#79775d',H*.57,56,.058,1.7);mountain('#5d6449',H*.64,39,.108,2.5)}
  else{mountain('#98918b',H*.49,58,.022,.8);mountain('#797a78',H*.56,43,.052,1.9);mountain('#5b6163',H*.63,30,.098,2.8)}
- background();environmentIdentity();sectionAtmosphereSignaturePass();locationLandmarks();expertTransferSceneryPass();cinematicVisualPass();premiumVisualPass();
+ safeVisualPass('background',background);safeVisualPass('environmentIdentity',environmentIdentity);safeVisualPass('sectionAtmosphere',sectionAtmosphereSignaturePass);safeVisualPass('landmarks',locationLandmarks);safeVisualPass('expertScenery',expertTransferSceneryPass);safeVisualPass('cinematic',cinematicVisualPass);safeVisualPass('premium',premiumVisualPass);
  let pts=[];for(let x=0;x<=W+20;x+=10)pts.push({x,y:groundY(x)});
  ctx.beginPath();ctx.moveTo(0,H);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(W,H);ctx.closePath();
  let gg=ctx.createLinearGradient(0,H*.55,0,H);
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();terrainContourDepthPass();texture();terrainLightShadowPass();pumpTransferLightingPass();terrainFeatureMaterialPass();launchSurfaceContinuityPass();namedSectionWayfindingPass();terrainContactShadows();obstacles.forEach(drawObstacle);environmentSignaturePass();foregroundDepth();dynamicAtmospherePass()
+ ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle);safeVisualPass('environmentSignature',environmentSignaturePass);safeVisualPass('foregroundDepth',foregroundDepth);safeVisualPass('dynamicAtmosphere',dynamicAtmospherePass)
 }
 function drawLocationIntro(now){
  if(!introActive)return;
