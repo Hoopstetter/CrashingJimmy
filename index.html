@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v162</title>
+<title>JIMMY — Fast Lines, Great Stories — v163</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -256,13 +256,13 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v162';
+const BUILD_VERSION='v163';
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
 const BUILD_META=Object.freeze({
- version:'v162',parent:'v161',episode:'Contextual Crash Debriefs',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',audience:'all + Jim',
+ version:'v163',parent:'v162',episode:'Playable Version Museum',edition:'canonical + jim-cut',visibility:'public shell / playable archive',audience:'all + Jim',
  environments:['Big Bear','Orange County','SoCal'],cameos:[],privateVariant:true,
- tags:['ui sound polish','crash dialogue','debrief','context','fast line','brake set','send it','jim cut'],
- summary:'Jimmy’s rotating crash debrief now also reads how he entered the failure — SEND IT, brake-set, FAST, CONTROL, or open line — adding 25 contextual observations while preserving the existing cause- and sport-specific shuffle decks.'
+ tags:['version museum','playable archive','history','return current','ui','jim cut'],
+ summary:'The Version Museum can now launch verified historical snapshots from v150 through v162, clearly distinguishes playable archives from metadata-only milestones, and every archived build has a persistent return-to-current control.'
 });
 const BUILD_CATALOG=Object.freeze([
  {version:'v110',episode:'Expert Transfer Complexes',edition:'canonical',visibility:'public',cameos:[],tags:['terrain','expert transfer','ramps']},
@@ -289,6 +289,7 @@ const BUILD_CATALOG=Object.freeze([
  {version:'v159',episode:'Speed Depth Cues',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['environment graphics','speed depth','optic flow','snow streaks','trail dust','pavement seams','jim cut']},
  {version:'v160',episode:'Composure Hazards',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['props hazards events','composure','braking','line set','snowbank','roots','pothole','jim cut']},
  {version:'v161',episode:'Finish Streak Progression',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['scoring progression','finish streak','consistency','career','persistent progress','jim cut']},
+ {version:'v162',episode:'Contextual Crash Debriefs',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['ui sound polish','crash dialogue','debrief','context','fast line','brake set','send it','jim cut']},
  BUILD_META
 ]);
 window.CRASHN_JIMMY_BUILD_META=BUILD_META;
@@ -1509,29 +1510,29 @@ function museumMatches(query=''){
   ...(entry.cameos||[]),...(entry.tags||[])
  ].join(' ').toLowerCase().includes(q)).slice().reverse();
 }
+const MUSEUM_PLAYABLE=new Set(['v150','v151','v152','v153','v154','v155','v156','v157','v158','v159','v160','v161','v162']);
 function museumEntryMarkup(entry){
- const current=entry.version===BUILD_VERSION;
- const cameos=(entry.cameos&&entry.cameos.length)?entry.cameos.join(', '):'none';
- const tags=(entry.tags||[]).join(' · ');
- return `<div class="museum-entry${current?' current':''}"><div class="museum-top"><b>${entry.version}</b><span class="museum-status">${current?'CURRENT BUILD':'METADATA INDEXED'}</span></div><div class="museum-title">${entry.episode}</div><div class="museum-meta">${entry.edition.toUpperCase()} · ${entry.visibility.toUpperCase()} · CAMEOS: ${cameos}</div><div class="museum-tags">${tags}</div></div>`;
+ const current=entry.version===BUILD_VERSION,playable=MUSEUM_PLAYABLE.has(entry.version);
+ const cameos=(entry.cameos&&entry.cameos.length)?entry.cameos.join(', '):'none',tags=(entry.tags||[]).join(' · ');
+ const status=current?'CURRENT BUILD':playable?'PLAYABLE ARCHIVE':'METADATA ONLY';
+ const action=playable?`<button class="museum-play" data-version="${entry.version}">PLAY THIS VERSION</button>`:'';
+ return `<div class="museum-entry${current?' current':''}"><div class="museum-top"><b>${entry.version}</b><span class="museum-status">${status}</span></div><div class="museum-title">${entry.episode}</div><div class="museum-meta">${entry.edition.toUpperCase()} · ${entry.visibility.toUpperCase()} · CAMEOS: ${cameos}</div><div class="museum-tags">${tags}</div>${action}</div>`;
 }
 function renderMuseumResults(query=''){
  const host=$('museumResults');if(!host)return;
  const found=museumMatches(query);
- if(found.length){host.innerHTML=found.map(museumEntryMarkup).join('');return}
+ if(found.length){host.innerHTML=found.map(museumEntryMarkup).join('');host.querySelectorAll('.museum-play').forEach(b=>b.onclick=()=>location.href=`archive/${b.dataset.version}.html`);return}
  const label=(query||'').trim();
- host.innerHTML=`<div class="museum-empty"><b>NO MATCHING BUILDS YET</b><br>${label?`Nothing indexed for “${label}” yet. `:''}Future cameo builds can register names like Forbie, Kurt, Bryan or Moustache Jim here and immediately become searchable.</div>`;
+ host.innerHTML=`<div class="museum-empty"><b>NO MATCHING BUILDS YET</b><br>${label?`Nothing indexed for “${label}” yet. `:''}Older milestones stay metadata-only until their exact historical HTML is recovered.</div>`;
 }
 function showMuseum(initialQuery=''){
  if(typeof initialQuery!=='string')initialQuery='';
  card.className='card';overlay.style.display='flex';
- const cameoCount=BUILD_CATALOG.reduce((n,e)=>n+(e.cameos||[]).length,0);
- card.innerHTML=`<div class="location">CRASH'N JIMMY ARCHIVE</div><h2>VERSION MUSEUM</h2><p class="museum-note">Search milestone builds by version, feature, edition or cameo. This is the metadata foundation for preserved episodes, Jim-only cuts and future playable archive builds.</p><div class="museum-summary"><div class="museum-chip">INDEXED<b>${BUILD_CATALOG.length}</b></div><div class="museum-chip">LATEST<b>${BUILD_VERSION}</b></div><div class="museum-chip">CAMEOS<b>${cameoCount}</b></div></div><div class="museum-search"><input id="museumQuery" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="v117, ramps, Forbie…" value="${(initialQuery||'').replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}"><button id="museumGo">SEARCH</button></div><div id="museumResults" class="museum-results"></div><p class="museum-note"><b>Archive status:</b> metadata is searchable now. Historical HTML snapshots will become directly launchable once the repository archive/index is added. No old build is falsely presented as playable yet.</p><button id="museumBack">BACK TO JIMMY</button>`;
- const input=$('museumQuery');
- const runSearch=()=>renderMuseumResults(input.value);
+ const playable=MUSEUM_PLAYABLE.size;
+ card.innerHTML=`<div class="location">CRASH'N JIMMY ARCHIVE</div><h2>VERSION MUSEUM</h2><p class="museum-note">Play verified historical snapshots or search every indexed milestone. Archived builds run as they actually existed; use RETURN TO CURRENT JIMMY in the upper-right corner to come back.</p><div class="museum-summary"><div class="museum-chip">PLAYABLE<b>${playable}</b></div><div class="museum-chip">LATEST<b>${BUILD_VERSION}</b></div><div class="museum-chip">INDEXED<b>${BUILD_CATALOG.length}</b></div></div><div class="museum-search"><input id="museumQuery" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="v150, ramps, crash…" value="${(initialQuery||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"><button id="museumGo">SEARCH</button></div><div id="museumResults" class="museum-results"></div><p class="museum-note"><b>Archive status:</b> v150–v162 are verified playable snapshots. Earlier entries remain metadata-only until their exact files are recovered.</p><button id="museumBack">BACK TO CURRENT JIMMY</button>`;
+ const input=$('museumQuery'),runSearch=()=>renderMuseumResults(input.value);
  $('museumGo').onclick=runSearch;input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runSearch()}});$('museumBack').onclick=start;
- renderMuseumResults(initialQuery);
- setTimeout(()=>input.focus({preventScroll:true}),0);
+ renderMuseumResults(initialQuery);setTimeout(()=>input.focus({preventScroll:true}),0);
 }
 
 function showScores(){
@@ -4668,7 +4669,7 @@ function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.max(0,p.
 
 let last=performance.now();
 function loop(now){let dt=Math.min(.033,(now-last)/1000);last=now;if(running)update(dt);if(!ended||running||introActive){drawScene();if(introActive){drawLocationIntro(now)}else{brakeSpray();drawPlayer();drawPhysicsCue();drawParticles()}}requestAnimationFrame(loop)}
-resize();buildTerrain();start();requestAnimationFrame(loop);
+resize();buildTerrain();start();if(new URLSearchParams(location.search).has('museum'))setTimeout(()=>showMuseum(),0);requestAnimationFrame(loop);
 })();
 </script>
 </body>
