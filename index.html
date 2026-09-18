@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v150</title>
+<title>JIMMY — Fast Lines, Great Stories — v162</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -96,7 +96,7 @@ button:active{transform:translateY(1px)}
 .result-summary .run-rating{margin-top:0}
 .result-summary .stats{margin-top:6px}
 .result-summary .result-actions{margin-bottom:0}
-.jimmy-note{margin:5px 0 0!important;color:#dfe4e9}
+.jimmy-note{margin:5px 0 0!important;color:#dfe4e9}.jimmy-read{display:block;margin-bottom:3px;color:#aeb8c2;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
 #section.section-enter{animation:sectionEnter .62s cubic-bezier(.18,.72,.28,1)}
 @keyframes sectionEnter{0%{transform:translateY(-4px) scale(.94);filter:brightness(1.65);box-shadow:0 0 0 1px rgba(242,184,75,.55),0 0 16px rgba(242,184,75,.24)}55%{transform:translateY(0) scale(1.04);filter:brightness(1.18)}100%{transform:none;filter:none;box-shadow:none}}
 .scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.board{background:#141820;border-radius:11px;padding:10px}.board h3{color:var(--accent)}
@@ -256,13 +256,13 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v150';
+const BUILD_VERSION='v162';
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
 const BUILD_META=Object.freeze({
- version:'v150',parent:'v149',episode:'Input + Opening Run Hotfix',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',audience:'all + Jim',
+ version:'v162',parent:'v161',episode:'Contextual Crash Debriefs',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',audience:'all + Jim',
  environments:['Big Bear','Orange County','SoCal'],cameos:[],privateVariant:true,
- tags:['hotfix','jump','museum','opening runway','controls','jim cut'],
- summary:'Fixes Version Museum click handling, makes controls immediately take over from the location intro, and gives Jimmy a safer opening runway before the first generated hazard.'
+ tags:['ui sound polish','crash dialogue','debrief','context','fast line','brake set','send it','jim cut'],
+ summary:'Jimmy’s rotating crash debrief now also reads how he entered the failure — SEND IT, brake-set, FAST, CONTROL, or open line — adding 25 contextual observations while preserving the existing cause- and sport-specific shuffle decks.'
 });
 const BUILD_CATALOG=Object.freeze([
  {version:'v110',episode:'Expert Transfer Complexes',edition:'canonical',visibility:'public',cameos:[],tags:['terrain','expert transfer','ramps']},
@@ -277,6 +277,18 @@ const BUILD_CATALOG=Object.freeze([
  {version:'v147',episode:"Jim's Cut: Fourth Wall",edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['jim cut','fourth wall','private variant','jim']},
  {version:'v148',episode:'Section Atmosphere Signatures',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['environment graphics','section atmosphere','place identity','jim cut']},
  {version:'v149',episode:'Bryan Control Layout',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['controls','button order','jump restart','ergonomics','jim cut']},
+ {version:'v150',episode:'Input + Opening Run Hotfix',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['hotfix','jump','museum','opening runway','controls','jim cut']},
+ {version:'v151',episode:'Player Render Hotfix',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['hotfix','player render','jump','runtime','controls','jim cut']},
+ {version:'v152',episode:'Breakaway Course Markers',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['props hazards events','breakaway markers','braking','forgiveness','jim cut']},
+ {version:'v153',episode:'Balanced Line Finish Bonus',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['scoring progression','balanced line','fast line','control line','braking','jim cut']},
+ {version:'v154',episode:'Crash Audio Signatures',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['ui sound polish','crash audio','impact feedback','landing','edgewash','frontload','wobble','jim cut']},
+ {version:'v155',episode:'Mobile Resize Stabilizer',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['qa mobile','iphone','orientation','visual viewport','resize','performance','jim cut']},
+ {version:'v156',episode:'Momentum Carry Physics',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['gameplay physics','momentum','flow','speed carry','braking','send it','jim cut']},
+ {version:'v157',episode:'Adaptive Ramp Catches',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['terrain course design','ramps','landing apron','fast line','control line','rideable terrain','jim cut']},
+ {version:'v158',episode:'Carried Speed Stance',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['jimmy animation','speed stance','momentum','body language','snowboard','mtb','longboard','jim cut']},
+ {version:'v159',episode:'Speed Depth Cues',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['environment graphics','speed depth','optic flow','snow streaks','trail dust','pavement seams','jim cut']},
+ {version:'v160',episode:'Composure Hazards',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['props hazards events','composure','braking','line set','snowbank','roots','pothole','jim cut']},
+ {version:'v161',episode:'Finish Streak Progression',edition:'canonical + jim-cut',visibility:'public shell / unlisted variant',cameos:[],tags:['scoring progression','finish streak','consistency','career','persistent progress','jim cut']},
  BUILD_META
 ]);
 window.CRASHN_JIMMY_BUILD_META=BUILD_META;
@@ -296,7 +308,7 @@ let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
 let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='';
 // v74 Props/Hazards/Events: short location-opening vehicle arrival cinematic.
-let introActive=false,introStarted=0,lorePropUsed=false,signatureFilmerUsed=false,expertSpotterUsed=false,lastPostJumpTap=0,crashSceneSerial=0,lineShotCardTimer=0;
+let introActive=false,introStarted=0,lorePropUsed=false,signatureFilmerUsed=false,expertSpotterUsed=false,lastPostJumpTap=0,crashSceneSerial=0,lineShotCardTimer=0,lastCrashContext=null;
 let lastNamedSectionCue='';
 const INTRO_DURATION=3.6; // any gameplay control now skips the intro and starts riding immediately
 
@@ -492,6 +504,73 @@ const crashModeLines={
   ]
  }
 };
+const crashContextLines={
+ SENT:[
+  "That was a real send. The correction is where I spent it.",
+  "I'd keep the commitment. I'd clean up the last input.",
+  "Speed wasn't hiding anything; it just shortened the meeting.",
+  "I chose the fast answer. Next lap I make it a cleaner answer.",
+  "The send was intentional. The cleanup starts one input earlier."
+ ],
+ SET:[
+  "I had the speed checked. I needed to finish the setup sooner.",
+  "The brake-set helped. I just asked it to solve too much.",
+  "I made room for the feature. I didn't quite make enough.",
+  "Right idea: settle, then commit. My timing was late.",
+  "I'll keep the setup and move it six feet earlier."
+ ],
+ FAST:[
+  "Fast line still works. I need a cleaner exit.",
+  "I earned the speed. I didn't spend it cleanly.",
+  "Nothing wrong with choosing fast. I just owe it better timing.",
+  "The line was worth taking. The last correction wasn't.",
+  "I'd take that route again with one quieter decision."
+ ],
+ CONTROL:[
+  "The control line did its job. I over-managed the finish.",
+  "I had margin and still used all of it.",
+  "That line gave me room. I turned the room into paperwork.",
+  "Good choice of line. One bad input after the hard part.",
+  "The controlled option was right. I got ambitious on the exit."
+ ],
+ OPEN:[
+  "Open line, clear read. I still found more data.",
+  "I had room. I used the wrong part of it.",
+  "Nothing boxed me in there. That's useful information.",
+  "Clean sightline, messy last input.",
+  "The route was honest. My timing was not."
+ ]
+};
+function makeCrashContext(o){
+ const label=sectionLabel();
+ const line=label.includes('FAST LINE')?'FAST':label.includes('CONTROL LINE')?'CONTROL':'OPEN';
+ const brakeSet=braking&&(brakeHold>=.18||lineSetReady||lineSet>.24);
+ const intent=sendIt?'SENT':brakeSet?'SET':line;
+ return{line,intent,speed:Math.round(speed*4.8),meter:Math.round(meter),type:o&&o.type?o.type:'obstacle'}
+}
+function crashContextPool(context){
+ if(!context)return[];
+ const keys=[];
+ if(context.intent==='SENT'||context.intent==='SET')keys.push(context.intent);
+ if(context.line==='FAST'||context.line==='CONTROL'||context.line==='OPEN')keys.push(context.line);
+ return[...new Set(keys.flatMap(k=>crashContextLines[k]||[]))]
+}
+function crashContextToken(context){
+ return context?(context.intent||'OPEN')+'-'+(context.line||'OPEN'):'NONE'
+}
+function crashContextReadout(context){
+ if(!context)return'LINE READ · RECORDED';
+ const line=context.line==='OPEN'?'OPEN LINE':context.line+' LINE';
+ const intent=context.intent==='SENT'?'SEND IT':context.intent==='SET'?'BRAKE SET':'NEUTRAL';
+ const pace=context.speed>=38?'HIGH SPEED':context.speed>=30?'PACE ON':'COMPOSED';
+ return line+' · '+intent+' · '+pace
+}
+function crashLinePool(hit,context){
+ const base=crashLines[hit]||crashLines.default;
+ const sport=crashModeLines[mode]||{};
+ const specific=sport[hit]||[];
+ return[...new Set(crashContextPool(context).concat(specific,base,sport.default||[]))]
+}
 const lastCrashLineByKey={};
 const crashLineDecks={};
 function shuffledCrashPool(pool){
@@ -502,12 +581,9 @@ function shuffledCrashPool(pool){
  }
  return deck
 }
-function crashLine(hit){
- const base=crashLines[hit]||crashLines.default;
- const sport=crashModeLines[mode]||{};
- const specific=sport[hit]||[];
- const pool=specific.concat(base,sport.default||[]);
- const key=mode+':'+(hit||'default');
+function crashLine(hit,context=null){
+ const pool=crashLinePool(hit,context);
+ const key=mode+':'+(hit||'default')+':'+crashContextToken(context);
  let deck=crashLineDecks[key];
  if(!deck||!deck.length){
   deck=shuffledCrashPool(pool);
@@ -549,7 +625,56 @@ function tone(freq=440,dur=.07,type='sine',gain=.035,slide=0){
  g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+dur);
  o.connect(g);g.connect(ac.destination);o.start(now);o.stop(now+dur+.02);
 }
-function sfx(kind){
+function crashAudioProfile(hit){
+ // v154 UI/Sound: the crash transient now explains the failure before the result card does.
+ // Keep it short and physical rather than cartoonish; Jimmy made a riding mistake, not a joke sound.
+ const cause=['landing','edgewash','frontload','wobble'].includes(hit)?hit:'obstacle';
+ const sportShift=mode==='snow'?8:mode==='bike'?-5:0;
+ if(cause==='landing')return {cause,pattern:'compression',base:86+sportShift,noiseFreq:520,label:'LANDING COMPRESSION'};
+ if(cause==='edgewash')return {cause,pattern:'scrape',base:178,noiseFreq:1850,label:'EDGE WASH'};
+ if(cause==='frontload')return {cause,pattern:'fork',base:96,noiseFreq:720,label:'FRONT-END LOAD'};
+ if(cause==='wobble')return {cause,pattern:'oscillation',base:146,noiseFreq:1120,label:'HIGH-SPEED WOBBLE'};
+ if(mode==='snow')return {cause,pattern:'obstacle',base:108,noiseFreq:1420,label:'SNOW IMPACT'};
+ if(mode==='bike')return {cause,pattern:'obstacle',base:92,noiseFreq:760,label:'TRAIL IMPACT'};
+ return {cause,pattern:'obstacle',base:116,noiseFreq:1080,label:'PAVEMENT IMPACT'};
+}
+function crashImpactSfx(hit){
+ const p=crashAudioProfile(hit);
+ if(p.pattern==='compression'){
+  tone(p.base,.115,'sine',.048,-34);
+  noiseHit(0,.055,.032,p.noiseFreq);
+  setTimeout(()=>tone(Math.max(44,p.base-28),.18,'triangle',.036,-18),58);
+  return
+ }
+ if(p.pattern==='scrape'){
+  noiseHit(0,.16,.038,p.noiseFreq);
+  tone(p.base,.12,'sawtooth',.028,-92);
+  setTimeout(()=>noiseHit(0,.07,.022,p.noiseFreq+420),78);
+  return
+ }
+ if(p.pattern==='fork'){
+  tone(p.base,.075,'square',.046,-26);
+  noiseHit(0,.048,.037,p.noiseFreq);
+  setTimeout(()=>tone(p.base+52,.055,'triangle',.024,-74),42);
+  setTimeout(()=>noiseHit(0,.036,.018,p.noiseFreq+260),78);
+  return
+ }
+ if(p.pattern==='oscillation'){
+  tone(p.base,.042,'triangle',.026,-28);
+  setTimeout(()=>tone(p.base-18,.042,'triangle',.027,34),45);
+  setTimeout(()=>tone(p.base-33,.052,'triangle',.03,-44),90);
+  setTimeout(()=>{noiseHit(0,.075,.042,p.noiseFreq);tone(72,.15,'square',.04,-20)},138);
+  return
+ }
+ // Obstacle contacts keep a common heavy impact shape but the material band changes by sport.
+ tone(p.base,.14,'sawtooth',.052,-64);
+ noiseHit(0,.072,.046,p.noiseFreq);
+ setTimeout(()=>tone(Math.max(52,p.base-42),.19,'square',.038,-16),72);
+ if(mode==='bike')setTimeout(()=>noiseHit(0,.038,.018,1180),126);
+ else if(mode==='board')setTimeout(()=>tone(172,.045,'triangle',.018,-72),126);
+ else setTimeout(()=>noiseHit(0,.05,.017,1960),126);
+}
+function sfx(kind,detail=''){
  if(!audioOn)return;
  if(kind==='jump')tone(240,.09,'triangle',.04,170);
  else if(kind==='land'){
@@ -595,9 +720,9 @@ function sfx(kind){
   setTimeout(()=>tone(465,.075,'triangle',.024,72),62);
   setTimeout(()=>tone(660,.10,'sine',.022,95),132);
  }
- else if(kind==='crash'){tone(120,.16,'sawtooth',.055,-70);noiseHit(0,.075,.05);setTimeout(()=>tone(65,.22,'square',.045,-18),70);setTimeout(()=>noiseHit(0,.045,.026),145)}
+ else if(kind==='crash')crashImpactSfx(detail)
 }
-function noiseHit(delay=0,dur=.055,gain=.035){
+function noiseHit(delay=0,dur=.055,gain=.035,center=950){
  const ac=ensureAudio();if(!ac)return;const start=ac.currentTime+delay;
  // v116 mobile QA: reuse one short white-noise AudioBuffer instead of allocating/filling a
  // new buffer for every touchdown/crash hit. Random offsets keep each transient from sounding cloned.
@@ -608,7 +733,7 @@ function noiseHit(delay=0,dur=.055,gain=.035){
   for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
  }
  const src=ac.createBufferSource(),filter=ac.createBiquadFilter(),g=ac.createGain();
- filter.type='bandpass';filter.frequency.value=950;
+ filter.type='bandpass';filter.frequency.value=center;
  g.gain.setValueAtTime(gain,start);
  g.gain.linearRampToValueAtTime(.0001,start+dur);
  src.buffer=noiseBuffer;src.connect(filter);filter.connect(g);g.connect(ac.destination);
@@ -666,8 +791,24 @@ function resize(){
   player.vy*=velocityScale;
  }
 }
-window.addEventListener('resize',resize);
-if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
+let resizeRaf=0,resizeSettleTimer=0;
+function scheduleResize(){
+ // v155 QA/mobile: iPhone Safari can fire window + visualViewport resize several times
+ // in the same frame while browser chrome moves or the phone rotates. One backing-store
+ // resize per frame is enough; repeated allocations can hitch rendering and repeatedly
+ // rescale an airborne Jimmy.
+ if(resizeRaf)return;
+ resizeRaf=requestAnimationFrame(()=>{resizeRaf=0;resize()});
+}
+function scheduleSettledResize(){
+ // Orientation geometry can settle one beat after the first resize on iOS.
+ scheduleResize();
+ clearTimeout(resizeSettleTimer);
+ resizeSettleTimer=setTimeout(scheduleResize,140);
+}
+window.addEventListener('resize',scheduleResize);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleResize);
+window.addEventListener('orientationchange',scheduleSettledResize);
 
 function buildTerrain(){
  terrain=[];terrainFeatures=[];complexBounds=[];
@@ -941,35 +1082,65 @@ function rampRunInShape(f,wx){
  const bell=16*t*t*(1-t)*(1-t);
  return f.amp*profile.depth*bell;
 }
+function rampCatchProfile(f){
+ // v157 higher-refinement terrain/course design: the launch line and the catch terrain now agree.
+ // FAST ramps are taller/faster, so their catch begins farther downrange and runs deeper. CONTROL
+ // ramps launch lower and slower, so their catch comes in earlier and shallower. Both remain terrain,
+ // not collidable props, and expert transfers keep a little extra run-out.
+ const choice=f&&f.complex&&f.complexId!==undefined?lineChoices[f.complexId]:null;
+ const base=mode==='snow'
+  ?{control:{down:.44,hold:.64,depth:.45},neutral:{down:.54,hold:.70,depth:.54},fast:{down:.64,hold:.79,depth:.64}}
+  :mode==='bike'
+   ?{control:{down:.40,hold:.58,depth:.39},neutral:{down:.50,hold:.66,depth:.47},fast:{down:.60,hold:.74,depth:.57}}
+   :{control:{down:.47,hold:.64,depth:.30},neutral:{down:.58,hold:.73,depth:.37},fast:{down:.68,hold:.82,depth:.45}};
+ const p={...(choice==='fast'?base.fast:choice==='control'?base.control:base.neutral)};
+ if(f&&f.expertCatch){
+  p.down=Math.min(.74,p.down+.025);
+  p.hold=Math.min(.88,p.hold+.04);
+  p.depth*=1.06;
+ }
+ return p;
+}
 function landingApronShape(f,wx){
  if(!f.apron)return 0;
  const start=f.x+f.width;
- // v118 terrain/course refinement: the expert-transfer launches get longer, sport-specific
- // catch transitions to match v117's preserved airborne momentum. The catch is still terrain,
- // not a collision object, and still resolves fully before the next authored feature.
  const length=f.apronLength|| (mode==='snow'?390:mode==='bike'?340:380);
  const t=(wx-start)/length;
  if(t<0||t>1)return 0;
- if(f.expertCatch){
-  const profile=mode==='snow'
-   ?{down:.50,hold:.69,depth:.62}   // long forgiving snow catch
-   :mode==='bike'
-    ?{down:.43,hold:.61,depth:.54} // quicker trail transition with a defined compression
-    :{down:.56,hold:.74,depth:.42};// lower, longer concrete run-out
+ if(f.kind==='ramp'){
+  const profile=rampCatchProfile(f);
   const depth=f.amp*profile.depth;
   if(t<profile.down){
    const q=t/profile.down;
    return depth*(q*q*(3-2*q));
   }
   if(t<profile.hold){
-   // A short landing bench lets Jimmy touch down without immediately crossing the next grade change.
+   // A short catch bench gives the tires/board room to reconnect before the terrain blends away.
+   const q=(t-profile.down)/(profile.hold-profile.down);
+   return depth*(1-.035*Math.sin(q*Math.PI));
+  }
+  const q=(t-profile.hold)/(1-profile.hold);
+  return depth*(1-q*q*(3-2*q));
+ }
+ // Non-ramp apron features keep their established natural catch shape.
+ if(f.expertCatch){
+  const profile=mode==='snow'
+   ?{down:.50,hold:.69,depth:.62}
+   :mode==='bike'
+    ?{down:.43,hold:.61,depth:.54}
+    :{down:.56,hold:.74,depth:.42};
+  const depth=f.amp*profile.depth;
+  if(t<profile.down){
+   const q=t/profile.down;
+   return depth*(q*q*(3-2*q));
+  }
+  if(t<profile.hold){
    const q=(t-profile.down)/(profile.hold-profile.down);
    return depth*(1-.045*Math.sin(q*Math.PI));
   }
   const q=(t-profile.hold)/(1-profile.hold);
   return depth*(1-q*q*(3-2*q));
  }
- // Standard authored jump catch slope.
  const depth=f.amp*(mode==='snow'?.56:mode==='bike'?.48:.38);
  if(t<.58){
   const q=t/.58;
@@ -1186,7 +1357,7 @@ function activateRunFromIntro(){
 function reset(){
  signatureTrack.style.display='none';
  runIntro();
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
  player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();startLocationIntro()
 }
 function postGameJumpRestart(){
@@ -1202,7 +1373,7 @@ function postGameJumpRestart(){
 function hud(){scoreEl.textContent=Math.floor(score);speedEl.textContent=Math.round(speed*4.8)+' mph';meterFill.style.width=meter+'%';maxMeter=Math.max(maxMeter,meter);const mult=1+Math.max(0,flowChain-1)*.25;flowValue.textContent='x'+mult.toFixed(2);flowValue.style.opacity=flowChain?1:.6;flowFill.style.width=(flowChain?Math.max(0,Math.min(100,flowTimer/4.25*100)):0)+'%';let rs='CRUISE';if(!player.onGround)rs=airLineSet>.35?'SET AIR':'AIR';else if(braking)rs=lineSetReady?'LINE SET':brakeHold<.34?'SPEED CHECK':'BRAKING';else if(sendIt)rs='SEND IT';else if(lineSet>.18)rs='SETTING';rideStateValue.textContent=rs;const rr=runRating();ratingValue.textContent=rr.name;ratingHud.className='tier'+rr.tier;if(running&&rr.tier>lastRatingTier){lastRatingTier=rr.tier;if(rr.tier>0){physicsCue=rr.name+' RUN';physicsCueTimer=1.05;sfx('rating')}}const sig=signatureChallenge();signatureName.textContent=sig.name;signatureProgress.textContent=sig.complete?'CLEARED · +'+sig.reward:sig.progress;signatureTrack.classList.toggle('cleared',sig.complete||signatureAwarded);if(lastSignatureProgress&&sig.progress!==lastSignatureProgress&&!sig.complete){signatureTrack.classList.remove('pulse');void signatureTrack.offsetWidth;signatureTrack.classList.add('pulse');setTimeout(()=>signatureTrack.classList.remove('pulse'),300)}lastSignatureProgress=sig.progress;}
 
 const key='crashingJimmyScoresV4';
-function blank(){return{best:0,air:0,close:0,meter:0,flow:0,mastery:0,sections:0,fast:0,control:0,rating:0,signature:0,reads:0,shots:0,transfers:0,traffic:0,runs:0}}
+function blank(){return{best:0,air:0,close:0,meter:0,flow:0,mastery:0,sections:0,fast:0,control:0,rating:0,signature:0,reads:0,shots:0,transfers:0,traffic:0,runs:0,finishes:0,streak:0,bestStreak:0}}
 function records(){let r={};try{r=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){};return{snow:Object.assign(blank(),r.snow||{}),bike:Object.assign(blank(),r.bike||{}),board:Object.assign(blank(),r.board||{})}}
 const RATING_NAMES=['OPEN','DIALED','PINNED','LEGENDARY'];
 const MASTERY_TITLES={
@@ -1252,7 +1423,42 @@ function checkSignatureChallenge(){
   physicsCue=c.name+'  +'+c.reward;physicsCueTimer=1.35;sfx('rating');
  }
 }
-function save(){let a=records(),r=a[mode],rating=runRating();r.best=Math.max(r.best,Math.floor(score));r.air=Math.max(r.air,totalAir);r.close=Math.max(r.close,closeCalls);r.meter=Math.max(r.meter,Math.round(maxMeter));r.flow=Math.max(r.flow,bestFlowChain);r.mastery=Math.max(r.mastery,bestMasteryStreak);r.sections=Math.max(r.sections,masteredSections);r.fast=Math.max(r.fast,fastLineClears);r.control=Math.max(r.control,controlLineClears);r.rating=Math.max(r.rating,rating.tier);r.signature=Math.max(r.signature||0,signatureAwarded?1:0);r.reads=(r.reads||0)+surfaceReads;r.shots=(r.shots||0)+lineShots;r.transfers=(r.transfers||0)+expertTransfers;r.traffic=(r.traffic||0)+trafficReads;r.runs++;localStorage.setItem(key,JSON.stringify(a))}
+function lineBalanceBonus(crashed=false){
+ // v153 Scoring/Progression: a finished run is worth more when Jimmy demonstrates both
+ // pace and judgment. Pair FAST clears with CONTROL clears; crashes and one-sided runs
+ // get no bonus. This makes BRAKE part of the high-score route without dulling SEND IT.
+ if(crashed)return{points:0,paired:0,label:'NO FINISH'};
+ const paired=Math.min(fastLineClears,controlLineClears);
+ if(paired<1)return{points:0,paired:0,label:'ONE-SIDED'};
+ const points=300+Math.min(2,paired-1)*150;
+ const label=paired>=3?'COMPLETE RIDER':paired>=2?'TWO-WAY LINE':'BALANCED LINE';
+ return{points,paired,label};
+}
+function consistencyProgress(r){
+ // v161 Scoring/Progression: reward reliability without inflating a run score.
+ // The current streak is fragile; the best streak remains persistent evidence
+ // that Jimmy can repeatedly bring a line home across changing conditions.
+ const current=Math.max(0,r.streak||0),best=Math.max(current,r.bestStreak||0);
+ const tiers=[
+  {min:0,title:'OPEN'},
+  {min:1,title:'ROLLING'},
+  {min:2,title:'DIALED'},
+  {min:3,title:'CONSISTENT'},
+  {min:5,title:'LOCKED IN'},
+  {min:8,title:'ALL DAY'}
+ ];
+ let tier=0,entry=tiers[0],next=null;
+ for(let i=0;i<tiers.length;i++)if(best>=tiers[i].min){tier=i;entry=tiers[i]}
+ for(const t of tiers)if(t.min>best){next=t;break}
+ return{tier,title:entry.title,current,best,nextAt:next?next.min:best,nextNeed:next?next.min-best:0,maxed:!next};
+}
+function save(crashed=false){
+ let a=records(),r=a[mode],rating=runRating();
+ r.best=Math.max(r.best,Math.floor(score));r.air=Math.max(r.air,totalAir);r.close=Math.max(r.close,closeCalls);r.meter=Math.max(r.meter,Math.round(maxMeter));r.flow=Math.max(r.flow,bestFlowChain);r.mastery=Math.max(r.mastery,bestMasteryStreak);r.sections=Math.max(r.sections,masteredSections);r.fast=Math.max(r.fast,fastLineClears);r.control=Math.max(r.control,controlLineClears);r.rating=Math.max(r.rating,rating.tier);r.signature=Math.max(r.signature||0,signatureAwarded?1:0);r.reads=(r.reads||0)+surfaceReads;r.shots=(r.shots||0)+lineShots;r.transfers=(r.transfers||0)+expertTransfers;r.traffic=(r.traffic||0)+trafficReads;r.runs++;
+ if(crashed)r.streak=0;
+ else{r.finishes=(r.finishes||0)+1;r.streak=(r.streak||0)+1;r.bestStreak=Math.max(r.bestStreak||0,r.streak)}
+ localStorage.setItem(key,JSON.stringify(a))
+}
 function linecraftProgress(r){
  // v140 Scoring/Progression: the four newer judgment mechanics now feed one persistent
  // sport-specific progression path. Variety matters: repeatedly farming one event cannot
@@ -1266,7 +1472,7 @@ function linecraftProgress(r){
  if(total>=24&&minCount>=3){tier=4;title='ALL CONDITIONS';next='MAXED'}
  return{tier,title,total,breadth,minCount,next,progress:`${total} READS · ${breadth}/4 SKILLS${tier<4?' · NEXT '+next:' · BALANCED'}`};
 }
-function board(name,r,m){const lc=linecraftProgress(r);return `<div class="board"><h3>${name}</h3><div class="row"><span>Mastery title</span><b>${masteryTitle(m,r.rating,r.signature)}</b></div><div class="row"><span>Linecraft</span><b>${lc.title}</b></div><div class="row"><span>Linecraft progress</span><b>${lc.total} · ${lc.breadth}/4</b></div><div class="row"><span>Best score</span><b>${r.best}</b></div><div class="row"><span>Best airtime</span><b>${r.air.toFixed(1)}s</b></div><div class="row"><span>Close calls</span><b>${r.close}</b></div><div class="row"><span>Jimmy Meter</span><b>${r.meter}%</b></div><div class="row"><span>Best flow</span><b>x${(1+Math.max(0,r.flow-1)*.25).toFixed(2)}</b></div><div class="row"><span>Best line streak</span><b>${r.mastery}</b></div><div class="row"><span>Most mastered lines</span><b>${r.sections}</b></div><div class="row"><span>Fast-line clears</span><b>${r.fast}</b></div><div class="row"><span>Control-line clears</span><b>${r.control}</b></div><div class="row"><span>Best run rating</span><b>${RATING_NAMES[r.rating||0]}</b></div><div class="row"><span>Signature run</span><b>${r.signature?'CLEARED':'OPEN'}</b></div><div class="row"><span>Surface reads</span><b>${r.reads||0}</b></div><div class="row"><span>Line shots</span><b>${r.shots||0}</b></div><div class="row"><span>Expert transfers</span><b>${r.transfers||0}</b></div><div class="row"><span>Clear-line reads</span><b>${r.traffic||0}</b></div><div class="row"><span>Runs</span><b>${r.runs}</b></div></div>`}
+function board(name,r,m){const lc=linecraftProgress(r),cp=consistencyProgress(r);return `<div class="board"><h3>${name}</h3><div class="row"><span>Mastery title</span><b>${masteryTitle(m,r.rating,r.signature)}</b></div><div class="row"><span>Consistency</span><b>${cp.title}</b></div><div class="row"><span>Run streak</span><b>${cp.current} · BEST ${cp.best}</b></div><div class="row"><span>Linecraft</span><b>${lc.title}</b></div><div class="row"><span>Linecraft progress</span><b>${lc.total} · ${lc.breadth}/4</b></div><div class="row"><span>Best score</span><b>${r.best}</b></div><div class="row"><span>Best airtime</span><b>${r.air.toFixed(1)}s</b></div><div class="row"><span>Close calls</span><b>${r.close}</b></div><div class="row"><span>Jimmy Meter</span><b>${r.meter}%</b></div><div class="row"><span>Best flow</span><b>x${(1+Math.max(0,r.flow-1)*.25).toFixed(2)}</b></div><div class="row"><span>Best line streak</span><b>${r.mastery}</b></div><div class="row"><span>Most mastered lines</span><b>${r.sections}</b></div><div class="row"><span>Fast-line clears</span><b>${r.fast}</b></div><div class="row"><span>Control-line clears</span><b>${r.control}</b></div><div class="row"><span>Best run rating</span><b>${RATING_NAMES[r.rating||0]}</b></div><div class="row"><span>Signature run</span><b>${r.signature?'CLEARED':'OPEN'}</b></div><div class="row"><span>Surface reads</span><b>${r.reads||0}</b></div><div class="row"><span>Line shots</span><b>${r.shots||0}</b></div><div class="row"><span>Expert transfers</span><b>${r.transfers||0}</b></div><div class="row"><span>Clear-line reads</span><b>${r.traffic||0}</b></div><div class="row"><span>Runs</span><b>${r.runs}</b></div></div>`}
 function careerProgress(r=records()){
  // v123 progression: TOUR SCORE still honors every sport's best run, but balanced riders now earn
  // a 50% bonus on their weakest best score. Improving the lowest terrain becomes a meaningful path,
@@ -1338,18 +1544,18 @@ function contextualHazards(kind,lineChoice){
  // Hazards belong to the section AND to the line Jimmy committed to.
  // FAST LINE favors technical, high-consequence features; CONTROL LINE favors readable, lower-profile obstacles.
  const neutral={
-  snow:{moguls:['rock','snowgun'],ramp:['parkrail','snowgun'],tabletop:['parkrail','kicker'],steep:['tree','rock'],bowl:['rock','snowgun'],drop:['tree','rock'],rollers:['tree','snowgun']},
-  bike:{rockgarden:['roots','rock'],berm:['trailpost','log'],gully:['rock','roots'],drop:['log','rock'],ramp:['log','trailpost'],rollers:['trailpost','roots']},
+  snow:{moguls:['rock','snowgun','snowmarker','snowbank'],ramp:['parkrail','snowgun'],tabletop:['parkrail','kicker'],steep:['tree','rock','snowmarker'],bowl:['rock','snowgun','snowbank'],drop:['tree','rock'],rollers:['tree','snowgun','snowmarker','snowbank']},
+  bike:{rockgarden:['roots','rock'],berm:['trailpost','log','trailflag'],gully:['rock','roots'],drop:['log','rock'],ramp:['log','trailpost'],rollers:['trailpost','roots','trailflag']},
   board:{hill:['trashcan','cone'],speedbump:['cone','curb'],driveway:['roadpatch','trashcan'],sweep:['cone','pothole'],crest:['cone','roadpatch'],dip:['pothole','roadpatch'],ramp:['curb','cone']}
  };
  const fast={
-  snow:{moguls:['rock','rock','snowgun'],ramp:['parkrail','parkrail','snowgun'],tabletop:['parkrail','kicker','parkrail'],steep:['tree','rock','tree'],bowl:['rock','rock','snowgun'],drop:['tree','rock','tree'],rollers:['tree','rock']},
-  bike:{rockgarden:['roots','rock','roots'],berm:['log','trailpost','log'],gully:['rock','roots','rock'],drop:['log','rock','log'],ramp:['log','rock'],rollers:['roots','trailpost']},
+  snow:{moguls:['rock','rock','snowgun','snowbank'],ramp:['parkrail','parkrail','snowgun'],tabletop:['parkrail','kicker','parkrail'],steep:['tree','rock','tree'],bowl:['rock','rock','snowgun','snowbank'],drop:['tree','rock','tree'],rollers:['tree','rock','snowmarker','snowbank']},
+  bike:{rockgarden:['roots','rock','roots'],berm:['log','trailpost','log'],gully:['rock','roots','rock'],drop:['log','rock','log'],ramp:['log','rock'],rollers:['roots','trailpost','trailflag']},
   board:{hill:['cone','trashcan','pothole'],speedbump:['curb','cone','curb'],driveway:['roadpatch','trashcan','pothole'],sweep:['pothole','cone','pothole'],crest:['roadpatch','cone','pothole'],dip:['pothole','roadpatch','pothole'],ramp:['curb','cone','curb']}
  };
  const control={
-  snow:{moguls:['snowgun','rock'],ramp:['snowgun','parkrail'],tabletop:['kicker','snowgun'],steep:['rock','tree'],bowl:['snowgun','rock'],drop:['rock','tree'],rollers:['snowgun','tree']},
-  bike:{rockgarden:['roots','trailpost'],berm:['trailpost','log'],gully:['roots','trailpost'],drop:['log','trailpost'],ramp:['trailpost','log'],rollers:['trailpost','roots']},
+  snow:{moguls:['snowgun','rock','snowmarker','snowbank'],ramp:['snowgun','parkrail'],tabletop:['kicker','snowgun'],steep:['rock','tree','snowmarker'],bowl:['snowgun','rock','snowbank'],drop:['rock','tree'],rollers:['snowgun','tree','snowmarker','snowbank']},
+  bike:{rockgarden:['roots','trailpost'],berm:['trailpost','log','trailflag'],gully:['roots','trailpost'],drop:['log','trailpost'],ramp:['trailpost','log'],rollers:['trailpost','roots','trailflag']},
   board:{hill:['cone','trashcan'],speedbump:['cone','roadpatch'],driveway:['roadpatch','trashcan'],sweep:['cone','roadpatch'],crest:['cone','roadpatch'],dip:['roadpatch','cone'],ramp:['cone','curb']}
  };
  const set=lineChoice==='fast'?fast:lineChoice==='control'?control:neutral;
@@ -1580,7 +1786,7 @@ function spawn(){
   sectionKind:f?f.kind:null,lineChoice,variant:0,reacted:false,reactionTimer:0,baseVx:0,surfaceResolved:false};
  Object.assign(o,{
   rock:{w:38,h:24},kicker:{w:58,h:24},drop:{w:58,h:24},log:{w:46,h:15},lion:{w:58,h:30,vx:-70},bear:{w:48,h:54,vx:-18},streetfreeze:{w:30,h:58,vx:0},pedestrian:{w:32,h:56,vx:-18},
-  snowgun:{w:34,h:48},parkrail:{w:66,h:20},trailpost:{w:24,h:46},roots:{w:58,h:12},trashcan:{w:30,h:40},roadpatch:{w:64,h:7},
+  snowgun:{w:34,h:48},snowmarker:{w:18,h:52},snowbank:{w:62,h:14},parkrail:{w:66,h:20},trailpost:{w:24,h:46},trailflag:{w:20,h:38},roots:{w:58,h:12},trashcan:{w:30,h:40},roadpatch:{w:64,h:7},
   skier:{w:38,h:54,vx:-38},hiker:{w:30,h:54,vx:-28},car:{w:86,h:38,vx:-92},snowcat:{w:108,h:48,vx:-22},trailcart:{w:74,h:42,vx:-10},utilityvan:{w:98,h:48,vx:-34},
   cone:{w:24,h:34},pothole:{w:52,h:8},curb:{w:55,h:12},
   snowchop:{w:150,h:8},loosegravel:{w:160,h:7},brokenasphalt:{w:165,h:7}
@@ -1790,6 +1996,59 @@ function checkLineMastery(){
  }
 }
 
+function groundSpeedStep(current,dt,grade,isBraking,brakeAge,isSending,rideMode,flowMeter){
+ // v156 higher-refinement gameplay physics: separate drive, braking, and coasting.
+ // Earlier builds pulled every neutral ground speed back toward cruise at response 2.4,
+ // so a clean landing or pump could lose most of its earned speed almost immediately.
+ // Neutral now preserves momentum with modest surface/excess-speed drag; terrain still
+ // accelerates or scrubs it, SEND IT still supplies drive, and BRAKE remains authoritative.
+ const cruise=6.15+flowMeter*.018;
+ if(isBraking){
+  let target,response;
+  if(brakeAge<.34){
+   const checkRatio=rideMode==='bike'?.70:rideMode==='snow'?.74:.78;
+   target=Math.max(2.65,current*checkRatio);
+   response=6.4;
+  }else{
+   target=1.55;
+   response=12;
+  }
+  target+=grade*8;
+  return current+(target-current)*Math.min(1,response*dt);
+ }
+ if(isSending){
+  const target=10.4+grade*18;
+  return current+(target-current)*Math.min(1,3.2*dt);
+ }
+ if(current<cruise){
+  const target=cruise+grade*16;
+  return current+(target-current)*Math.min(1,1.85*dt);
+ }
+ const excess=Math.max(0,current-cruise);
+ const baseDrag=rideMode==='bike'?.18:rideMode==='snow'?.12:.09;
+ const flowCarry=1-Math.max(0,Math.min(1,flowMeter/100))*.22;
+ const coastDrag=(baseDrag+excess*.16)*flowCarry;
+ const gradeAccel=grade*(rideMode==='bike'?8.0:rideMode==='snow'?8.8:7.4);
+ return current+(gradeAccel-coastDrag)*dt;
+}
+function lowProfileHazardResolution(type,currentSpeed,isBraking,isSending,isLineSetReady,currentLineSet){
+ // v160 Props/Hazards/Events: low-profile terrain nuisances are now setup problems, not binary walls.
+ // An experienced Jimmy can absorb them with a brake-set / prepared line. Charging them unprepared
+ // at real speed can still produce a legitimate crash. No bonus points are awarded for simply surviving.
+ const threshold=type==='snowbank'?7.8:type==='roots'?7.35:type==='pothole'?6.9:null;
+ if(threshold===null)return null;
+ const prepared=(isBraking&&!isSending)||isLineSetReady||currentLineSet>.42;
+ if(isSending||(currentSpeed>threshold&&!prepared))return {action:'crash',prepared,threshold};
+ const composed=prepared;
+ return {
+  action:'absorb',prepared:composed,threshold,
+  stabilityLoss:composed?3:8,
+  speedLoss:composed?.12:.32,
+  cue:type==='snowbank'?(composed?'SNOW BANK · ABSORB':'SNOW BANK · RIDE THROUGH'):
+      type==='roots'?(composed?'ROOT WEB · LIGHT HANDS':'ROOT WEB · ABSORB'):
+      (composed?'POTHOLE · UNWEIGHT':'POTHOLE · RIDE THROUGH')
+ };
+}
 function update(dt){
  animClock+=dt;
  landingSquash=Math.max(0,landingSquash-dt*5.5);
@@ -1808,23 +2067,7 @@ function update(dt){
  // simply by holding BRAKE, or accelerate him toward SEND IT cruise speed without ground contact.
  if(braking)brakeHold=Math.min(1.2,brakeHold+dt);else brakeHold=0;
  if(player.onGround){
-  const cruiseTarget=sendIt?10.4:6.15+meter*.018;
-  let target=cruiseTarget;
-  let response=sendIt?3.2:2.4;
-  if(braking){
-   if(brakeHold<.34){
-    const checkRatio=mode==='bike'?.70:mode==='snow'?.74:.78;
-    target=Math.max(2.65,speed*checkRatio);
-    response=6.4;
-   }else{
-    target=1.55;
-    response=12;
-   }
-  }
-  // Terrain now matters while Jimmy is connected to it: descents add speed, climbs scrub it;
-  // braking still wins over gravity.
-  target+=downhill*(braking?8:18);
-  speed+=(target-speed)*Math.min(1,response*dt);
+  speed=groundSpeedStep(speed,dt,downhill,braking,brakeHold,sendIt,mode,meter);
  }else{
   // Preserve takeoff momentum with only a very small passive drag. BRAKE remains useful for
   // pitch control and landing absorption; SEND IT remains useful for forward air rotation.
@@ -2212,8 +2455,12 @@ function update(dt){
    else if(o.type==='retroboard')nearLabel='RETRO JIMMY WAS HERE';
    else if(o.type==='garagebike')nearLabel='JIMMY\'S TRAILHEAD';
    else if(o.type==='miatasign')nearLabel='MIATA COUNTRY';
+   else if(o.type==='snowmarker')nearLabel='BOUNDARY MARKER';
+   else if(o.type==='snowbank')nearLabel='SOFT SNOW BANK';
+   else if(o.type==='trailflag')nearLabel='TRAIL FLAG';
    else if(o.type==='parkrail')nearLabel='PARK RAIL';
-   else if(o.type==='roots')nearLabel='ROOTS';
+   else if(o.type==='roots')nearLabel='ROOT WEB · BRAKE / SET';
+   else if(o.type==='pothole')nearLabel='POTHOLE · BRAKE / SET';
    else if(o.type==='roadpatch')nearLabel='ROAD PATCH';
    if(nearLabel&&o.advisory)nearLabel='ADVISORY · '+nearLabel;
    if(nearLabel&&o.lineChoice&&!o.wildlife&&!o.event&&!surfaceWarning)nearLabel=(o.lineChoice==='fast'?'FAST LINE · ':'CONTROL LINE · ')+nearLabel;
@@ -2221,15 +2468,37 @@ function update(dt){
   const terrainLaunchProp=o.type==='kicker'||o.type==='ramp'||o.type==='tabletop';
   if(!terrainLaunchProp&&!o.decor&&!o.yieldClear&&!o.hit&&player.x+player.w-5>sx&&player.x+5<sx+o.w&&player.y+player.h-4>oy&&player.y+7<oy+o.h){
    o.hit=true;
-   // v66 Props/Hazards: traffic cones are now breakaway soft props. Jimmy can clip one,
-   // lose a little composure, and keep the run alive instead of suffering a cheap full crash.
-   if(o.type==='cone'){
-    o.knocked=true;o.vx=-115;stability=Math.max(0,stability-12);score=Math.max(0,score-90);
-    physicsCue='CONE CLIP · KEEP IT MOVING';physicsCueTimer=.85;tone(150,.06,'square',.022,-45);
-   }else{crash(o);return}
+   const lowProfile=lowProfileHazardResolution(o.type,speed,braking,sendIt,lineSetReady,lineSet);
+   if(lowProfile){
+    if(lowProfile.action==='crash'){crash(o);return}
+    o.absorbed=true;
+    stability=Math.max(0,stability-lowProfile.stabilityLoss);
+    speed=Math.max(1.35,speed-lowProfile.speedLoss);
+    physicsCue=lowProfile.cue;physicsCueTimer=.88;
+    tone(lowProfile.prepared?235:175,.055,'triangle',.017,-24);
+   }else{
+    // v152 Props/Hazards/Events: course markers are breakaway soft props in all three sports.
+    // A composed/braking clip is a minor brush; SEND IT makes the same mistake more expensive,
+    // but none of these flexible markers should produce a full crash.
+    const softMarker=o.type==='cone'||o.type==='snowmarker'||o.type==='trailflag';
+    if(softMarker){
+     const hard=sendIt||speed>8.0;
+     const composed=braking&&!sendIt;
+     const stabilityLoss=composed?5:hard?18:10;
+     const scoreLoss=composed?35:hard?125:75;
+     const speedLoss=composed?.07:hard?.28:.15;
+     o.knocked=true;o.vx=mode==='snow'?-90:mode==='bike'?-105:-115;
+     stability=Math.max(0,stability-stabilityLoss);score=Math.max(0,score-scoreLoss);speed=Math.max(1.35,speed-speedLoss);
+     physicsCue=o.type==='snowmarker'?'BOUNDARY POLE BRUSH · KEEP RIDING':o.type==='trailflag'?'TRAIL FLAG CLIP · STAY LOOSE':'CONE CLIP · KEEP IT MOVING';
+     physicsCueTimer=.85;tone(composed?185:hard?125:150,.06,'square',.022,-35);
+    }else{crash(o);return}
+   }
   }
   if(!terrainLaunchProp&&!o.decor&&!o.passed&&sx+o.w<player.x){
-   o.passed=true;let clear=Math.abs((player.y+player.h)-oy);
+   o.passed=true;
+   // Do not award a close call or clean-pass points for a marker Jimmy actually clipped.
+   if(o.hit)continue;
+   let clear=Math.abs((player.y+player.h)-oy);
    if(clear<26){closeCalls++;meter=Math.min(100,meter+8);skillAward(180,'CLOSE CALL')}else score+=80;
    if(o.wildlife){meter=Math.min(100,meter+18);skillAward(750,'WILDLIFE ENCOUNTER');physicsCueTimer=1.05}
    else if(o.event){meter=Math.min(100,meter+10);skillAward(mode==='board'?360:300,mode==='board'?'HUMAN SLALOM':'THREAD THE NEEDLE');physicsCueTimer=.9}
@@ -2265,7 +2534,8 @@ function update(dt){
 }
 
 function crash(o){
- sfx('crash');setTimeout(playCrashVoice,520);running=false;ended=true;lastPostJumpTap=0;
+ lastCrashContext=makeCrashContext(o);
+ sfx('crash',o&&o.type?o.type:'obstacle');setTimeout(playCrashVoice,520);running=false;ended=true;lastPostJumpTap=0;
  physicsCue='DOUBLE-TAP JUMP · RESTART';physicsCueTimer=.78;
  let injury=injuries[Math.floor(Math.random()*injuries.length)];
  for(let i=0;i<32;i++)particles.push({x:player.x+18,y:player.y+25,vx:rand(-6,6),vy:rand(-8,2),life:rand(38,70)});
@@ -2324,7 +2594,8 @@ function crashSceneMarkup(hit,variant=0){
 
 function results(crashed,injury,hit,snapshot=null){
  card.className='card';
- let q=snapshot?.q||quotes[Math.floor(Math.random()*quotes.length)],final=snapshot?.final??Math.floor(score+(crashed?0:900));score=final;let rating=snapshot?.rating||runRating(),signature=snapshot?.signature||signatureChallenge(),title=snapshot?.title||masteryTitle(mode,rating.tier,signature.complete);
+ const runLineBalance=snapshot?.lineBalance||lineBalanceBonus(crashed);
+ let q=snapshot?.q||quotes[Math.floor(Math.random()*quotes.length)],final=snapshot?.final??Math.floor(score+(crashed?0:900)+runLineBalance.points);score=final;let rating=snapshot?.rating||runRating(),signature=snapshot?.signature||signatureChallenge(),title=snapshot?.title||masteryTitle(mode,rating.tier,signature.complete);
  const sceneVariant=snapshot?.sceneVariant??(crashed?(crashSceneSerial++%3):0);
  const runSurfaceReads=snapshot?.surfaceReads??surfaceReads;
  const runSurfaceReadPoints=snapshot?.surfaceReadPoints??surfaceReadPoints;
@@ -2342,27 +2613,36 @@ function results(crashed,injury,hit,snapshot=null){
  const tiedBest=snapshot?.tiedBest??(priorBest>0&&final===priorBest);
  const pbDelta=snapshot?.pbDelta??(priorBest>0?final-priorBest:final);
  const linecraftBefore=snapshot?.linecraftBefore||linecraftProgress(beforeRecord);
- if(!snapshot)save();
- const linecraftAfter=snapshot?.linecraftAfter||linecraftProgress(records()[mode]);
+ const consistencyBefore=snapshot?.consistencyBefore||consistencyProgress(beforeRecord);
+ if(!snapshot)save(crashed);
+ const afterRecord=records()[mode];
+ const linecraftAfter=snapshot?.linecraftAfter||linecraftProgress(afterRecord);
  const linecraftAdvanced=snapshot?.linecraftAdvanced??(linecraftAfter.tier>linecraftBefore.tier);
+ const consistencyAfter=snapshot?.consistencyAfter||consistencyProgress(afterRecord);
+ const consistencyAdvanced=snapshot?.consistencyAdvanced??(consistencyAfter.tier>consistencyBefore.tier);
+ const streakStatus=snapshot?.streakStatus||(crashed
+  ?`STREAK RESET · BEST ${consistencyAfter.best}`
+  :`STREAK ${consistencyAfter.current} · ${consistencyAfter.title}${consistencyAdvanced?' UP':''}`);
  // v141 UI/Sound: surface the v140 persistent progression exactly when it advances.
  // Re-opening RESULTS from details/share reuses the snapshot and does not replay the fanfare.
  if(!snapshot&&linecraftAdvanced)setTimeout(()=>sfx('linecraft'),170);
  appEl.classList.add('postrun');overlay.style.display='flex';
- let jimmyCrash=snapshot?.jimmyCrash||crashLine(hit),impact=impactReadout(hit);
+ const crashContext=snapshot?.crashContext||lastCrashContext;
+ const crashRead=snapshot?.crashRead||crashContextReadout(crashContext);
+ let jimmyCrash=snapshot?.jimmyCrash||crashLine(hit,crashContext),impact=impactReadout(hit);
  card.innerHTML=`<div class="location">${MODES[mode].name} — ${MODES[mode].tag}</div><h2>${crashed?'RUN TERMINATED':'JIMMY LIVES'}</h2>
- <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><p class="jimmy-note"><b>Jimmy debrief:</b> “${jimmyCrash}”</p>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
- <div class="result-summary"><div class="run-rating">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
+ <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><p class="jimmy-note"><span class="jimmy-read">${crashRead}</span><b>Jimmy debrief:</b> “${jimmyCrash}”</p>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
+ <div class="result-summary"><div class="run-rating">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'}${runLineBalance.points?' · '+runLineBalance.label+' +'+runLineBalance.points:''} · ${streakStatus} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
  <div class="result-actions"><button id="again">ONE MORE RUN</button><button id="menu">CHANGE SPORT</button><button id="details">FULL RUN STATS</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
  $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset()};$('menu').onclick=start;
- $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,jimmyCrash,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
- $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,jimmyCrash,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
+ $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
+ $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
  if(!snapshot)maybeTriggerJimCut();
 }
 function showRunDetails(run){
  const career=careerProgress();
  card.className='card run-details';
- card.innerHTML=`<div class="details-head"><div class="location">${MODES[mode].name} · FULL RUN STATS</div><h2>${run.title}</h2></div><div class="details-ratings"><div class="run-rating">RUN RATING <b>${run.rating.name}</b><span>${run.rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${run.signature.name}</b><span>${run.signature.complete?'CLEARED · +'+run.signature.reward+' points':run.signature.progress}</span></div><div class="run-rating">JIMMY CAREER <b>${career.title}</b><span>SIGNATURE STAMPS ${career.stamps}/3${career.complete?' · ALL-TERRAIN COMPLETE':' · NEXT: '+career.next}</span></div><div class="run-rating">ALL-TERRAIN TOUR <b>${career.tourTitle}</b><span>TOUR ${career.tourScore.toLocaleString()} · BALANCE +${career.balanceBonus.toLocaleString()} · ${career.tourMax?'TOP TIER':'NEXT '+career.nextTerrain}</span></div></div><div class="stats details-stats"><div class="stat">${run.isNewBest?'NEW PB':run.tiedBest?'TIED PB':'Score'}<b>${run.final}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Tricks landed<b>${tricksLanded}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div><div class="stat">Surface read<b>${run.surfaceReads?run.surfaceReads+' · +'+run.surfaceReadPoints:'0'}</b></div><div class="stat">Line shot<b>${run.lineShots?run.lineShots+' · +'+run.lineShotPoints:'0'}</b></div><div class="stat">Expert transfer<b>${run.expertTransfers?run.expertTransfers+' · +'+run.expertTransferPoints:'0'}</b></div><div class="stat">Clear-line read<b>${run.trafficReads?run.trafficReads+' · +'+run.trafficReadPoints:'0'}</b></div></div><div class="secondary details-actions"><button id="detailsBack">BACK TO RESULTS</button><button id="scoreBtn">SCOREBOARD</button></div>`;
+ card.innerHTML=`<div class="details-head"><div class="location">${MODES[mode].name} · FULL RUN STATS</div><h2>${run.title}</h2></div><div class="details-ratings"><div class="run-rating">RUN RATING <b>${run.rating.name}</b><span>${run.rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${run.signature.name}</b><span>${run.signature.complete?'CLEARED · +'+run.signature.reward+' points':run.signature.progress}</span></div><div class="run-rating">CONSISTENCY <b>${run.consistencyAfter?.title||'OPEN'}</b><span>${run.streakStatus||'STREAK 0 · OPEN'}${run.consistencyAfter&&!run.consistencyAfter.maxed?' · NEXT BEST '+run.consistencyAfter.nextAt:''}</span></div><div class="run-rating">JIMMY CAREER <b>${career.title}</b><span>SIGNATURE STAMPS ${career.stamps}/3${career.complete?' · ALL-TERRAIN COMPLETE':' · NEXT: '+career.next}</span></div><div class="run-rating">ALL-TERRAIN TOUR <b>${career.tourTitle}</b><span>TOUR ${career.tourScore.toLocaleString()} · BALANCE +${career.balanceBonus.toLocaleString()} · ${career.tourMax?'TOP TIER':'NEXT '+career.nextTerrain}</span></div></div><div class="stats details-stats"><div class="stat">${run.isNewBest?'NEW PB':run.tiedBest?'TIED PB':'Score'}<b>${run.final}</b></div><div class="stat">Finish streak<b>${run.consistencyAfter?.current||0} · BEST ${run.consistencyAfter?.best||0}</b></div><div class="stat">Line balance<b>${run.lineBalance?.points?'+'+run.lineBalance.points+' · '+run.lineBalance.paired+' pair'+(run.lineBalance.paired===1?'':'s'):'0'}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Tricks landed<b>${tricksLanded}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div><div class="stat">Surface read<b>${run.surfaceReads?run.surfaceReads+' · +'+run.surfaceReadPoints:'0'}</b></div><div class="stat">Line shot<b>${run.lineShots?run.lineShots+' · +'+run.lineShotPoints:'0'}</b></div><div class="stat">Expert transfer<b>${run.expertTransfers?run.expertTransfers+' · +'+run.expertTransferPoints:'0'}</b></div><div class="stat">Clear-line read<b>${run.trafficReads?run.trafficReads+' · +'+run.trafficReadPoints:'0'}</b></div></div><div class="secondary details-actions"><button id="detailsBack">BACK TO RESULTS</button><button id="scoreBtn">SCOREBOARD</button></div>`;
  $('detailsBack').onclick=()=>results(run.crashed,run.injury,run.hit,run);$('scoreBtn').onclick=showScores
 }
 function showShareCard(run){
@@ -3407,6 +3687,52 @@ function launchSurfaceContinuityPass(){
  ctx.restore();
 }
 
+function environmentSpeedCueStrength(currentSpeed){
+ // v159 Environment Graphics: use actual velocity, not SEND IT state, so v156's earned
+ // momentum remains visible after the button is released. Visual only.
+ const t=Math.max(0,Math.min(1,(currentSpeed-6.4)/3.7));
+ return t*t*(3-2*t);
+}
+function speedDepthCuePass(){
+ const strength=environmentSpeedCueStrength(speed);
+ if(strength<.015)return;
+ const t=animClock;
+ ctx.save();
+ ctx.lineCap='round';
+ if(mode==='snow'){
+  // Wind-skated surface ribbons stay low and nearly horizontal; faster travel lengthens them.
+  const count=6+Math.round(strength*6),len=18+strength*48;
+  ctx.strokeStyle=`rgba(239,249,253,${(.08+strength*.16).toFixed(3)})`;
+  ctx.lineWidth=1+strength*.8;
+  for(let i=0;i<count;i++){
+   const x=((i*137-(world*.88+t*18)%137)-40),gx=groundY(Math.max(0,Math.min(W,x)));
+   const y=gx+5+(i%3)*5;
+   ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+len*.48,y-2-strength*2,x+len,y-1);ctx.stroke();
+  }
+ }else if(mode==='bike'){
+  // OC speed reads as low dry dust wakes and scrub flashes, never as a cartoon cloud.
+  const count=5+Math.round(strength*5),len=16+strength*38;
+  for(let i=0;i<count;i++){
+   const x=((i*151-(world*.84+t*15)%151)-55),gx=groundY(Math.max(0,Math.min(W,x)));
+   const y=gx+7+(i%3)*4;
+   ctx.globalAlpha=.06+strength*.11;ctx.fillStyle='#c7a77d';
+   ctx.beginPath();ctx.ellipse(x,y,len,2.1+strength*1.9,-.05,0,Math.PI*2);ctx.fill();
+   if(i%2===0){ctx.globalAlpha=.12+strength*.12;ctx.strokeStyle='#8c744f';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+8,y-4);ctx.lineTo(x+14+strength*8,y-9);ctx.stroke()}
+  }
+ }else{
+  // SoCal pavement uses fast near-field seam/glint motion so speed reads without screen blur.
+  const count=6+Math.round(strength*6),len=24+strength*56;
+  ctx.lineWidth=1.1+strength*.6;
+  for(let i=0;i<count;i++){
+   const x=((i*128-(world*.94+t*20)%128)-60),gx=groundY(Math.max(0,Math.min(W,x)));
+   const y=gx+7+(i%4)*4;
+   ctx.strokeStyle=`rgba(215,221,223,${(.06+strength*.15).toFixed(3)})`;
+   ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y+1);ctx.stroke();
+   if(i%3===0){ctx.strokeStyle=`rgba(238,187,139,${(.04+strength*.08).toFixed(3)})`;ctx.beginPath();ctx.moveTo(x+len*.25,y-2);ctx.lineTo(x+len*.70,y-1);ctx.stroke()}
+  }
+ }
+ ctx.restore();
+}
 function dynamicAtmospherePass(){
  // v43 environment-graphics pass: moving atmospheric detail that reinforces place and speed without affecting gameplay.
  ctx.save();
@@ -3485,7 +3811,7 @@ function drawScene(){
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle);safeVisualPass('environmentSignature',environmentSignaturePass);safeVisualPass('foregroundDepth',foregroundDepth);safeVisualPass('dynamicAtmosphere',dynamicAtmospherePass)
+ ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle);safeVisualPass('environmentSignature',environmentSignaturePass);safeVisualPass('foregroundDepth',foregroundDepth);safeVisualPass('speedDepthCue',speedDepthCuePass);safeVisualPass('dynamicAtmosphere',dynamicAtmospherePass)
 }
 function drawLocationIntro(now){
  if(!introActive)return;
@@ -3585,6 +3911,36 @@ function drawObstacle(o){
  else if(o.type==='drop'){ctx.fillStyle=mode==='snow'?'#78909d':'#5d4937';ctx.strokeStyle='#27333a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x+o.w,y+3);ctx.lineTo(x+o.w,y+o.h);ctx.lineTo(x,y+o.h);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#f2b84b';ctx.fillRect(x+5,y+7,o.w-10,4)}
  else if(o.type==='lion'){ctx.fillStyle='#b78b55';ctx.fillRect(x+10,y+10,34,14);ctx.beginPath();ctx.arc(x+46,y+12,9,0,Math.PI*2);ctx.fill();ctx.fillRect(x+9,y+21,5,13);ctx.fillRect(x+34,y+21,5,13)}
  else if(o.type==='bear'){ctx.fillStyle='#3c2a20';ctx.beginPath();ctx.arc(x+23,y+27,20,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(x+34,y+10,13,0,Math.PI*2);ctx.fill();ctx.fillRect(x+10,y+40,7,14);ctx.fillRect(x+29,y+40,7,14)}
+ else if(o.type==='snowbank'){
+  ctx.save();
+  const base=y+o.h;
+  ctx.fillStyle=o.absorbed?'rgba(216,235,244,.76)':'rgba(232,245,250,.92)';
+  ctx.strokeStyle='rgba(110,151,174,.68)';ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.moveTo(x-3,base);ctx.quadraticCurveTo(x+8,y-1,x+24,y+4);ctx.quadraticCurveTo(x+42,y-5,x+o.w+4,base);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x+8,y+6);ctx.quadraticCurveTo(x+28,y-1,x+51,y+6);ctx.stroke();
+  if(o.absorbed){ctx.strokeStyle='rgba(92,132,153,.48)';ctx.beginPath();ctx.moveTo(x+15,base-2);ctx.lineTo(x+28,base-5);ctx.moveTo(x+35,base-3);ctx.lineTo(x+47,base-6);ctx.stroke()}
+  ctx.restore();
+ }
+ else if(o.type==='snowmarker'){
+  ctx.save();
+  const px=x+o.w*.5,base=y+o.h;
+  if(o.knocked){ctx.translate(px,base);ctx.rotate(-1.02);ctx.translate(-px,-base)}
+  ctx.strokeStyle='#284e72';ctx.lineWidth=4;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(px,base);ctx.quadraticCurveTo(px+2,y+22,px-1,y+3);ctx.stroke();
+  ctx.fillStyle='#f0c247';ctx.fillRect(px-7,y+7,14,7);
+  ctx.fillStyle='rgba(238,248,252,.72)';ctx.beginPath();ctx.ellipse(px,base+2,12,3,0,0,Math.PI*2);ctx.fill();
+  ctx.restore()
+ }
+ else if(o.type==='trailflag'){
+  ctx.save();
+  const px=x+5,base=y+o.h;
+  if(o.knocked){ctx.translate(px,base);ctx.rotate(-1.08);ctx.translate(-px,-base)}
+  ctx.strokeStyle='#4d3a2d';ctx.lineWidth=3;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(px,base);ctx.lineTo(px,y+2);ctx.stroke();
+  ctx.fillStyle='#e67a33';ctx.beginPath();ctx.moveTo(px+1,y+5);ctx.lineTo(px+16,y+10);ctx.lineTo(px+1,y+16);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(78,57,39,.42)';ctx.beginPath();ctx.ellipse(px,base+2,11,3,0,0,Math.PI*2);ctx.fill();
+  ctx.restore()
+ }
  else if(o.type==='cone'){
   ctx.save();
   if(o.knocked){ctx.translate(x+o.w/2,y+o.h-3);ctx.rotate(-1.12);ctx.translate(-(x+o.w/2),-(y+o.h-3))}
@@ -3779,6 +4135,10 @@ function drawObstacle(o){
  // v139 Props/Hazards/Events: staged traffic and operations now have a short physical intent tell.
  // This is presentation-only and reuses the existing reaction state: early braking still produces LINE CLEAR;
  // an un-read crossing briefly shows COMMITTING plus actor-specific body language / vehicle signals.
+ if(o.absorbed&&(o.type==='roots'||o.type==='pothole')){
+  ctx.save();ctx.strokeStyle='rgba(242,184,75,.62)';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(x+o.w*.30,y-5);ctx.lineTo(x+o.w*.42,y-10);ctx.moveTo(x+o.w*.58,y-6);ctx.lineTo(x+o.w*.70,y-11);ctx.stroke();ctx.restore();
+ }
  if((o.event||o.maintenance)&&!o.decor&&o.reacted&&!o.yieldClear&&o.reactionTimer>0){
   const pulse=.55+.45*Math.sin(animClock*24);
   ctx.save();
@@ -3827,9 +4187,21 @@ function drawPhysicsCue(){
  ctx.fillStyle='#f2b84b';ctx.fillText(physicsCue,x,y);ctx.restore();
 }
 
+function carriedSpeedStance(rideMode,currentSpeed,isSending,isBraking,isGrounded){
+ // v158 Jimmy & animation: v156 made earned speed persist physically; the character now
+ // preserves that information visually after SEND IT is released. This is animation-only.
+ if(!isGrounded||isBraking)return 0;
+ const start=rideMode==='board'?7.0:rideMode==='bike'?7.25:7.35;
+ const full=rideMode==='board'?9.0:rideMode==='bike'?9.25:9.45;
+ let t=Math.max(0,Math.min(1,(currentSpeed-start)/(full-start)));
+ t=t*t*(3-2*t);
+ if(isSending)t=Math.max(t,.72);
+ return t;
+}
 function drawPlayer(){
  const airborne=!player.onGround;
- const bob=player.onGround?Math.sin(animClock*8.5+world*.022)*.9:0;
+ const speedStance=carriedSpeedStance(mode,speed,sendIt,braking,player.onGround);
+ const bob=player.onGround?Math.sin(animClock*8.5+world*.022)*(.9-speedStance*.48):0;
  const squash=landingSquash*4.8;
  // v111: touchdown recovery has a brief load -> extension -> settle arc.
  // Rough landings use the same window for a visible correction instead of a heroic pose.
@@ -3852,7 +4224,8 @@ function drawPlayer(){
  // trajectory, rotation, landing thresholds, or scoring.
  const riderWx=world+player.x;
  const landingProbeX=riderWx+Math.max(34,speed*7.5);
- const landingProbeY=airborne?groundYAt(landingProbeX):player.y+player.h;
+ // v151 blocker fix: landingProbeX is world-space; groundY() expects screen-space.
+ const landingProbeY=airborne?groundY(landingProbeX-world):player.y+player.h;
  const landingGap=airborne?Math.max(0,landingProbeY-(player.y+player.h)):999;
  const landingSpot=airborne&&player.vy>.5?Math.max(0,Math.min(1,1-landingGap/112)):0;
  const landingReady=airLanding||(airborne&&player.vy>.8&&landingSpot>.22);
@@ -3934,21 +4307,22 @@ function drawPlayer(){
   }
  }
  const pumpLean=player.onGround?(pumpRelease*.055-pumpLoad*.025):0;
- const baseLean=(brakePose?-.10:sendPose?.11:0)+pumpLean+(airborne?Math.max(-.16,Math.min(.16,player.vy*.009)):0);
+ const speedLean=player.onGround&&!brakePose?speedStance*(mode==='snow'?.025:mode==='bike'?.035:.050):0;
+ const baseLean=(brakePose?-.10:sendPose?.11:0)+speedLean+pumpLean+(airborne?Math.max(-.16,Math.min(.16,player.vy*.009)):0);
  // The head stays calmer than the chassis/body and progressively re-levels as the landing
  // comes into range, creating a visible "eyes on the exit" cue without impossible neck motion.
  // v129 Jimmy & animation: Jimmy now looks through turns and his expression follows what he is
  // actually doing: focused on setup/landing, committed under SEND IT, and composed under braking.
  // This is visual-only and never changes steering, speed, stability, collision, or scoring state.
- const groundedLook=player.onGround?(-carve*(mode==='snow'?.055:mode==='bike'?.042:.035)*pace):0;
+ const groundedLook=player.onGround?(-carve*(mode==='snow'?.055:mode==='bike'?.042:.035)*pace*(1-speedStance*.42)):0;
  const setupLook=player.onGround?(-.035*preload-.026*naturalLoad+.012*naturalExtension):0;
  const headSpotAngle=airborne
   ?Math.max(-.24,Math.min(.24,-(player.rot+baseLean)*(.18+.48*landingSpot)))
   :groundedLook+setupLook;
  const faceBrace=(landingReady||airBack||brakePose)?1:0;
- const faceCommit=(airForward||sendPose)?1:0;
+ const faceCommit=Math.max((airForward||sendPose)?1:0,speedStance*.72);
  const faceFloat=(airFloat&&!landingReady&&!airBack)?Math.min(1,airTime/.65):0;
- const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+naturalLoad*.58+naturalExtension*.20+(linePose?.32:0)));
+ const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+naturalLoad*.58+naturalExtension*.20+(linePose?.32:0)+speedStance*.24));
  const carveLean=player.onGround?carve*(mode==='snow'?.075:mode==='bike'?.045:.025)*pace:0;
  ctx.save();
  ctx.translate(player.x+18,player.y+26+bob+squash*.22);
@@ -4032,7 +4406,7 @@ function drawPlayer(){
  if(mode==='snow'){
   // Snowboard: sideways stance, low edge-set under braking, compact grab/tweak in longer air.
   // v73 Retro '93 uses the same competent physics/animation with a distinct period kit and old-school deck silhouette.
-  const crouch=(sendPose?3.2:0)+(brakePose?5.2:0)+(linePose?2.0:0)+(preload*5.0)-(launchExtension*4.1)+(naturalLoad*3.8)-(naturalExtension*3.4)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airborne?airStyle*1.5:0)+(landingSpot*2.2)+(airLanding?1.2:0);
+  const crouch=(sendPose?3.2:0)+(speedStance*2.8)+(brakePose?5.2:0)+(linePose?2.0:0)+(preload*5.0)-(launchExtension*4.1)+(naturalLoad*3.8)-(naturalExtension*3.4)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airborne?airStyle*1.5:0)+(landingSpot*2.2)+(airLanding?1.2:0);
   const hipY=9+crouch*.58, shoulderY=-7+crouch*.28, headY=-19+crouch*.30;
   const tweak=airborne?Math.sin(Math.min(1,airStyle)*Math.PI)*5:0;
   head(2,headY,8);
@@ -4074,8 +4448,9 @@ function drawPlayer(){
    limb(-1,shoulderY,-12-drive*3,shoulderY+5-drive*6,4);
    limb(0,shoulderY,12+drive*5,shoulderY+3-drive*8,4);
   }else{
-   const spread=brakePose?17:sendPose?12:20;
-   limb(-1,shoulderY,-spread,shoulderY+(carve*4),4);limb(0,shoulderY,spread-2,shoulderY-(carve*3),4);
+   const spread=brakePose?17:sendPose?12:20-speedStance*5.5;
+   const quiet=1-speedStance*.55;
+   limb(-1,shoulderY,-spread,shoulderY+(carve*4*quiet),4);limb(0,shoulderY,spread-2,shoulderY-(carve*3*quiet),4);
   }
   // knees visibly absorb landings; bindings anchor the feet to the deck
   limb(-2,hipY,-13,18+crouch*.18,4.2);limb(-13,18+crouch*.18,-14,24,4.2);
@@ -4087,7 +4462,7 @@ function drawPlayer(){
 
  }else if(mode==='bike'){
   // MTB: elbows and knees stay active, body moves independently from the bike, suspension compresses on impact.
-  const compression=squash*1.05+(brakePose?2.6:0)+(linePose?1.2:0)+(preload*4.2)-(launchExtension*3.7)+(naturalLoad*3.6)-(naturalExtension*3.1)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*2.5)+(airLanding?1.0:0);
+  const compression=squash*1.05+(speedStance*1.8)+(brakePose?2.6:0)+(linePose?1.2:0)+(preload*4.2)-(launchExtension*3.7)+(naturalLoad*3.6)-(naturalExtension*3.1)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*2.5)+(airLanding?1.0:0);
   const rear={x:-16,y:25},front={x:20,y:25};
   const bikePitch=airborne?Math.max(-.08,Math.min(.08,-player.vy*.004)):0;
   ctx.save();ctx.rotate(bikePitch);
@@ -4096,14 +4471,14 @@ function drawPlayer(){
   const crankY=11+compression*.28;
   ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(rear.x,rear.y);ctx.lineTo(0,crankY);ctx.lineTo(front.x,front.y);ctx.lineTo(rear.x,rear.y);ctx.moveTo(0,crankY);ctx.lineTo(12,8+compression*.12);ctx.lineTo(18,7);ctx.stroke();
   ctx.restore();
-  const hipX=landingReady?-4:airForward?4:airBack?-6:airborne?-1:brakePose?-5:sendPose?4:1;
+  const hipX=landingReady?-4:airForward?4:airBack?-6:airborne?-1:brakePose?-5:sendPose?4:1+speedStance*2.0;
   const pumpHipDrive=pumpRelease*3.8-pumpLoad*1.2;
   const recoveryDrive=recoveryFlow*3.0-recoveryCorrection*1.4;
-  const hipY=7+compression*.34, shoulderX=(airForward?8:airBack?-2:sendPose?7:brakePose?-2:4)+pumpHipDrive+recoveryDrive, shoulderY=-8+compression*.22;
+  const hipY=7+compression*.34, shoulderX=(airForward?8:airBack?-2:sendPose?7:brakePose?-2:4+speedStance*2.8)+pumpHipDrive+recoveryDrive, shoulderY=-8+compression*.22;
   head(shoulderX+1,-20+compression*.18,7.6);
   limb(shoulderX, -12+compression*.18, shoulderX, shoulderY,4.5);torso(shoulderX,shoulderY,hipX,hipY,4.8);
   // both hands stay on bars; elbows flare more under braking and in rough landings
-  const elbowDrop=(landingReady?6:airBack?7:airForward?1:brakePose?7:airborne?2:4)+(landingSpot*1.4)+(naturalLoad*2.1)-(naturalExtension*.8)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2);
+  const elbowDrop=(landingReady?6:airBack?7:airForward?1:brakePose?7:airborne?2:4+speedStance*1.8)+(landingSpot*1.4)+(naturalLoad*2.1)-(naturalExtension*.8)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2);
   limb(shoulderX,shoulderY,11,shoulderY+elbowDrop,4);limb(11,shoulderY+elbowDrop,18,7,3.8);
   limb(shoulderX-1,shoulderY,-4,shoulderY+elbowDrop+1,4);limb(-4,shoulderY+elbowDrop+1,15,7,3.8);
   // pedals / knees
@@ -4112,7 +4487,7 @@ function drawPlayer(){
 
  }else{
   // Longboard: SEND IT becomes a compact speed tuck; braking reads as a deliberate speed-check carve.
-  const tuck=sendPose?1:0;
+  const tuck=Math.max(sendPose?1:0,speedStance*.92);
   const check=brakePose?1:0;
   const crouch=2+squash+(tuck*6)+(check*3)+(linePose*1.5)+(preload*4.6)-(launchExtension*3.3)+(naturalLoad*3.2)-(naturalExtension*2.8)+(pumpLoad*4.9)-(pumpRelease*2.5)+(recoveryLoad*3.0)-(recoveryFlow*2.0)-(recoveryAbsorb*.6)+(landingSpot*2.8)+(airLanding?1.2:0);
   const bank=player.onGround?carve*.10*pace*(check?1.75:1):0;
