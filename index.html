@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A44</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A46</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -266,7 +266,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A44';
+const BUILD_VERSION='v221-A46';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1615,6 +1615,39 @@ function rampMomentumTransfer(currentSpeed,faceAngle,sending,manualPop,prepared,
 function rampControlRollThrough(currentSpeed,brakingNow,brakeTime,sending,manualPop,rideMode){
  const rollCeiling=rideMode==='bike'?4.60:rideMode==='snow'?4.80:4.90;
  return !!(brakingNow&&!sending&&!manualPop&&brakeTime>=.18&&currentSpeed<=rollCeiling);
+}
+// v221-A45 Jimmy & animation: a controlled A43/A44 ramp roll now has its own grounded
+// absorption/recenter envelope instead of borrowing the launch extension pose. This is visual-only:
+// the envelope reads existing ramp-roll state and never changes speed, terrain contact, launch rules,
+// scoring, stability, collision, or braking strength.
+function rampRollAnimationEnvelope(u,releaseU,rollingOrCommitted){
+ if(!rollingOrCommitted)return{active:0,load:0,settle:0};
+ const start=-.22,end=1.04;
+ if(u<start||u>end)return{active:0,load:0,settle:0};
+ if(u<releaseU){
+  const t=Math.max(0,Math.min(1,(u-start)/Math.max(.001,releaseU-start)));
+  const s=t*t*(3-2*t);
+  return{active:1,load:.16+.84*s,settle:0};
+ }
+ const t=Math.max(0,Math.min(1,(u-releaseU)/Math.max(.001,end-releaseU)));
+ const s=t*t*(3-2*t);
+ return{active:1,load:1-s,settle:s};
+}
+function rampRollAnimationPose(riderWx){
+ const releaseU=mode==='snow'?.69:mode==='bike'?.57:.71;
+ const rampPreloadLifetime=700;
+ for(const f of terrainFeatures){
+  if(f.kind!=='ramp')continue;
+  const u=(riderWx-f.x)/Math.max(1,f.width);
+  if(u<-.22||u>1.04)continue;
+  const manualRampPop=rampPopQueued&&rampPopFeatureLabel===(f.label||'')&&performance.now()-rampPopQueuedAt<=rampPreloadLifetime;
+  const controlled=rampControlRollThrough(speed,braking,brakeHold,sendIt,manualRampPop,mode);
+  const key=f.label||('ramp-'+Math.round(f.x));
+  const committed=rampRollCueFeature===key&&u>=releaseU;
+  const envelope=rampRollAnimationEnvelope(u,releaseU,controlled||committed);
+  if(envelope.active)return{...envelope,label:key,u,releaseU};
+ }
+ return{active:0,load:0,settle:0,label:'',u:-9,releaseU};
 }
 // v221-A27 higher-refinement gameplay physics: touchdown load is measured relative to the
 // landing surface, not just screen-down velocity. A downhill catch is moving away beneath Jimmy's
@@ -4714,6 +4747,64 @@ function chaseSurfaceColor(i){
 }
 function chaseShoulderColor(){return mode==='snow'?'#b6cbd7':mode==='bike'?'#67513c':'#33383c'}
 
+function drawChasePlaceIdentityPass(riderWx,look,horizon){
+ // v221-A46 Environment Graphics: CHASE BETA now carries recognizable place identity beyond
+ // the rideable ribbon. Everything here is visual-only and world-anchored where it moves, so
+ // the over-the-shoulder prototype reads as Big Bear, Orange County or SoCal at a glance.
+ ctx.save();
+ // Atmosphere first: match the side-view lighting language without adding blur or overlays.
+ if(mode==='snow'){
+  sunGlow(W*.78,H*.14,Math.min(86,W*.12),'#fff4cf');
+  ctx.globalAlpha=.16;ctx.fillStyle='#f6fbff';
+  for(let i=0;i<5;i++){const x=(i*223-(world*.012)%223)-70,y=H*.10+(i%3)*15;ctx.beginPath();ctx.ellipse(x,y,70+(i%2)*26,8,0,0,Math.PI*2);ctx.fill()}
+ }else if(mode==='bike'){
+  sunGlow(W*.82,H*.17,Math.min(96,W*.14),'#ffe2a3');
+  const haze=ctx.createLinearGradient(0,horizon-22,0,horizon+72);haze.addColorStop(0,'rgba(246,212,160,0)');haze.addColorStop(1,'rgba(240,199,137,.24)');ctx.fillStyle=haze;ctx.fillRect(0,horizon-22,W,100);
+  // Far foothill neighborhood / terracotta roofs, intentionally distant and non-collidable.
+  ctx.globalAlpha=.20;const houseStep=92,phase=(world*.018)%houseStep;
+  for(let i=-1;i<Math.ceil(W/houseStep)+2;i++){
+   const x=i*houseStep-phase,y=horizon+20+(i%3)*3,w=48+(i%2)*10;
+   ctx.fillStyle='#c7b297';ctx.fillRect(x,y-11,w,11);ctx.fillStyle='#9a6245';ctx.beginPath();ctx.moveTo(x-3,y-11);ctx.lineTo(x+w*.5,y-24);ctx.lineTo(x+w+3,y-11);ctx.closePath();ctx.fill();
+  }
+ }else{
+  sunGlow(W*.77,H*.15,Math.min(112,W*.16),'#ffd59e');
+  const haze=ctx.createLinearGradient(0,horizon-28,0,horizon+78);haze.addColorStop(0,'rgba(244,201,176,0)');haze.addColorStop(1,'rgba(238,180,138,.28)');ctx.fillStyle=haze;ctx.fillRect(0,horizon-28,W,108);
+  // Low coastal-basin skyline bands sell depth behind the palms and road furniture.
+  ctx.globalAlpha=.18;const step=78,phase=(world*.014)%step;
+  for(let i=-1;i<Math.ceil(W/step)+2;i++){const x=i*step-phase,h=10+(i%4)*5;ctx.fillStyle=i%3===0?'#6e7173':'#85817d';ctx.fillRect(x,horizon+22-h,52+(i%2)*14,h)}
+ }
+ ctx.restore();
+
+ // Route-edge infrastructure is stable in course coordinates, so it approaches naturally with speed.
+ const spacing=mode==='snow'?500:mode==='bike'?430:470;
+ const first=Math.floor((riderWx+120)/spacing)*spacing;
+ const anchors=[];
+ for(let wx=first;wx<riderWx+look;wx+=spacing){
+  const gap=wx-riderWx;if(gap<120||gap>look)continue;
+  const p=chaseProjection(gap);if(p.scale<.12)continue;
+  anchors.push({wx,p,idx:Math.floor(wx/spacing)});
+ }
+ if(!anchors.length)return;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ if(mode==='snow'){
+  // A chairlift line stays outside the active run: towers, cable and occasional chair silhouettes.
+  const pts=anchors.map(a=>({a,x:a.p.x-a.p.half-22*a.p.scale,y:a.p.y-53*a.p.scale}));
+  ctx.strokeStyle='rgba(45,55,61,.46)';ctx.lineWidth=1.2;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();
+  for(const q of pts){const sc=q.a.p.scale,baseY=q.a.p.y,x=q.x;ctx.strokeStyle='rgba(47,56,61,.72)';ctx.lineWidth=Math.max(1,2.5*sc);ctx.beginPath();ctx.moveTo(x,baseY+5*sc);ctx.lineTo(x,q.y+4*sc);ctx.moveTo(x-13*sc,q.y+8*sc);ctx.lineTo(x+13*sc,q.y+8*sc);ctx.stroke();if(q.a.idx%2===0){ctx.strokeStyle='rgba(35,42,47,.58)';ctx.lineWidth=Math.max(.8,1.3*sc);ctx.beginPath();ctx.moveTo(x+13*sc,q.y);ctx.lineTo(x+18*sc,q.y+10*sc);ctx.lineTo(x+30*sc,q.y+10*sc);ctx.stroke()}}
+ }else if(mode==='bike'){
+  // Low trail-edge posts and sandstone outcrops make the OC shoulder read like dry foothill singletrack.
+  const side=1;const pts=anchors.map(a=>({a,x:a.p.x+side*(a.p.half+18*a.p.scale),y:a.p.y}));
+  ctx.strokeStyle='rgba(95,73,51,.32)';ctx.lineWidth=1;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q.x,q.y-13*q.a.p.scale):ctx.moveTo(q.x,q.y-13*q.a.p.scale));ctx.stroke();
+  for(const q of pts){const sc=q.a.p.scale,x=q.x,y=q.y;ctx.strokeStyle='rgba(91,67,47,.62)';ctx.lineWidth=Math.max(1,2.6*sc);ctx.beginPath();ctx.moveTo(x,y+3*sc);ctx.lineTo(x,y-25*sc);ctx.stroke();ctx.fillStyle=q.a.idx%2?'rgba(126,92,62,.60)':'rgba(153,115,76,.58)';ctx.beginPath();ctx.ellipse(x-13*sc,y+2*sc,13*sc,5*sc,-.10,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(86,104,59,.54)';ctx.beginPath();ctx.arc(x+9*sc,y-5*sc,8*sc,0,Math.PI*2);ctx.fill()}
+ }else{
+  // SoCal gets a palm / utility rhythm outside the pavement with a light overhead wire.
+  const side=-1;const pts=anchors.map(a=>({a,x:a.p.x+side*(a.p.half+20*a.p.scale),y:a.p.y}));
+  ctx.strokeStyle='rgba(55,58,60,.34)';ctx.lineWidth=1;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q.x,q.y-48*q.a.p.scale):ctx.moveTo(q.x,q.y-48*q.a.p.scale));ctx.stroke();
+  for(const q of pts){const sc=q.a.p.scale,x=q.x,y=q.y;if(q.a.idx%2===0){ctx.strokeStyle='rgba(47,57,50,.72)';ctx.lineWidth=Math.max(1,2.4*sc);ctx.beginPath();ctx.moveTo(x,y+4*sc);ctx.quadraticCurveTo(x-3*sc,y-25*sc,x+1*sc,y-49*sc);ctx.stroke();ctx.fillStyle='rgba(49,78,60,.68)';for(let a=0;a<6;a++){const ang=-Math.PI*.9+a*Math.PI*.34;ctx.save();ctx.translate(x+1*sc,y-49*sc);ctx.rotate(ang);ctx.beginPath();ctx.ellipse(9*sc,0,11*sc,2.2*sc,0,0,Math.PI*2);ctx.fill();ctx.restore()}}else{ctx.strokeStyle='rgba(54,57,60,.68)';ctx.lineWidth=Math.max(1,2.4*sc);ctx.beginPath();ctx.moveTo(x,y+4*sc);ctx.lineTo(x,y-49*sc);ctx.moveTo(x-10*sc,y-42*sc);ctx.lineTo(x+10*sc,y-42*sc);ctx.stroke();ctx.fillStyle='rgba(176,139,108,.36)';ctx.fillRect(x+8*sc,y-18*sc,24*sc,18*sc)}}
+ }
+ ctx.restore();
+}
+
 function drawChaseSurfaceMaterialPass(riderWx,look){
  // v221-A38 Environment Graphics: carry A30's world-anchored material language into CHASE BETA.
  // Every fleck belongs to a stable course coordinate and is projected through the same camera as
@@ -4823,6 +4914,7 @@ function drawChaseScene(){
  ctx.save();ctx.globalAlpha=.55;ctx.fillStyle=mode==='snow'?'#5f7d90':mode==='bike'?'#7e775f':'#777b7d';ctx.beginPath();ctx.moveTo(0,horizon+24);for(let x=0;x<=W;x+=W/8){const y=horizon-26-Math.sin(x*.021+world*.0007)*19;ctx.lineTo(x,y)}ctx.lineTo(W,horizon+42);ctx.lineTo(0,horizon+42);ctx.closePath();ctx.fill();ctx.restore();
  // Shoulder field beneath the path.
  ctx.fillStyle=chaseShoulderColor();ctx.fillRect(0,horizon,W,H-horizon);
+ drawChasePlaceIdentityPass(riderWx,look,horizon);
  const bands=36;
  for(let i=0;i<bands;i++){
   const dFar=look-(i/bands)*look,dNear=look-((i+1)/bands)*look,pf=chaseProjection(dFar),pn=chaseProjection(dNear);
@@ -4850,6 +4942,8 @@ function chaseRiderPose(){
  // state but never changes speed, launch, landing, collision, score, or route timing.
  const riderWx=world+player.x+player.w*.5;
  let rampLoad=0,rampPop=0,terrainLoad=0,terrainRelease=0,landing=0;
+ const rampRoll=player.onGround?rampRollAnimationPose(riderWx):{active:0,load:0,settle:0,label:''};
+ let rampRollLoad=rampRoll.load||0,rampRollSettle=rampRoll.settle||0;
  if(player.onGround){
   const rampAnim=mode==='snow'?{lip:.70,approach:235}:mode==='bike'?{lip:.58,approach:205}:{lip:.72,approach:220};
   for(const f of terrainFeatures){
@@ -4860,7 +4954,9 @@ function chaseRiderPose(){
    }else if(riderWx>=face&&riderWx<lip){
     const t=Math.max(0,Math.min(1,(riderWx-face)/Math.max(1,lip-face)));
     rampLoad=Math.max(rampLoad,Math.max(.04,1-(t*t*(3-2*t))*.96));
-    const e=Math.max(0,Math.min(1,(t-.34)/.66));rampPop=Math.max(rampPop,e*e*(3-2*e));
+    const e=Math.max(0,Math.min(1,(t-.34)/.66));
+    // A controlled roll stays loaded through the lip; only a genuine launch earns the pop pose.
+    if(!(rampRoll.active&&rampRoll.label===(f.label||('ramp-'+Math.round(f.x)))))rampPop=Math.max(rampPop,e*e*(3-2*e));
    }
   }
   if(rampLoad<.04){
@@ -4877,7 +4973,7 @@ function chaseRiderPose(){
   const brace=landingLoadBrace(player.vy,speed,terrainSlopeAt(probeX),spot);
   landing=spot*(.38+.62*brace);
  }
- return{rampLoad,rampPop,terrainLoad,terrainRelease,landing};
+ return{rampLoad,rampPop,terrainLoad,terrainRelease,landing,rampRollLoad,rampRollSettle};
 }
 function drawChasePlayer(){
  const clearance=Math.max(0,(groundY(player.x)-player.h)-player.y),airLift=Math.min(H*.16,clearance*.55),x=W*.5,y=H*.82-airLift;
@@ -4887,9 +4983,9 @@ function drawChasePlayer(){
  // extension wins at the lip. Jimmy reads as prepared, not surprised.
  const crouch=Math.max(0,
   brake*5+send*2+(player.onGround?0:2.5)+pose.rampLoad*6.4+pose.terrainLoad*3.2+pose.landing*6.0
-  -pose.rampPop*4.8-pose.terrainRelease*1.7
+  +(pose.rampRollLoad||0)*4.8-(pose.rampRollSettle||0)*1.7-pose.rampPop*4.8-pose.terrainRelease*1.7
  );
- const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94);
+ const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94+(pose.rampRollLoad||0)*.72);
  const extension=Math.min(1,pose.rampPop+pose.terrainRelease*.42+(rising?.18:0));
  ctx.save();ctx.translate(x,y);ctx.globalAlpha=.98;
  // Ground/contact shadow follows the rider but drops away in airtime.
@@ -5484,6 +5580,10 @@ function drawPlayer(){
    }
   }
  }
+ const rampRollPose=rampRollAnimationPose(riderWx+18);
+ const rampRollLoad=rampRollPose.load||0,rampRollSettle=rampRollPose.settle||0;
+ // A grounded controlled roll should absorb the lip, not visually fire the launch-extension pose.
+ if(rampRollPose.active)launchExtension*=Math.max(0,1-rampRollPose.active);
  const preload=Math.pow(Math.max(0,Math.min(1,launchApproach)),1.35);
 
  // v145 higher-refinement Jimmy & animation: v143's speed-sensitive natural terrain release
@@ -5532,7 +5632,7 @@ function drawPlayer(){
  }
  const pumpLean=player.onGround?(pumpRelease*.055-pumpLoad*.025):0;
  const speedLean=player.onGround?(1-brakePose)*speedStance*(mode==='snow'?.025:mode==='bike'?.035:.050):0;
- const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+(rampReleasePose*.018);
+ const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean-(rampRollLoad*.018)+(rampRollSettle*.008)+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+(rampReleasePose*.018);
  // The head stays calmer than the chassis/body and progressively re-levels as the landing
  // comes into range, creating a visible "eyes on the exit" cue without impossible neck motion.
  // v129 Jimmy & animation: Jimmy now looks through turns and his expression follows what he is
@@ -5546,7 +5646,7 @@ function drawPlayer(){
  const faceBrace=Math.max(landingReady?(.42+.58*landingBrace):0,airBack,brakePose);
  const faceCommit=Math.max(airForward,sendPose,speedStance*.72);
  const faceFloat=(airFloat&&!landingReady&&airBack<.18)?Math.min(1,airTime/.65):0;
- const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+naturalLoad*.58+naturalExtension*.20+linePose*.32+speedStance*.24));
+ const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+rampRollLoad*.72+rampRollSettle*.18+naturalLoad*.58+naturalExtension*.20+linePose*.32+speedStance*.24));
  const carveLean=player.onGround?carve*(mode==='snow'?.075:mode==='bike'?.045:.025)*pace:0;
  ctx.save();
  ctx.translate(player.x+18,player.y+26+bob+squash*.22);
@@ -5630,7 +5730,7 @@ function drawPlayer(){
  if(mode==='snow'){
   // Snowboard: sideways stance, low edge-set under braking, compact grab/tweak in longer air.
   // v73 Retro '93 uses the same competent physics/animation with a distinct period kit and old-school deck silhouette.
-  const crouch=(sendPose*3.2)+(speedStance*2.8)+(brakePose*5.2)+(linePose*2.0)+(preload*5.0)-(launchExtension*4.1)+(naturalLoad*3.8)-(naturalExtension*3.4)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airPose*airStyle*1.5)+(landingSpot*1.2)+(landingBrace*4.0)+(airLanding?.45:0)-(rampReleasePose*3.8);
+  const crouch=(sendPose*3.2)+(speedStance*2.8)+(brakePose*5.2)+(linePose*2.0)+(preload*5.0)-(launchExtension*4.1)+(rampRollLoad*4.4)-(rampRollSettle*1.4)+(naturalLoad*3.8)-(naturalExtension*3.4)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airPose*airStyle*1.5)+(landingSpot*1.2)+(landingBrace*4.0)+(airLanding?.45:0)-(rampReleasePose*3.8);
   const hipY=9+crouch*.58, shoulderY=-7+crouch*.28, headY=-19+crouch*.30;
   const tweak=airborne?Math.sin(Math.min(1,airStyle)*Math.PI)*5:0;
   head(2,headY,8);
@@ -5664,6 +5764,10 @@ function drawPlayer(){
     limb(-1,shoulderY,-14-recoveryFlow*2,shoulderY+3-recoveryFlow*5,4);
     limb(0,shoulderY,15+recoveryFlow*4,shoulderY+2-recoveryFlow*7,4);
    }
+  }else if(rampRollLoad>.08||rampRollSettle>.08){
+   // Controlled ramp roll: hands stay low and forward while Jimmy absorbs the lip, then quietly recenter.
+   limb(-1,shoulderY,-13-rampRollLoad*2,shoulderY+5+rampRollLoad*4-rampRollSettle*3,4);
+   limb(0,shoulderY,14+rampRollLoad*2,shoulderY+4+rampRollLoad*4-rampRollSettle*3,4);
   }else if(naturalLoad>.10||naturalExtension>.10){
    // Natural crest read: quiet hands during compression, then a small forward release at the lip.
    const rise=naturalExtension;
@@ -5689,7 +5793,7 @@ function drawPlayer(){
 
  }else if(mode==='bike'){
   // MTB: elbows and knees stay active, body moves independently from the bike, suspension compresses on impact.
-  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(preload*4.2)-(launchExtension*3.7)+(naturalLoad*3.6)-(naturalExtension*3.1)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(airLanding?.40:0)-(rampReleasePose*3.5);
+  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(preload*4.2)-(launchExtension*3.7)+(rampRollLoad*4.8)-(rampRollSettle*1.3)+(naturalLoad*3.6)-(naturalExtension*3.1)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(airLanding?.40:0)-(rampReleasePose*3.5);
   const rear={x:-16,y:25},front={x:20,y:25};
   const bikePitch=airborne?Math.max(-.08,Math.min(.08,-player.vy*.004)):0;
   ctx.save();ctx.rotate(bikePitch);
@@ -5712,7 +5816,7 @@ function drawPlayer(){
   limb(shoulderX, -12+compression*.18, shoulderX, shoulderY,4.5);torso(shoulderX,shoulderY,hipX,hipY,4.8);
   // both hands stay on bars; elbows flare more under braking and in rough landings
   let elbowBase;if(landingReady)elbowBase=4.8+landingBrace*4.0;else if(airborne)elbowBase=2-airForward+5*airBack;else{const neutralElbow=4+speedStance*1.8;elbowBase=neutralElbow+(7-neutralElbow)*brakePose;}
-  const elbowDrop=elbowBase+(landingSpot*1.4)+(naturalLoad*2.1)-(naturalExtension*.8)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2);
+  const elbowDrop=elbowBase+(landingSpot*1.4)+(rampRollLoad*3.2)-(rampRollSettle*.9)+(naturalLoad*2.1)-(naturalExtension*.8)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2);
   limb(shoulderX,shoulderY,11,shoulderY+elbowDrop,4);limb(11,shoulderY+elbowDrop,18,7,3.8);
   limb(shoulderX-1,shoulderY,-4,shoulderY+elbowDrop+1,4);limb(-4,shoulderY+elbowDrop+1,15,7,3.8);
   // pedals / knees
@@ -5723,7 +5827,7 @@ function drawPlayer(){
   // Longboard: SEND IT becomes a compact speed tuck; braking reads as a deliberate speed-check carve.
   const tuck=Math.max(sendPose,speedStance*.92);
   const check=brakePose;
-  const crouch=2+squash+(tuck*6)+(check*3)+(linePose*1.5)+(preload*4.6)-(launchExtension*3.3)+(naturalLoad*3.2)-(naturalExtension*2.8)+(pumpLoad*4.9)-(pumpRelease*2.5)+(recoveryLoad*3.0)-(recoveryFlow*2.0)-(recoveryAbsorb*.6)+(landingSpot*1.35)+(landingBrace*4.15)+(airLanding?.45:0)-(rampReleasePose*3.2);
+  const crouch=2+squash+(tuck*6)+(check*3)+(linePose*1.5)+(preload*4.6)-(launchExtension*3.3)+(rampRollLoad*4.2)-(rampRollSettle*1.2)+(naturalLoad*3.2)-(naturalExtension*2.8)+(pumpLoad*4.9)-(pumpRelease*2.5)+(recoveryLoad*3.0)-(recoveryFlow*2.0)-(recoveryAbsorb*.6)+(landingSpot*1.35)+(landingBrace*4.15)+(airLanding?.45:0)-(rampReleasePose*3.2);
   const bank=player.onGround?carve*.10*pace*(1+.75*check):0;
   ctx.rotate(bank);
   const hipY=9+crouch*.55, shoulderY=-6+crouch*.35, headY=-18+crouch*.38;
@@ -5753,6 +5857,10 @@ function drawPlayer(){
     limb(0,shoulderY,-10-recoveryFlow*2,shoulderY+5-recoveryFlow*4,4);
     limb(1,shoulderY,14+recoveryFlow*4,shoulderY-recoveryFlow*6,4);
    }
+  }else if(rampRollLoad>.08||rampRollSettle>.08){
+   // Controlled ramp roll: stay compact over the trucks through the lip, then reopen only as the board settles.
+   limb(0,shoulderY,-11-rampRollLoad*3,shoulderY+5+rampRollLoad*4-rampRollSettle*3,4);
+   limb(1,shoulderY,12+rampRollLoad*3,shoulderY+5+rampRollLoad*4-rampRollSettle*3,4);
   }else if(naturalLoad>.10||naturalExtension>.10){
    // Road crest read: Jimmy stays compact over the trucks, then quietly opens into the release.
    const rise=naturalExtension;
@@ -5904,7 +6012,7 @@ function drawCrashXray(progress,hit){
 function drawParticles(frozen=false){for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/70);ctx.fillStyle=mode==='snow'?'#fff':mode==='bike'?'#d6ad79':'#bbb';ctx.fillRect(p.x,p.y,5,5);if(!frozen){p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.life--}}ctx.globalAlpha=1;if(!frozen)particles=particles.filter(p=>p.life>0)}
 
 // v221-A6 QA hook is exposed only when ?qa=1 is present; production behavior is unchanged.
-if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseRiderPose:()=>({...chaseRiderPose()}),chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},setPaused:(value)=>setPaused(value),forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
+if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampRollAnimationEnvelope:(u,releaseU,active)=>({...rampRollAnimationEnvelope(u,releaseU,active)}),rampRollAnimationPose:()=>({...rampRollAnimationPose(world+player.x+18)}),rampRollPoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,sbh=brakeHold,si=sendIt,sq=rampPopQueued,sqa=rampPopQueuedAt,sql=rampPopFeatureLabel,src=rampRollCueFeature;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const release=mode==='snow'?.69:mode==='bike'?.57:.71,center=player.x+player.w*.5,setAt=(u,roll,committed=false)=>{world=(f.x+f.width*u)-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;speed=roll?4.45:6;braking=roll;brakeHold=roll?.34:0;sendIt=false;rampPopQueued=false;rampPopFeatureLabel='';rampRollCueFeature=committed?(f.label||('ramp-'+Math.round(f.x))):'';return{roll:{...rampRollAnimationPose(world+player.x+18)},chase:{...chaseRiderPose()}}};const out={label:f.label||'RAMP',release,pre:setAt(Math.max(.25,release-.13),true,false),normal:setAt(Math.max(.25,release-.13),false,false),post:setAt(Math.min(1,release+.16),false,true)};world=sw;player=sp;speed=ss;braking=sb;brakeHold=sbh;sendIt=si;rampPopQueued=sq;rampPopQueuedAt=sqa;rampPopFeatureLabel=sql;rampRollCueFeature=src;return out},rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseRiderPose:()=>({...chaseRiderPose()}),chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},setPaused:(value)=>setPaused(value),forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
 
 // v221-A5: composed controls + exact mobile canvas sizing + fixed-step physics clock.
 const FIXED_DT=1/60,MAX_FRAME_DT=.05,MAX_FRAME_STEPS=3;
