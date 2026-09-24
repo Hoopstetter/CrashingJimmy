@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A46</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A64</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -266,7 +266,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A46';
+const BUILD_VERSION='v221-A64';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -322,7 +322,7 @@ let terrain=[],terrainFeatures=[],complexBounds=[],terrainFeaturePastReach=0,obs
 let jumpTapCount=0,lastJumpTap=0,airTrick='',tricksLanded=0;
 let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,activeExpertTransfer='';
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
-let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampRollCueFeature='';
+let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampPopQuality=0,rampRollCueFeature='';
 // v169 recovery: low-pass the major authored riding poses so Jimmy transitions through them instead of snapping frame-to-frame.
 let poseBlend={brake:0,send:0,line:0,air:0,airForward:0,airBack:0,landing:0,rampRelease:0};
 // v74 Props/Hazards/Events: short location-opening vehicle arrival cinematic.
@@ -330,7 +330,7 @@ let introActive=false,introStarted=0,lorePropUsed=false,signatureFilmerUsed=fals
 let lastNamedSectionCue='';
 const INTRO_DURATION=3.6; // any gameplay control now skips the intro and starts riding immediately
 
-let audioOn=true,audioCtx=null,lastToneAt=0,noiseBuffer=null,speedBed=null,speedBedBuffer=null,speedBedClock=0,speedBedLastProfile=null;
+let audioOn=true,audioCtx=null,lastToneAt=0,noiseBuffer=null,speedBed=null,motionBedBuffers={},speedBedClock=0,speedBedLastProfile=null;
 // v147 JIM'S CUT: unlisted feature gate. This is privacy by URL obscurity, not authentication.
 const JIM_CUT_QUERY=new URLSearchParams(location.search);
 const JIM_CUT_ENABLED=JIM_CUT_QUERY.get('jim')==='1'||location.hash.startsWith('#jim');
@@ -589,6 +589,172 @@ const crashLines={
   "I still like the line. I just know more about it now."
  ]
 };
+// v221-A58 UI/Sound/Polish: Deep Crash Debriefs substantially expands Jimmy's rotating
+// cause-aware crash vocabulary. Every crash cause gets four additional competent, analytical
+// lines. Existing shuffle-deck behavior remains: no repeat within a cause/context deck until
+// that deck is exhausted, and the first line after a reshuffle cannot repeat the prior line.
+const CRASH_LINE_EXPANSION={
+ landing:[
+  "I was on the right trajectory until I stopped matching the slope.",
+  "The landing asked for absorption. I showed up with momentum and a deadline.",
+  "I carried the right speed into the wrong part of the transition.",
+  "That is a recoverable landing problem. The takeoff stays in the plan."
+ ],
+ edgewash:[
+  "I had traction in reserve until I spent it all at once.",
+  "The carve was finished. I kept loading it like it owed me another turn.",
+  "I needed to release pressure before the board filed the traction report.",
+  "Same arc, less late edge. The speed can stay."
+ ],
+ frontload:[
+  "The front contact patch got every assignment at the same time.",
+  "I needed a half-inch more bike underneath me and a lot less hand pressure.",
+  "The line was fine. My weight transfer arrived before the rest of me.",
+  "That is a center-of-mass correction, not a reason to slow the whole section down."
+ ],
+ wobble:[
+  "The board started a small conversation and I answered with too many syllables.",
+  "I had one correction available. I used three.",
+  "The chassis wanted quiet hands. I gave it active management.",
+  "Next run I let the first oscillation die instead of introducing it to the second."
+ ],
+ tree:[
+  "I exited the turn toward the only object that had no reason to move.",
+  "The tree did not close the gap. I did that part myself.",
+  "I had the speed and the sightline. I needed another foot of exit discipline.",
+  "Same mountain. I finish the release before the branches enter the meeting."
+ ],
+ rock:[
+  "The rock was readable. My margin calculation was just too generous.",
+  "I carried the line close enough to geology to make it personal.",
+  "That clearance existed at entry and disappeared one correction later.",
+  "No speed cut required. I just stop borrowing space from the rock."
+ ],
+ snowgun:[
+  "Infrastructure stays put. My line needed to respect that sooner.",
+  "I gave the snowgun the same exit lane I was already using.",
+  "The machine was obvious. The overlap was optional.",
+  "Next lap I keep the pressure and move the corridor uphill six inches."
+ ],
+ parkrail:[
+  "I was riding the feature beside the rail, not negotiating a merger with it.",
+  "The rail had a fixed address. My landing line wandered into the neighborhood.",
+  "I solved the takeoff and then spent the lateral margin afterward.",
+  "Same park line. Cleaner shoulder on the exit and the rail stays decorative."
+ ],
+ snowbank:[
+  "The bank absorbed everything except the lesson.",
+  "Soft snow still has a stopping distance when I bring that much speed.",
+  "I had enough room to miss it and used the part that did not count.",
+  "Next pass I preserve the width instead of testing the snowpack."
+ ],
+ log:[
+  "The log required one clean unweight. I arrived half a beat heavy.",
+  "I cleared the first contact and let the rest of the bike finish the experiment.",
+  "That obstacle was simple. My load timing made it expensive.",
+  "Same trail speed. Earlier lift, quieter rear wheel, fewer forestry consequences."
+ ],
+ trailpost:[
+  "The trail marker was excellent information. I treated it like a clipping point.",
+  "I knew exactly where the post was and still reduced the corridor unnecessarily.",
+  "That line had two clean exits. I selected the one with signage.",
+  "Same pace. Half a bar-width more space solves the whole problem."
+ ],
+ roots:[
+  "The root web changed grip before I changed pressure.",
+  "I entered balanced and then loaded the front exactly where the trail got complicated.",
+  "The roots were not random. My timing made them feel that way.",
+  "Next run I float the bike over the network instead of asking the tire to negotiate it."
+ ],
+ trashcan:[
+  "Municipal furniture remains a poor apex marker.",
+  "I had open pavement and still let the curbside become relevant.",
+  "That was a line-width error delivered at downhill speed.",
+  "Same hill. I leave the trash can entirely out of the vehicle dynamics model."
+ ],
+ curb:[
+  "I ran out of pavement because I kept spending lateral margin.",
+  "The curb was not moving. My return-to-center was simply late.",
+  "I had the road until the last correction put the wheels on the boundary condition.",
+  "Same speed. Earlier recenter and the curb becomes scenery again."
+ ],
+ pothole:[
+  "The hole was visible. I just carried too much load into the moment it mattered.",
+  "I needed to unweight before the depression, not during the receipt.",
+  "The pavement gave me a warning and I arrived with the chassis still committed.",
+  "Same pace. Settle first, float second, keep rolling."
+ ],
+ roadpatch:[
+  "The patch changed grip, not the laws of physics. I still have to respect both.",
+  "I crossed the surface change with more steering than the surface could support.",
+  "That seam needed a neutral board. I brought an active correction.",
+  "Same descent. Square the board before the patch and let it pass underneath."
+ ],
+ bear:[
+  "The bear had priority by every reasonable mountain rule.",
+  "Wildlife encounter confirmed. I would prefer the next data point at greater range.",
+  "I had time to make space and used too much of it deciding how much space.",
+  "Same mountain, much earlier speed check if the forest starts moving."
+ ],
+ lion:[
+  "The mountain lion made the trail hierarchy extremely clear.",
+  "That is not an obstacle I intend to out-corner.",
+  "I had the sightline. Next time I convert it into distance sooner.",
+  "Wildlife gets the line. I can find another one."
+ ],
+ skier:[
+  "The skier telegraphed the crossing. My brake set needed to happen before the merge.",
+  "I read the person correctly and still carried the closing speed too long.",
+  "That encounter was predictable. My timing made it urgent.",
+  "Same run. I create the gap early and keep the interaction boring."
+ ],
+ hiker:[
+  "The hiker had a readable crossing. I needed to make my space decision sooner.",
+  "Trail etiquette and physics agreed on that one. I was late to both.",
+  "I saw the crossing and kept the closure rate alive too long.",
+  "Same trail. Earlier brake set, wider berth, cleaner pass."
+ ],
+ pedestrian:[
+  "The pedestrian had the crossing. I had enough hill to manage it better.",
+  "I recognized the movement and waited too long to turn recognition into speed control.",
+  "That was a readable street interaction. My timing made it dramatic.",
+  "Same descent. I create the gap before the crosswalk becomes a decision point."
+ ],
+ streetfreeze:[
+  "Traffic stopped. I needed to convert sight distance into stopping distance sooner.",
+  "The street went static and I stayed dynamic one beat too long.",
+  "That freeze was readable. I was late making the downhill math agree with it.",
+  "Same block. Earlier check-up, same confidence, less bodywork."
+ ],
+ snowcat:[
+  "The groomer was operating exactly where the warning said it would be.",
+  "Heavy equipment gets the corridor. I needed to bank that decision earlier.",
+  "I had the read. I just kept too much closure speed after the read was complete.",
+  "Same pitch. Earlier brake set and the groomer becomes background machinery."
+ ],
+ trailcart:[
+  "The crew cart was predictable. My approach speed made it unnecessarily interesting.",
+  "Operations traffic gets room. I waited too long to manufacture the room.",
+  "I read the work zone correctly and finished the speed adjustment late.",
+  "Same trail. Check up earlier, clear the crew, put the pace back on afterward."
+ ],
+ utilityvan:[
+  "The driveway van announced the problem before it became my problem.",
+  "I had enough sight distance to make that interaction routine.",
+  "The vehicle committed to the driveway. I committed to braking one beat afterward.",
+  "Same street. Earlier set, clean gap, speed comes back after the crossing."
+ ],
+ default:[
+  "I can account for that run all the way to the expensive part.",
+  "The useful piece is that I know which input changed the outcome.",
+  "Nothing about that was mysterious. It was just very thoroughly demonstrated.",
+  "Keep the confidence. Edit the final decision."
+ ]
+};
+for(const [cause,lines] of Object.entries(CRASH_LINE_EXPANSION)){
+ if(crashLines[cause])crashLines[cause].push(...lines);
+}
+
 const propCrashTypes=new Set([
  'tree','rock','snowgun','parkrail','snowbank',
  'log','trailpost','roots',
@@ -775,47 +941,94 @@ function ensureAudio(){
   return audioCtx;
  }catch(_){return null}
 }
-// v221-A33 UI/Sound/Polish: a restrained continuous speed bed now tracks Jimmy's pace and contact state.
-// It is intentionally subtle: wind grows with speed, while a sport-specific surface band fades out in the air
-// and becomes more pronounced under braking. This is presentation only and never feeds back into physics.
+// v221-A60 blocker fix: the A33/A44 speed bed used two filtered loops of raw white noise.
+// On real phone speakers that read as radio/static rather than snow, tires, wheels, or wind.
+// Keep the lightweight Web Audio architecture, but replace that bed with deterministic colored,
+// rhythmic motion textures. Surface/contact is now the audible anchor; wind only rises at real pace.
+function motionSoundRecipe(m){
+ return m==='snow'
+  ?{kind:'snow',label:'SNOW EDGE / PACKED POWDER',surfaceBase:.0048,surfaceSpan:.0108,brakeLift:1.34,baseRate:.78,rateSpan:.34,filterBase:1280,filterSpan:520}
+  :m==='bike'
+   ?{kind:'bike',label:'TIRE / CHAIN / TRAIL',surfaceBase:.0052,surfaceSpan:.0138,brakeLift:1.24,baseRate:.88,rateSpan:.48,filterBase:760,filterSpan:520}
+   :{kind:'board',label:'WHEELS / BEARINGS / PAVEMENT',surfaceBase:.0046,surfaceSpan:.0128,brakeLift:1.42,baseRate:.82,rateSpan:.42,filterBase:940,filterSpan:470};
+}
 function speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled){
  const pace=Math.max(0,Math.min(1,(v-2.0)/8.9));
  const active=runningNow&&audioEnabled;
- const spec=m==='snow'
-  ?{windBase:980,windSpan:1320,surfaceBase:760,surfaceSpan:420,surfaceGain:.0105,brakeLift:1.40}
-  :m==='bike'
-   ?{windBase:900,windSpan:1450,surfaceBase:520,surfaceSpan:560,surfaceGain:.0135,brakeLift:1.30}
-   :{windBase:860,windSpan:1500,surfaceBase:265,surfaceSpan:420,surfaceGain:.0155,brakeLift:1.48};
- const windGain=active?(.0018+Math.pow(pace,1.7)*.0235)*(sendNow?1.10:1):0;
- const surfaceGain=active&&onGroundNow?(.0016+pace*spec.surfaceGain)*(brakingNow?spec.brakeLift:1):0;
+ const spec=motionSoundRecipe(m);
+ // Wind is deliberately absent at low/medium cruise. It should read as speed, not a permanent hiss.
+ const windPace=Math.max(0,(pace-.38)/.62);
+ const windGain=active?Math.pow(windPace,1.55)*.0064*(sendNow?1.12:1):0;
+ const surfaceGain=active&&onGroundNow?(spec.surfaceBase+pace*spec.surfaceSpan)*(brakingNow?spec.brakeLift:1):0;
  return{
-  pace,
-  windGain,
-  surfaceGain,
-  windHz:spec.windBase+pace*spec.windSpan+(sendNow?110:0),
-  surfaceHz:spec.surfaceBase+pace*spec.surfaceSpan+(brakingNow?m==='board'?80:120:0),
-  windRate:.72+pace*.48+(sendNow?.04:0),
-  surfaceRate:(m==='snow'?.58:m==='bike'?.92:.70)+pace*(m==='bike'?.42:.26),
+  pace,windGain,surfaceGain,
+  windHz:520+pace*760+(sendNow?80:0),
+  surfaceHz:spec.filterBase+pace*spec.filterSpan+(brakingNow?m==='board'?90:60:0),
+  windRate:.74+pace*.34+(sendNow?.035:0),
+  surfaceRate:spec.baseRate+pace*spec.rateSpan,
+  surfaceLabel:spec.label,
   active
  }
 }
+function motionPRNG(seed){
+ let s=seed>>>0;
+ return()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^(s>>>15),1|s);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296}
+}
+function buildMotionBuffer(ac,kind){
+ const cacheKey=kind+':'+ac.sampleRate;
+ if(motionBedBuffers[cacheKey])return motionBedBuffers[cacheKey];
+ const duration=2.4,length=Math.ceil(ac.sampleRate*duration),b=ac.createBuffer(1,length,ac.sampleRate),d=b.getChannelData(0);
+ const seeds={wind:0xA60A11,snow:0xA60B22,bike:0xA60C33,board:0xA60D44};
+ const rnd=motionPRNG(seeds[kind]||0xA60E55),sr=ac.sampleRate;
+ let slow=0,mid=0;
+ for(let i=0;i<length;i++){
+  const t=i/sr,n=rnd()*2-1;
+  slow+=.012*(n-slow);mid+=.085*(n-mid);
+  const colored=.72*slow+.28*mid;
+  let s=0;
+  if(kind==='wind'){
+   // Low, breathing air movement with slight colored turbulence; no full-band static bed.
+   const swell=.62+.22*Math.sin(Math.PI*2*.43*t)+.12*Math.sin(Math.PI*2*.71*t+1.1);
+   s=swell*(.16*Math.sin(Math.PI*2*118*t)+.10*Math.sin(Math.PI*2*187*t+.6)+.055*Math.sin(Math.PI*2*302*t+1.7))+.24*colored;
+  }else if(kind==='snow'){
+   // Edge scrape plus granular packed-snow crunches.
+   const scrape=(.12*Math.sin(Math.PI*2*410*t)+.08*Math.sin(Math.PI*2*635*t+.9))*(.70+.18*Math.sin(Math.PI*2*2.15*t));
+   const phase=(t*7.2)%1,crunch=phase<.055?Math.exp(-phase*64)*(.55*mid+.18*Math.sin(Math.PI*2*1180*t)):0;
+   s=.34*colored+scrape+crunch;
+  }else if(kind==='bike'){
+   // Tire casing rumble with regular chain/freehub ticks and trail chatter.
+   const wheel=.27*Math.sin(Math.PI*2*61*t)+.12*Math.sin(Math.PI*2*93*t+.4);
+   const phase=(t*10.6)%1,click=phase<.035?Math.exp(-phase*105)*(.42*Math.sin(Math.PI*2*1320*t)+.24*Math.sin(Math.PI*2*1780*t)):0;
+   const chatter=.10*Math.sin(Math.PI*2*215*t)*(0.5+0.5*Math.sin(Math.PI*2*5.3*t));
+   s=wheel+click+chatter+.12*colored;
+  }else{
+   // Four-wheel/bearing hum with pavement seam pulses. Tonal on purpose, never a hiss loop.
+   const bearings=.23*Math.sin(Math.PI*2*86*t)+.11*Math.sin(Math.PI*2*172*t+.3)+.055*Math.sin(Math.PI*2*258*t+1.0);
+   const phase=(t*6.35)%1,seam=phase<.055?Math.exp(-phase*76)*(.34*Math.sin(Math.PI*2*520*t)+.17*Math.sin(Math.PI*2*1040*t)):0;
+   s=bearings+seam+.10*colored;
+  }
+  d[i]=Math.max(-.92,Math.min(.92,s));
+ }
+ motionBedBuffers[cacheKey]=b;
+ return b
+}
+function motionBufferSignature(ac,kind){
+ const b=buildMotionBuffer(ac,kind),d=b.getChannelData(0);let sum=0,delta=0,peak=0,hash=2166136261>>>0,step=Math.max(1,Math.floor(d.length/2048));
+ for(let i=0;i<d.length;i+=step){const v=d[i];sum+=v*v;peak=Math.max(peak,Math.abs(v));if(i>=step)delta+=Math.abs(v-d[i-step]);const q=Math.round((v+1)*32767);hash^=q;hash=Math.imul(hash,16777619)>>>0}
+ const n=Math.ceil(d.length/step);return{kind,rms:+Math.sqrt(sum/n).toFixed(4),peak:+peak.toFixed(4),avgDelta:+(delta/Math.max(1,n-1)).toFixed(4),hash:hash.toString(16).padStart(8,'0')}
+}
 function ensureSpeedSoundscape(){
  const ac=ensureAudio();if(!ac)return null;
- if(speedBed&&speedBed.ctx===ac)return speedBed;
- if(!speedBedBuffer||speedBedBuffer.sampleRate!==ac.sampleRate){
-  const length=Math.ceil(ac.sampleRate*1.45);
-  speedBedBuffer=ac.createBuffer(1,length,ac.sampleRate);
-  const data=speedBedBuffer.getChannelData(0);
-  for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
- }
+ if(speedBed&&speedBed.ctx===ac&&speedBed.mode===mode)return speedBed;
+ if(speedBed)disposeSpeedSoundscape(.02);
  const wind=ac.createBufferSource(),windFilter=ac.createBiquadFilter(),windGain=ac.createGain();
  const surface=ac.createBufferSource(),surfaceFilter=ac.createBiquadFilter(),surfaceGain=ac.createGain();
- wind.buffer=speedBedBuffer;wind.loop=true;windFilter.type='bandpass';windFilter.Q.value=.62;windGain.gain.value=.0001;
- surface.buffer=speedBedBuffer;surface.loop=true;surfaceFilter.type='bandpass';surfaceFilter.Q.value=mode==='board'?1.15:.78;surfaceGain.gain.value=.0001;
+ wind.buffer=buildMotionBuffer(ac,'wind');wind.loop=true;windFilter.type='lowpass';windFilter.Q.value=.28;windGain.gain.value=.0001;
+ surface.buffer=buildMotionBuffer(ac,mode);surface.loop=true;surfaceFilter.type='lowpass';surfaceFilter.Q.value=mode==='board'?.62:.48;surfaceGain.gain.value=.0001;
  wind.connect(windFilter);windFilter.connect(windGain);windGain.connect(ac.destination);
  surface.connect(surfaceFilter);surfaceFilter.connect(surfaceGain);surfaceGain.connect(ac.destination);
- const now=ac.currentTime;wind.start(now,Math.random()*Math.max(.01,speedBedBuffer.duration-.02));surface.start(now,Math.random()*Math.max(.01,speedBedBuffer.duration-.02));
- speedBed={ctx:ac,wind,windFilter,windGain,surface,surfaceFilter,surfaceGain};
+ const now=ac.currentTime;wind.start(now,.17);surface.start(now,mode==='snow'?.31:mode==='bike'?.53:.79);
+ speedBed={ctx:ac,mode,wind,windFilter,windGain,surface,surfaceFilter,surfaceGain};
  return speedBed
 }
 function speedAudioParam(param,value,now,time=.08){
@@ -827,11 +1040,7 @@ function silenceSpeedSoundscape(time=.06){
  speedAudioParam(speedBed.windGain.gain,0,now,time);speedAudioParam(speedBed.surfaceGain.gain,0,now,time);
  speedBedLastProfile=speedSoundProfile(speed,player?.onGround??true,false,false,mode,false,audioOn)
 }
-// v221-A34 QA/mobile: retire the two continuously looping noise sources whenever gameplay is not
-// actively using them. A33 correctly faded the bed to silence, but the BufferSources kept looping
-// forever after a crash, finish, mute, menu return, or background-tab transition. On mobile that is
-// unnecessary audio-thread work and battery drain. Fade first, then stop/disconnect only that retired
-// bed; a later active run lazily creates a fresh bed without touching one-shot impact/intro sounds.
+// Keep A34's mobile lifecycle discipline: retired motion beds are actually stopped/disconnected.
 function disposeSpeedSoundscape(time=.045){
  const bed=speedBed;if(!bed)return false;
  speedBed=null;speedBedClock=0;
@@ -854,7 +1063,7 @@ function updateSpeedSoundscape(dt){
  speedAudioParam(bed.windGain.gain,p.windGain,now,.075);speedAudioParam(bed.surfaceGain.gain,p.surfaceGain,now,.055);
  speedAudioParam(bed.windFilter.frequency,p.windHz,now,.10);speedAudioParam(bed.surfaceFilter.frequency,p.surfaceHz,now,.085);
  speedAudioParam(bed.wind.playbackRate,p.windRate,now,.12);speedAudioParam(bed.surface.playbackRate,p.surfaceRate,now,.10);
- bed.surfaceFilter.Q.value=mode==='board'?1.15:.78
+ bed.surfaceFilter.Q.value=mode==='board'?.62:.48
 }
 function tone(freq=440,dur=.07,type='sine',gain=.035,slide=0){
  const ac=ensureAudio();if(!ac)return;
@@ -1237,7 +1446,15 @@ function buildTerrain(){
   // but it also removes real shape overlap in SIDE because landingApronShape() is additive.
   const settleGap=mode==='snow'?180:mode==='bike'?160:190;
   const defaultApron=mode==='snow'?390:mode==='bike'?340:380;
-  let phraseShift=0,protectedUntil=-Infinity,tail=0;
+  // v221-A64 Terrain/Course: A63 made ramp preload timing meaningful, so each authored ramp now
+  // gets a short neutral setup lane before its existing sport-specific run-in compression. Before
+  // this pass, the previous technical feature could finish only 0–25 world units before the pump
+  // pocket began, leaving no clean moment to settle, brake, or deliberately load the face. We shift
+  // the ramp and the remainder of that phrase down-course just enough to preserve a readable setup;
+  // the ramp shape, run-in shape, catch geometry, launch physics, hazards, and scoring are unchanged.
+  const rampRunInLength=mode==='snow'?140:mode==='bike'?135:130;
+  const rampSetupGap=mode==='snow'?130:mode==='bike'?110:140;
+  let phraseShift=0,protectedUntil=-Infinity,tail=0,lastPlacedEnd=-Infinity;
   for(const spec of group){
    let placedDx=spec.dx+phraseShift;
    if(placedDx<protectedUntil){
@@ -1245,10 +1462,20 @@ function buildTerrain(){
     phraseShift+=extra;
     placedDx+=extra;
    }
+   if(spec.kind==='ramp'&&Number.isFinite(lastPlacedEnd)){
+    const setupStart=placedDx-rampRunInLength;
+    const minimumSetupStart=lastPlacedEnd+rampSetupGap;
+    if(setupStart<minimumSetupStart){
+     const extra=minimumSetupStart-setupStart;
+     phraseShift+=extra;
+     placedDx+=extra;
+    }
+   }
    // Slight amplitude variance keeps repeats fresh while retaining recognizable feature grammar.
    // Every authored phrase shares a complexId so Jimmy's entry decision can shape the whole line.
    terrainFeatures.push({x:cursor+placedDx,width:spec.width,amp:spec.amp*rand(.92,1.08),kind:spec.kind,label:spec.label,complex:true,complexId,complexStart,apron:!!spec.apron,apronLength:spec.apronLength||0,expertCatch:!!spec.expertCatch});
-   tail=Math.max(tail,placedDx+spec.width);
+   lastPlacedEnd=placedDx+spec.width;
+   tail=Math.max(tail,lastPlacedEnd);
    if(spec.apron){
     const apronLength=spec.apronLength||defaultApron;
     protectedUntil=placedDx+spec.width+apronLength+settleGap;
@@ -1291,9 +1518,17 @@ function buildTerrain(){
  const byComplex=new Map();
  for(const f of terrainFeatures){
   if(!f.complex||f.complexId===undefined)continue;
+  // v221-A53 higher-refinement terrain/course design: the authored complex envelope now owns
+  // the complete landing apron, not just the named feature body. Before this, baseTerrainNorm()
+  // began feathering procedural noise back in as soon as the final ramp/step-down ended, even
+  // though landingApronShape() was still defining the catch. Extending the cleaned baseline
+  // through the apron keeps A52's momentum-bound landing on the designed transition instead
+  // of letting random course undulation leak underneath the catch/run-out.
+  const apronReach=f.apron?(f.apronLength||400):0;
+  const authoredEnd=f.x+f.width+apronReach;
   let b=byComplex.get(f.complexId);
-  if(!b){b={id:f.complexId,start:f.x,end:f.x+f.width};byComplex.set(f.complexId,b)}
-  else{b.start=Math.min(b.start,f.x);b.end=Math.max(b.end,f.x+f.width)}
+  if(!b){b={id:f.complexId,start:f.x,end:authoredEnd};byComplex.set(f.complexId,b)}
+  else{b.start=Math.min(b.start,f.x);b.end=Math.max(b.end,authoredEnd)}
  }
  complexBounds=[...byComplex.values()].sort((a,b)=>a.start-b.start);
 }
@@ -1594,18 +1829,31 @@ function rampFaceAngle(f){
 // bounded part of forward momentum into lift instead of adding vertical energy for free.
 // SEND IT and a timed preload still create the strongest pop; a prepared line wastes less pace.
 // The transfer is deliberately modest so ramps stay fast and fun while reading more like real terrain.
-function rampMomentumTransfer(currentSpeed,faceAngle,sending,manualPop,prepared,rideMode){
+// v221-A63 higher-refinement gameplay physics: a preload is no longer binary. The same
+// rideable ramp face now rewards when the player loads the jump closer to the sport-specific
+// compression sweet spot. Early presses still queue a competent pop; better timing produces a
+// little more lift and pays for it with a correspondingly larger forward-momentum transfer.
+function rampPreloadQuality(u,rideMode){
+ const ideal=rideMode==='bike'?.50:rideMode==='snow'?.55:.56;
+ const span=rideMode==='bike'?.13:rideMode==='snow'?.17:.18;
+ const raw=1-Math.abs(u-ideal)/span;
+ return Math.max(.35,Math.min(1,raw));
+}
+function rampMomentumTransfer(currentSpeed,faceAngle,sending,manualPop,prepared,rideMode,popQuality=1){
  const modeLift=rideMode==='bike'?1.04:rideMode==='snow'?.98:.92;
  const geometryPop=(.48+Math.min(.28,faceAngle*.95))*modeLift;
  const speedCarry=Math.max(0,currentSpeed-3.8)*.04;
- const pop=geometryPop+speedCarry+(sending?.16:0)+(manualPop?.12:0)-prepared*.08;
+ const quality=manualPop?Math.max(.35,Math.min(1,popQuality)):0;
+ const manualLift=manualPop?.12*(.65+.55*quality):0;
+ const pop=geometryPop+speedCarry+(sending?.16:0)+manualLift-prepared*.08;
  const maxLift=manualPop?7.60:7.15;
  const verticalImpulse=Math.max(3.0,Math.min(maxLift,currentSpeed*pop));
  const liftRatio=Math.max(0,Math.min(1,verticalImpulse/7.6));
  const baseTransfer=rideMode==='bike'?.16:rideMode==='snow'?.13:.11;
- const transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+(manualPop?.025:0)-prepared*.04));
+ const manualTransfer=manualPop?.025*(.70+.60*quality):0;
+ const transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+manualTransfer-prepared*.04));
  const exitSpeed=Math.max(3.1,currentSpeed-transfer);
- return{verticalImpulse,exitSpeed,transfer};
+ return{verticalImpulse,exitSpeed,transfer,popQuality:quality};
 }
 // v221-A43 higher-refinement gameplay physics: a deliberate BRAKE speed check can now
 // roll an authored ramp instead of forcing an automatic airborne state at the lip. The ramp remains
@@ -1656,6 +1904,24 @@ function rampRollAnimationPose(riderWx){
 function slopeMatchedLandingLoad(verticalVelocity,forwardSpeed,landingSlope){
  const denom=Math.sqrt(1+landingSlope*landingSlope);
  return Math.max(0,(verticalVelocity-forwardSpeed*landingSlope)/denom);
+}
+// v221-A52 higher-refinement gameplay physics: a clean downhill landing may carry some of
+// Jimmy's descending momentum into forward speed, but it can no longer manufacture a generic
+// speed bonus from slope + airtime alone. The carry is bounded by the downhill projection of the
+// actual touchdown velocity, then reduced by alignment error and deliberate BRAKE absorption.
+// This keeps fast transition matching valuable while preserving BRAKE as the safer/slower choice.
+function landingMomentumCarry(verticalVelocity,landingSlope,landingError,absorbing,rideMode){
+ const cleanliness=Math.max(0,Math.min(1,1-landingError/.85));
+ if(landingSlope<=.055||verticalVelocity<=2.2||cleanliness<=.35){
+  return{eligible:false,gain:0,budget:0,cleanliness};
+ }
+ const slopeProjection=landingSlope/Math.sqrt(1+landingSlope*landingSlope);
+ const verticalExcess=Math.max(0,verticalVelocity-1.6);
+ const budget=Math.max(0,verticalExcess*slopeProjection);
+ const efficiency=rideMode==='bike'?.96:rideMode==='snow'?.90:.86;
+ const absorbFactor=absorbing?.28:1;
+ const gain=Math.max(0,Math.min(1.05,budget*efficiency*cleanliness*absorbFactor));
+ return{eligible:gain>.02,gain,budget,cleanliness};
 }
 
 // v221-A29 Jimmy & animation: anticipate touchdown compression from the same surface-relative
@@ -1815,7 +2081,7 @@ function start(){
  <p class="small">Big Bear may include black bears. Orange County may include mountain lions. Wildlife stays rare, but an early speed check can send it off the active line. Rare staged traffic encounters are telegraphed early and react once Jimmy closes in. A separate rare operations encounter can also appear: a groomer crossing at Big Bear, trail-crew cart in Orange County, or an active driveway vehicle in SoCal.<br><span style="opacity:.58">BUILD ${BUILD_VERSION}${JIM_CUT_ENABLED?' · JIM CUT ARMED':''}</span></p>`;
  $('snowMode').onclick=()=>begin('snow');$('bikeMode').onclick=()=>begin('bike');$('boardMode').onclick=()=>begin('board');$('scores').onclick=showScores;$('museum').onclick=()=>showMuseum(); if($('jimCutReplay'))$('jimCutReplay').onclick=()=>showJimCutScene(true); $('retro').onclick=()=>{retroSnow=!retroSnow;$('retro').textContent='RETRO JIMMY · '+(retroSnow?'ON':'OFF');$('snowMode').querySelector('span:last-child').textContent=retroSnow?"SNOWBOARD · '93 KIT":'SNOWBOARD'};
  $('viewMode').onclick=()=>{chaseView=!chaseView;$('viewMode').textContent='VIEW · '+(chaseView?'CHASE BETA':'SIDE')};
- $('rules').onclick=()=>alert('Each sport has its own persistent mastery title, built from your best run rating and Signature clear. LINECRAFT is persistent course IQ: surface reads, line shots, expert transfers and clear-line reads all count, but the upper ranks require variety instead of farming one event. RIDER RANGE carries that idea across all three sports: upper ranks require comparable Linecraft on snow, dirt and pavement. ROUTE RANGE records the best finished run that pairs FAST and CONTROL clears in the same run; crashes and separate one-sided runs do not combine. BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
+ $('rules').onclick=()=>alert('Each sport has its own persistent mastery title, built from your best run rating and Signature clear. LINECRAFT is persistent course IQ: surface reads, line shots, expert transfers and clear-line reads all count, but the upper ranks require variety instead of farming one event. A clear-line read only banks after Jimmy completes the yielded pass; the brake read alone does not score. Clean reads made from higher approach pace earn a modest pace bonus based on the speed Jimmy carried into the brake set, not the slower speed after he has already checked up. RIDER RANGE carries that idea across all three sports: upper ranks require comparable Linecraft on snow, dirt and pavement. ROUTE RANGE records the best finished run that pairs FAST and CONTROL clears in the same run; crashes and separate one-sided runs do not combine. BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
 }
 function begin(m){mode=m;appEl.classList.remove('postrun');clearPauseState();ensureAudio();overlay.style.display='none';resize();reset()}
 function startLocationIntro(){
@@ -1834,7 +2100,7 @@ function reset(){
  releaseControls();resetFrameClock();resetPoseContinuity();disposeSpeedSoundscape(.035);clearPauseState();
  signatureTrack.style.display='none';
  runIntro();
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampRollCueFeature='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
  player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();startLocationIntro()
 }
 function postGameJumpRestart(){
@@ -2143,44 +2409,79 @@ function eventProp(type,wx,sectionKind,lineChoice){
  }[type]||{});
  return base;
 }
+function stagedWarningPlan(kind='encounter',pace=speed,rideMode=mode){
+ // v221-A56 Props/Hazards/Events: preserve decision time as Jimmy gets faster.
+ // The advisory prop still enters the screen at the familiar location, while the staged actor
+ // is pushed farther down-course enough to keep roughly half a second of readable lead time.
+ // This changes no collision window, event frequency, braking threshold, or actor reaction logic.
+ const base=kind==='maintenance'?(rideMode==='board'?215:205):kind==='surface'?185:(rideMode==='board'?180:165);
+ const seconds=kind==='maintenance'?.56:kind==='surface'?.52:.50;
+ const lead=Math.round(Math.max(base,Math.min(base+190,Math.max(1.35,pace)*60*seconds)));
+ return{kind,base,lead,extra:lead-base,seconds:lead/(Math.max(1.35,pace)*60)};
+}
 function stageEncounter(primary,spawnWx,f,lineChoice){
  // v35: mode-specific run ratings add a persistent replay/progression target without changing core physics.
  // v34: rare encounters are now staged micro-events with readable lead-in props instead of surprise hitboxes.
- const kind=f?f.kind:null;
- if(mode==='snow')obstacles.push(eventProp('slowzone',spawnWx-165,kind,lineChoice));
- else if(mode==='bike')obstacles.push(eventProp('trailwarning',spawnWx-165,kind,lineChoice));
+ const kind=f?f.kind:null,lead=primary.warningLead||(mode==='board'?180:165);
+ if(mode==='snow')obstacles.push(eventProp('slowzone',spawnWx-lead,kind,lineChoice));
+ else if(mode==='bike')obstacles.push(eventProp('trailwarning',spawnWx-lead,kind,lineChoice));
  else{
-  obstacles.push(eventProp('slalomsign',spawnWx-180,kind,lineChoice));
+  obstacles.push(eventProp('slalomsign',spawnWx-lead,kind,lineChoice));
   // SoCal human slalom: one moving pedestrian plus one frozen-in-place pedestrian, staggered enough to read and maneuver around.
   const companionType=primary.type==='streetfreeze'?'pedestrian':'streetfreeze';
   const companion={wx:spawnWx+520,type:'pedestrian',w:32,h:56,hit:false,passed:false,vx:-18,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:2,reacted:false,reactionTimer:0,baseVx:-18,companion:true};
   obstacles.push(companion);
  }
 }
-function stageSurfaceEvent(spawnWx,f,lineChoice){
+function stageSurfaceEvent(primary,spawnWx,f,lineChoice){
  // v97 Props/Hazards/Events: one readable surface-choice event per run.
  // The warning arrives first; the patch itself is non-colliding and tests whether Jimmy
  // arrives composed, braking/line-set, or simply carries too much speed into rough ground.
- const kind=f?f.kind:null;
+ const kind=f?f.kind:null,lead=primary.warningLead||185;
  const type=mode==='snow'?'snowwarning':mode==='bike'?'gravelwarning':'roughroad';
- obstacles.push(eventProp(type,spawnWx-185,kind,lineChoice));
+ obstacles.push(eventProp(type,spawnWx-lead,kind,lineChoice));
 }
 function stageMaintenanceEncounter(primary,spawnWx,f,lineChoice){
  // v51: one rare operations encounter per run adds a deliberate, environment-specific moving hazard.
  // Each one is announced early with a non-colliding sign so it reads as a line-choice problem, not a surprise hit.
- const kind=f?f.kind:null;
- if(mode==='snow')obstacles.push(eventProp('workzone',spawnWx-205,kind,lineChoice));
- else if(mode==='bike')obstacles.push(eventProp('trailwork',spawnWx-205,kind,lineChoice));
- else obstacles.push(eventProp('drivewayout',spawnWx-215,kind,lineChoice));
+ const kind=f?f.kind:null,lead=primary.warningLead||(mode==='board'?215:205);
+ if(mode==='snow')obstacles.push(eventProp('workzone',spawnWx-lead,kind,lineChoice));
+ else if(mode==='bike')obstacles.push(eventProp('trailwork',spawnWx-lead,kind,lineChoice));
+ else obstacles.push(eventProp('drivewayout',spawnWx-lead,kind,lineChoice));
+}
+function clearLinePaceReward(pace=6){
+ // v221-A57 Scoring/Progression: A56 preserves decision time as speed rises; scoring can therefore
+ // recognize higher-stakes reads without paying for a reckless near miss. The pace snapshot is the
+ // speed Jimmy carried into the BRAKE set, while the reward still banks only after the safe pass.
+ const mph=Math.max(0,pace*4.8);
+ let bonus=0,label='COMPOSED';
+ if(mph>=46){bonus=90;label='PINNED'}
+ else if(mph>=39){bonus=60;label='FAST'}
+ else if(mph>=33){bonus=30;label='QUICK'}
+ return{base:180,bonus,points:180+bonus,label,mph:Math.round(mph)};
+}
+function armClearLineRead(o){
+ // v221-A49 arms the reward; A57 also snapshots pre-read pace before braking erases the evidence.
+ if(o.readAwarded||o.readArmed)return false;
+ o.readArmed=true;o.readPace=Math.max(speed,brakeEntrySpeed||0);
+ physicsCue='CLEAR-LINE READ · HOLD IT';physicsCueTimer=.82;
+ return true;
 }
 function awardClearLineRead(o){
- // v132 Scoring/Progression: v131 made early braking useful by getting staged traffic/operations
- // to yield. Now that competent read earns a modest, once-per-encounter reward without changing FLOW.
- if(o.readAwarded)return;
- o.readAwarded=true;
- const pts=180;
+ // Bank only after the yielded actor is fully behind Jimmy. A57 adds a bounded pace bonus from
+ // the armed approach speed; braking remains the required decision and the pass still must finish.
+ if(!o.readArmed||o.readAwarded)return false;
+ o.readAwarded=true;o.readArmed=false;
+ const reward=clearLinePaceReward(o.readPace||speed),pts=reward.points;
  trafficReads++;trafficReadPoints+=pts;score+=pts;meter=Math.min(100,meter+4);
- physicsCue='CLEAR-LINE READ  +'+pts;physicsCueTimer=1.0;sfx('skill');
+ physicsCue='CLEAR-LINE +'+pts+(reward.bonus?' · '+reward.label:'');physicsCueTimer=1.0;sfx('skill');
+ return true;
+}
+function yieldActorSafelyBehind(o,sx,riderX=player.x){
+ // v221-A48 blocker fix: A47 resumed yielded actors from a left-edge distance only.
+ // Wide actors (especially the groomer/van) could therefore re-enable collision while their
+ // trailing edge still overlapped Jimmy. Keep the yield shield until the entire actor is clear.
+ return sx+(o.w||0)<riderX-10;
 }
 function updateWildlifeBehavior(o,sx,dt){
  // v221-A39 Props/Hazards/Events: rare wildlife now responds to a competent early speed check.
@@ -2207,16 +2508,25 @@ function updateMaintenanceBehavior(o,sx,dt){
  const gap=sx-(player.x+player.w);
  // v131 Props/Hazards/Events: a deliberate early brake-set is now read by course operations.
  // The vehicle/crew visibly holds outside Jimmy's line instead of still committing across it.
- // This is a safety/readability interaction only: wildlife, normal hazard density, and scoring stay unchanged.
+ // Wildlife and normal hazard density stay unchanged; A49 banks the read only after the safe pass.
  if(o.yieldClear){
   if(o.reactionTimer>0)o.reactionTimer=Math.max(0,o.reactionTimer-dt);
+  // v221-A47 Props/Hazards/Events: a successful clear-line read now has a full event lifecycle.
+  // Operations hold out of Jimmy's corridor until he is safely past, then resume behind him.
+  // The resume happens only after the actor is behind the rider; A49 banks the armed read at that same safe boundary.
+  if(yieldActorSafelyBehind(o,sx)&&!o.yieldResumed){
+   awardClearLineRead(o);
+   o.yieldResumed=true;o.yieldClear=false;o.yieldResume=true;o.reactionTimer=.72;o.yieldLift=0;
+   o.vx=o.resumeVx??o.baseVx??0;
+  }
   return;
  }
  const brakeRead=player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<365&&gap>150;
  if(brakeRead&&!o.reacted){
-  o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.15;o.baseVx=o.vx;o.yieldLift=14;
+  o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.15;o.baseVx=o.vx;o.resumeVx=o.vx;o.yieldLift=14;
+  o.yieldSide=((Math.floor(o.wx/190)%2)*2-1);
   o.vx=o.type==='snowcat'?18:o.type==='trailcart'?12:22;
-  awardClearLineRead(o);
+  armClearLineRead(o);
   return;
  }
  if(gap<350&&gap>85&&!o.reacted){
@@ -2239,14 +2549,22 @@ function updateEncounterBehavior(o,sx,dt){
  // people yield out of the active line. SEND IT or a late/nonexistent read keeps the original crossing behavior.
  if(o.yieldClear){
   if(o.reactionTimer>0)o.reactionTimer=Math.max(0,o.reactionTimer-dt);
+  // v221-A47: people who yielded hold the clear corridor until Jimmy passes, then resume behind him.
+  // This turns the old permanent collision exemption into a readable yield / hold / resume event.
+  if(yieldActorSafelyBehind(o,sx)&&!o.yieldResumed){
+   awardClearLineRead(o);
+   o.yieldResumed=true;o.yieldClear=false;o.yieldResume=true;o.reactionTimer=.68;o.yieldLift=0;
+   o.vx=o.resumeVx??o.baseVx??0;
+  }
   return;
  }
  const brakeRead=player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<350&&gap>145;
  if(brakeRead&&!o.reacted){
-  o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.05;o.baseVx=o.vx;
+  o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.05;o.baseVx=o.vx;o.resumeVx=o.vx;
   o.yieldLift=o.type==='skier'?16:o.type==='hiker'?12:10;
+  o.yieldSide=((Math.floor(o.wx/170)%2)*2-1);
   o.vx=o.type==='skier'?20:o.type==='hiker'?12:16;
-  awardClearLineRead(o);
+  armClearLineRead(o);
   return;
  }
  // v82 SoCal fairness: the second pedestrian is visual/event pressure, not an unavoidable second wall.
@@ -2366,6 +2684,18 @@ function spawn(){
  // Surface read replaces one ordinary hazard slot after the opening settles down.
  // It never stacks with wildlife, human traffic, or operations encounters.
  const surfaceEvent=!wildlife&&!encounter&&!maintenance&&!surfaceEventUsed&&runTime>10;
+ const stagedKind=encounter?'encounter':maintenance?'maintenance':surfaceEvent?'surface':null;
+ const warningPlan=stagedKind?stagedWarningPlan(stagedKind,speed,mode):null;
+ const stagedWx=spawnWx+(warningPlan?warningPlan.extra:0);
+ if(warningPlan&&warningPlan.extra>0){
+  const stagedCorridor=launchCorridorAt(stagedWx);
+  if(stagedCorridor){
+   // Do not buy warning time by moving a traffic/surface event into authored launch or catch terrain.
+   // Defer the whole spawn until the shifted event position is safely beyond that corridor.
+   nextSpawn=Math.max(world+70,stagedCorridor.end+90-W-80);
+   return;
+  }
+ }
  let type=wildlife?d.wild:encounter?d.event:maintenance?(mode==='snow'?'snowcat':mode==='bike'?'trailcart':'utilityvan')
   :surfaceEvent?(mode==='snow'?'snowchop':mode==='bike'?'loosegravel':'brokenasphalt')
   :pool[Math.floor(Math.random()*pool.length)];
@@ -2376,8 +2706,9 @@ function spawn(){
  if(encounter)eventUsed=true;
  if(maintenance)maintenanceUsed=true;
  if(surfaceEvent)surfaceEventUsed=true;
- let o={wx:spawnWx,type,w:38,h:42,hit:false,passed:false,vx:0,event:encounter,wildlife,maintenance,surfaceHazard:surfaceEvent,
-  sectionKind:f?f.kind:null,lineChoice,variant:0,reacted:false,reactionTimer:0,baseVx:0,surfaceResolved:false};
+ let o={wx:stagedWx,type,w:38,h:42,hit:false,passed:false,vx:0,event:encounter,wildlife,maintenance,surfaceHazard:surfaceEvent,
+  sectionKind:f?f.kind:null,lineChoice,variant:0,reacted:false,reactionTimer:0,baseVx:0,surfaceResolved:false,
+  warningLead:warningPlan?warningPlan.lead:0,warningDecisionSeconds:warningPlan?warningPlan.seconds:0};
  Object.assign(o,{
   rock:{w:38,h:24},kicker:{w:58,h:24},drop:{w:58,h:24},log:{w:46,h:15},lion:{w:58,h:30,vx:-70},bear:{w:48,h:54,vx:-18},streetfreeze:{w:30,h:58,vx:0},pedestrian:{w:32,h:56,vx:-18},
   snowgun:{w:34,h:48},snowmarker:{w:18,h:52},snowbank:{w:62,h:14},parkrail:{w:66,h:20},trailpost:{w:24,h:46},trailflag:{w:20,h:38},roots:{w:58,h:12},trashcan:{w:30,h:40},roadpatch:{w:64,h:7},
@@ -2389,9 +2720,9 @@ function spawn(){
  if(surfaceEvent)o.decor=true;
  obstacles.push(o);
  if(!surfaceEvent)maybeSpawnLoreProp(spawnWx,f,lineChoice);
- if(encounter)stageEncounter(o,spawnWx,f,lineChoice);
- if(maintenance)stageMaintenanceEncounter(o,spawnWx,f,lineChoice);
- if(surfaceEvent)stageSurfaceEvent(spawnWx,f,lineChoice);
+ if(encounter)stageEncounter(o,stagedWx,f,lineChoice);
+ if(maintenance)stageMaintenanceEncounter(o,stagedWx,f,lineChoice);
+ if(surfaceEvent)stageSurfaceEvent(o,stagedWx,f,lineChoice);
  // v53 fairness fix: every new obstacle reserves enough world distance for one full jump arc,
  // touchdown, and a brief grounded reaction window before another mandatory jump can arrive.
  // The reserve grows with speed so SEND IT stays difficult without producing impossible back-to-back hazards.
@@ -2402,7 +2733,8 @@ function spawn(){
  const lineBuffer=f&&f.complex?(lineChoice==='fast'?55:lineChoice==='control'?135:95):75;
  const minGap=Math.max(staged?900:720,recoveryGap+lineBuffer+(staged?210:0));
  const maxGap=minGap+(staged?260:220);
- nextSpawn=world+rand(minGap,maxGap)
+ // Keep the same post-event recovery spacing after the speed-scaled staging shift.
+ nextSpawn=world+(warningPlan?warningPlan.extra:0)+rand(minGap,maxGap)
 }
 function jump(){
  activateRunFromIntro();
@@ -2447,7 +2779,8 @@ function jump(){
    if(rampU>=.38&&rampU<.60){
     ensureAudio();sfx('jump');jumpBtn.classList.add('active');setTimeout(()=>jumpBtn.classList.remove('active'),120);
     rampPopQueued=true;rampPopQueuedAt=now;rampPopFeatureLabel=rampPressFeature.label||'';
-    physicsCue='POP LOADED · RIDE THE LIP';physicsCueTimer=.62;
+    rampPopQuality=rampPreloadQuality(rampU,mode);
+    physicsCue=rampPopQuality>=.82?'POP LOADED · SWEET SPOT':'POP LOADED · RIDE THE LIP';physicsCueTimer=.62;
     return;
    }
   }
@@ -2474,20 +2807,28 @@ function jump(){
 // finger alone must not release the held action. This prevents accidental speed-control drops
 // while a player repositions a thumb on a phone. A rotation/blur hard release clears all owners.
 const holdPointers=new Map();
+// v221-A51 QA/mobile: hold controls now compose pointer + keyboard ownership instead of letting
+// whichever source releases first cancel the other. This matters on iPads with keyboards,
+// touch laptops, automated QA, and any player who transitions between physical and touch input.
+let brakePointerIntent=false,sendPointerIntent=false;
 function bindHold(btn,setter){
  const pointers=new Set();holdPointers.set(btn,pointers);
  btn.addEventListener('pointerdown',e=>{
   e.preventDefault();
   const first=pointers.size===0;
   pointers.add(e.pointerId);
-  if(first)setter(true);
-  btn.classList.add('active');
+  if(first)setter(true,'press');
   try{btn.setPointerCapture(e.pointerId)}catch(_){}
  });
- ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>btn.addEventListener(ev,e=>{
+ btn.addEventListener('pointerup',e=>{
   if(e.preventDefault)e.preventDefault();
   const owned=pointers.delete(e.pointerId);
-  if(owned&&pointers.size===0){setter(false);btn.classList.remove('active')}
+  if(owned&&pointers.size===0)setter(false,'release');
+ });
+ ['pointercancel','lostpointercapture'].forEach(ev=>btn.addEventListener(ev,e=>{
+  if(e.preventDefault)e.preventDefault();
+  const owned=pointers.delete(e.pointerId);
+  if(owned&&pointers.size===0)setter(false,'cancel');
  }));
 }
 $('jump').addEventListener('pointerdown',e=>{e.preventDefault();if(postGameJumpRestart())return;jump()});
@@ -2508,6 +2849,7 @@ function startBrakeTechnique(){
  if(braking)return;
  sfx('brake');brakeHold=0;brakeEntrySpeed=speed;brakeMinSpeed=speed;braking=true;
 }
+function clearBrakeTechnique(){braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0}
 function releaseBrakeTechnique(){
  if(!braking)return;
  const held=brakeHold;
@@ -2524,15 +2866,38 @@ function releaseBrakeTechnique(){
    physicsCueTimer=.9;
   }
  }
- braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;
+ clearBrakeTechnique();
 }
-bindHold(brakeBtn,v=>{if(v)activateRunFromIntro();if(v&&!braking)startBrakeTechnique();else if(!v)releaseBrakeTechnique()});bindHold(sendBtn,v=>{if(v)activateRunFromIntro();if(v&&!sendIt)sfx('send');sendIt=v});
 // v71 desktop QA: keyboard controls mirror the three touch controls without changing mobile behavior.
 // W / Up / Space = Jump, S / Down / A / Left = Brake, D / Right = Send It.
 const heldKeys=new Set();
 const jumpKeys=new Set(['KeyW','ArrowUp','Space']);
 const brakeKeys=new Set(['KeyS','ArrowDown','KeyA','ArrowLeft']);
 const sendKeys=new Set(['KeyD','ArrowRight']);
+function keyIntent(keys){for(const k of heldKeys)if(keys.has(k))return true;return false}
+// v221-A59 QA/mobile: a canceled touch is not a deliberate brake release.
+// iOS can emit pointercancel/lostpointercapture when a system gesture, browser chrome, or
+// interruption takes ownership of the finger. Ending BRAKE through that path must neutralize
+// the hold without awarding the timed CARVE/PUMP/TUCK release speed return. Normal pointerup
+// and keyboard keyup still use the skill release exactly as before.
+function syncBrakeInput(allowTechniqueRelease=true){
+ const desired=brakePointerIntent||keyIntent(brakeKeys);
+ if(desired&&!braking)startBrakeTechnique();
+ else if(!desired&&braking){
+  if(allowTechniqueRelease)releaseBrakeTechnique();
+  else clearBrakeTechnique();
+ }
+ brakeBtn.classList.toggle('active',desired);
+ return desired;
+}
+function syncSendInput(){
+ const desired=sendPointerIntent||keyIntent(sendKeys);
+ if(desired&&!sendIt)sfx('send');
+ sendIt=desired;sendBtn.classList.toggle('active',desired);
+ return desired;
+}
+bindHold(brakeBtn,(v,reason)=>{if(v)activateRunFromIntro();brakePointerIntent=v;syncBrakeInput(reason!=='cancel')});
+bindHold(sendBtn,v=>{if(v)activateRunFromIntro();sendPointerIntent=v;syncSendInput()});
 function keyControl(code,down,repeat=false){
  if(paused&&(jumpKeys.has(code)||brakeKeys.has(code)||sendKeys.has(code)))return true;
  if(down&&introActive&&(jumpKeys.has(code)||brakeKeys.has(code)||sendKeys.has(code)))activateRunFromIntro();
@@ -2545,13 +2910,13 @@ function keyControl(code,down,repeat=false){
   return true;
  }
  if(brakeKeys.has(code)){
-  if(down){heldKeys.add(code);if(!braking)startBrakeTechnique();brakeBtn.classList.add('active')}
-  else{heldKeys.delete(code);if(![...heldKeys].some(k=>brakeKeys.has(k)))releaseBrakeTechnique();brakeBtn.classList.remove('active')}
+  if(down)heldKeys.add(code);else heldKeys.delete(code);
+  syncBrakeInput();
   return true;
  }
  if(sendKeys.has(code)){
-  if(down){heldKeys.add(code);if(!sendIt)sfx('send');sendIt=true;sendBtn.classList.add('active')}
-  else{heldKeys.delete(code);if(![...heldKeys].some(k=>sendKeys.has(k)))sendIt=false;sendBtn.classList.remove('active')}
+  if(down)heldKeys.add(code);else heldKeys.delete(code);
+  syncSendInput();
   return true;
  }
  return false;
@@ -2567,7 +2932,8 @@ window.addEventListener('keyup',e=>{
  if(keyControl(e.code,false,false))e.preventDefault()
 },{passive:false});
 function releaseControls(){
- heldKeys.clear();holdPointers.forEach(pointers=>pointers.clear());braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;
+ heldKeys.clear();holdPointers.forEach(pointers=>pointers.clear());brakePointerIntent=false;sendPointerIntent=false;
+ braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;
  brakeBtn.classList.remove('active');jumpBtn.classList.remove('active');sendBtn.classList.remove('active');
 }
 // v78 mobile QA: do not release every control when any one finger lifts.
@@ -2934,7 +3300,8 @@ function update(dt){
    // v91 UI/Sound: landing quality now has an audible language. This is feedback only;
    // it does not alter speed, score, stability, collision, or landing forgiveness.
    const landingCleanliness=Math.max(0,1-landingError/.85);
-   const flowLanding=airTime>.32&&landingSlope>.055&&impactVy>2.2&&landingCleanliness>.35;
+   const landingCarry=airTime>.32?landingMomentumCarry(impactVy,landingSlope,landingError,landingAbsorb,mode):{eligible:false,gain:0,budget:0,cleanliness:landingCleanliness};
+   const flowLanding=landingCarry.eligible;
    const cleanLandingSound=airTime>.32&&landingCleanliness>.72&&normalImpact>2.6;
    // v111 Jimmy & animation: preserve the character of the touchdown for a short grounded
    // recovery sequence. Visual-only state: scoring, speed, stability and landing rules are untouched.
@@ -2985,23 +3352,25 @@ function update(dt){
     score+=Math.floor(airTime*330*(1+meter/100));
     meter=Math.min(100,meter+airTime*7);
 
-    // Flow physics: match the landing transition and Jimmy carries momentum.
-    // Land against the grade and the terrain scrubs speed instead.
-    const cleanLanding=landingCleanliness;
-    if(landingSlope>.055 && impactVy>2.2 && cleanLanding>.35){
-     const flowBoost=Math.min(1.35,.25+landingSlope*4.2+airTime*.32)*cleanLanding;
+    // v221-A52: match the landing transition and carry only the forward component that the
+    // actual touchdown can physically supply. BRAKE absorption deliberately converts more of that
+    // energy into composure instead of speed, so the safer line remains meaningfully slower.
+    if(landingCarry.eligible){
+     const flowBoost=landingCarry.gain;
      speed=Math.min(11.1,speed+flowBoost);
      skillAward(Math.round(90+flowBoost*110),'FLOW LANDING');
      meter=Math.min(100,meter+3+flowBoost*2);
-     speed=Math.min(11.1,speed+.08);
-     physicsCue+='  +'+Math.round(flowBoost*4.8)+' mph';
+     physicsCue+='  +'+Math.max(1,Math.round(flowBoost*4.8))+' mph';
      physicsCueTimer=1.05;
     }else if(landingSlope<-.07 && impactVy>2.4){
      const scrub=Math.min(.85,.18+Math.abs(landingSlope)*2.8);
      speed=Math.max(1.35,speed-scrub);
      physicsCue='UPHILL LANDING  -'+Math.max(1,Math.round(scrub*4.8))+' mph';
      physicsCueTimer=.8;
-    }else if(cleanLanding>.72 && impactVy>3.0){
+    // v221-A62 blocker hotfix: use the landingCleanliness value already computed above.
+    // A61 referenced a nonexistent cleanLanding variable here, which could throw on an otherwise
+    // successful clean touchdown that did not qualify for FLOW carry or the uphill scrub branch.
+    }else if(landingCleanliness>.72 && impactVy>3.0){
      skillAward(75,'CLEAN LANDING');
      physicsCueTimer=.75;
     }
@@ -3036,7 +3405,7 @@ function update(dt){
   const rampFeature=currentFeature(world+player.x+18);
   let rampLaunch=false;
   const rampPreloadLifetime=700;
-  if(rampPopQueued&&performance.now()-rampPopQueuedAt>rampPreloadLifetime){rampPopQueued=false;rampPopFeatureLabel=''}
+  if(rampPopQueued&&performance.now()-rampPopQueuedAt>rampPreloadLifetime){rampPopQueued=false;rampPopFeatureLabel='';rampPopQuality=0}
   if(rampFeature&&rampFeature.kind==='ramp'&&world-lastAutoLaunch>230){
    const ru=(world+player.x+18-rampFeature.x)/rampFeature.width;
    const manualRampPop=rampPopQueued&&rampPopFeatureLabel===(rampFeature.label||'')&&performance.now()-rampPopQueuedAt<=rampPreloadLifetime;
@@ -3056,16 +3425,20 @@ function update(dt){
     // Geometry owns the launch character: the short MTB lip is punchier, the snow kicker stays
     // balanced, and the low SoCal wedge sends Jimmy flatter. Approach speed, SEND IT and a timed
     // preload still matter, while a prepared line trades a little height for landing precision.
-    const rampLaunch=rampMomentumTransfer(speed,faceAngle,sendIt,manualRampPop,prepared,mode);
+    // v221-A61 blocker hotfix: keep the outer rampLaunch boolean distinct from the launch
+    // physics result. A60 reused the same identifier for both, so the takeoff path attempted
+    // to assign true to a block-scoped const and threw at the lip. Ramps now release normally
+    // without changing any launch tuning, terrain geometry, scoring, or control behavior.
+    const launchPhysics=rampMomentumTransfer(speed,faceAngle,sendIt,manualRampPop,prepared,mode,manualRampPop?rampPopQuality:1);
     airLineSet=lineSet;lineSet=0;lineSetReady=false;
     player.onGround=false;
-    player.vy=-rampLaunch.verticalImpulse;
-    speed=rampLaunch.exitSpeed;
+    player.vy=-launchPhysics.verticalImpulse;
+    speed=launchPhysics.exitSpeed;
     player.rot=surfaceAngle;
     // v221-A21 Jimmy & animation: preserve the compression-to-extension release for a short
     // visual follow-through after the authored lip. Stronger/timed pops carry a little more
     // extension, but this does not alter velocity, rotation, stability, scoring or collisions.
-    poseBlend.rampRelease=Math.max(poseBlend.rampRelease,Math.max(.72,Math.min(1,.68+(rampLaunch.verticalImpulse-5.4)*.085+(manualRampPop?.08:0))));
+    poseBlend.rampRelease=Math.max(poseBlend.rampRelease,Math.max(.72,Math.min(1,.68+(launchPhysics.verticalImpulse-5.4)*.085+(manualRampPop?.08:0))));
     stability=Math.min(100,stability+prepared*7+(manualRampPop?2:0));
     const launchNow=performance.now();
     lastAutoLaunch=world;lastAutoLaunchTime=launchNow;
@@ -3076,7 +3449,7 @@ function update(dt){
     // fifth-complex launch in each environment. Generic ramps keep their existing behavior.
     const expertLaunch=mode==='snow'?'GLADE TRANSFER':mode==='bike'?'SIDEHILL POP':'CONCRETE TRANSFER';
     activeExpertTransfer=rampFeature.label===expertLaunch?expertLaunch:'';
-    physicsCue=manualRampPop?(sendIt?'TIMED RAMP POP · SEND IT':'TIMED RAMP POP'):sendIt?'RAMP POP · SEND IT':prepared>.55?'RAMP POP · LINE SET':'RAMP POP';
+    physicsCue=manualRampPop?(sendIt?'TIMED RAMP POP · SEND IT':launchPhysics.popQuality>=.82?'TIMED RAMP POP · SWEET SPOT':'TIMED RAMP POP'):sendIt?'RAMP POP · SEND IT':prepared>.55?'RAMP POP · LINE SET':'RAMP POP';
     physicsCueTimer=manualRampPop?.84:.72;
    }
   }
@@ -3279,7 +3652,7 @@ function crash(o){
  physicsCue='DOUBLE-TAP JUMP · RESTART';physicsCueTimer=.78;
  let injury=injuries[Math.floor(Math.random()*injuries.length)];
  for(let i=0;i<32;i++)particles.push({x:player.x+18,y:player.y+25,vx:rand(-6,6),vy:rand(-8,2),life:rand(38,70)});
- let n=0,t=setInterval(()=>{if(chaseView){drawChaseScene();player.y+=2.7;drawChaseCrashPlayer(n/22,o.type)}else{drawScene();player.x+=2.4;player.y+=2.7;drawCrashPlayer(n/22,o.type);drawCrashXray(n/22,o.type);drawParticles()}if(++n>22){clearInterval(t);results(true,injury,o.type)}},30)
+ let n=0,t=setInterval(()=>{if(chaseView){drawChaseScene();player.y+=2.7;drawChaseCrashPlayer(n/22,o.type);drawChaseImpactScan(n/22,o.type)}else{drawScene();player.x+=2.4;player.y+=2.7;drawCrashPlayer(n/22,o.type);drawCrashXray(n/22,o.type);drawParticles()}if(++n>22){clearInterval(t);results(true,injury,o.type)}},30)
 }
 function finish(){clearPauseState();disposeSpeedSoundscape(.04);running=false;ended=true;updatePauseButton();results(false,null,null)}
 
@@ -4805,6 +5178,70 @@ function drawChasePlaceIdentityPass(riderWx,look,horizon){
  ctx.restore();
 }
 
+
+function drawChaseEdgeDepthPass(riderWx,look){
+ // v221-A55 Environment Graphics: give CHASE BETA a grounded route edge instead of a flat
+ // ribbon sitting on a single-color shoulder. The pass is visual-only: it projects narrow
+ // sport-specific berm/cut/curb depth outside the authoritative ride surface and adds a few
+ // world-anchored shoulder details. No terrain, collision, grip, braking, score, or controls change.
+ const steps=28;
+ const shadow=mode==='snow'?'rgba(91,132,154,.34)':mode==='bike'?'rgba(65,45,31,.42)':'rgba(29,32,35,.46)';
+ const lip=mode==='snow'?'rgba(239,248,252,.70)':mode==='bike'?'rgba(192,148,99,.50)':'rgba(205,201,191,.48)';
+ const bandRatio=mode==='snow'?.060:mode==='bike'?.052:.042;
+ ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+ for(const side of [-1,1]){
+  for(let i=0;i<steps;i++){
+   const dFar=look-(i/steps)*look,dNear=look-((i+1)/steps)*look;
+   const pf=chaseProjection(dFar),pn=chaseProjection(dNear);
+   const bf=Math.max(1.2,pf.half*bandRatio),bn=Math.max(1.6,pn.half*bandRatio);
+   const sinkF=Math.max(.4,2.4*pf.scale),sinkN=Math.max(.6,3.2*pn.scale);
+   ctx.fillStyle=shadow;
+   ctx.beginPath();
+   ctx.moveTo(pf.x+side*pf.half,pf.y);
+   ctx.lineTo(pf.x+side*(pf.half+bf),pf.y+sinkF);
+   ctx.lineTo(pn.x+side*(pn.half+bn),pn.y+sinkN);
+   ctx.lineTo(pn.x+side*pn.half,pn.y);
+   ctx.closePath();ctx.fill();
+  }
+  ctx.strokeStyle=lip;ctx.lineWidth=1.05;ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+   const p=chaseProjection(look-(i/steps)*look),off=Math.max(1.0,p.half*bandRatio*.52);
+   const x=p.x+side*(p.half+off);
+   i?ctx.lineTo(x,p.y+Math.max(.2,1.15*p.scale)):ctx.moveTo(x,p.y+Math.max(.2,1.15*p.scale));
+  }
+  ctx.stroke();
+ }
+
+ // Stable shoulder details provide scale without becoming obstacles.
+ const spacing=mode==='snow'?165:mode==='bike'?185:205;
+ const first=Math.ceil((riderWx+95)/spacing)*spacing;
+ for(let wx=first;wx<riderWx+look;wx+=spacing){
+  const gap=wx-riderWx,p=chaseProjection(gap),idx=Math.floor(wx/spacing);
+  if(p.scale<.14)continue;
+  const side=idx%2?-1:1;
+  const edge=p.x+side*(p.half+Math.max(4,p.half*bandRatio*1.35));
+  const y=p.y+Math.max(.8,2.4*p.scale);
+  if(mode==='snow'){
+   const w=(9+hash(idx+401)*9)*p.scale,h=(3.5+hash(idx+405)*3)*p.scale;
+   ctx.fillStyle='rgba(220,238,246,.68)';ctx.beginPath();ctx.ellipse(edge,y,w,h,side*.08,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='rgba(255,255,255,.58)';ctx.lineWidth=Math.max(.7,1.2*p.scale);ctx.beginPath();ctx.moveTo(edge-side*w*.7,y-h*.28);ctx.quadraticCurveTo(edge,y-h*.85,edge+side*w*.65,y-h*.18);ctx.stroke();
+  }else if(mode==='bike'){
+   const rock=(7+hash(idx+511)*8)*p.scale;
+   ctx.fillStyle=idx%3?'rgba(111,80,55,.72)':'rgba(137,96,61,.68)';
+   ctx.beginPath();ctx.moveTo(edge-rock,y+2*p.scale);ctx.lineTo(edge-rock*.30,y-rock*.55);ctx.lineTo(edge+rock*.62,y-rock*.22);ctx.lineTo(edge+rock,y+2*p.scale);ctx.closePath();ctx.fill();
+   if(idx%3===0){ctx.strokeStyle='rgba(77,96,55,.70)';ctx.lineWidth=Math.max(.7,1.2*p.scale);ctx.beginPath();ctx.moveTo(edge+side*rock*.45,y);ctx.lineTo(edge+side*rock*.65,y-12*p.scale);ctx.moveTo(edge+side*rock*.58,y-6*p.scale);ctx.lineTo(edge+side*rock*1.05,y-10*p.scale);ctx.stroke()}
+  }else{
+   // A restrained curb/drainage rhythm makes the street edge read as built infrastructure.
+   const w=22*p.scale,h=4.5*p.scale;
+   ctx.fillStyle='rgba(190,187,180,.62)';ctx.fillRect(edge-side*(side>0?0:w),y-h,w,h);
+   ctx.strokeStyle='rgba(91,93,94,.62)';ctx.lineWidth=Math.max(.7,p.scale);
+   const sx=edge+side*w*.52;ctx.beginPath();ctx.moveTo(sx,y-h);ctx.lineTo(sx,y);ctx.stroke();
+   if(idx%4===0){ctx.fillStyle='rgba(56,61,64,.72)';const dw=7*p.scale;ctx.fillRect(edge+side*6*p.scale-dw*.5,y-h*.82,dw,Math.max(1,1.6*p.scale))}
+  }
+ }
+ ctx.restore();
+}
+
 function drawChaseSurfaceMaterialPass(riderWx,look){
  // v221-A38 Environment Graphics: carry A30's world-anchored material language into CHASE BETA.
  // Every fleck belongs to a stable course coordinate and is projected through the same camera as
@@ -4884,6 +5321,9 @@ function drawChaseObstacle(o){
  // v221-A39: in Chase, a wildlife brake-read must look like an actual retreat, not an invisible
  // collision exemption. Slide the animal to a shoulder while keeping the authoritative course unchanged.
  if(o.wildlife&&o.yieldClear)side=(o.retreatSide||1)*.88;
+ // v221-A47: a successful human/operations yield must visibly clear the corridor in Chase too.
+ // Once Jimmy has passed and the actor resumes, yieldClear drops and the actor naturally returns to center behind him.
+ else if(o.yieldClear&&(o.event||o.maintenance))side=(o.yieldSide||1)*.84;
  const x=p.x+side*p.half,y=p.y,sc=Math.max(.12,p.scale);
  const w=Math.max(5,Math.min(82,(o.w||28)*sc*.92)),h=Math.max(7,Math.min(78,(o.h||34)*sc*.88));
  ctx.save();ctx.translate(x,y);ctx.globalAlpha=o.hit?.45:1;
@@ -4920,6 +5360,7 @@ function drawChaseScene(){
   const dFar=look-(i/bands)*look,dNear=look-((i+1)/bands)*look,pf=chaseProjection(dFar),pn=chaseProjection(dNear);
   ctx.fillStyle=chaseSurfaceColor(i);ctx.beginPath();ctx.moveTo(pf.x-pf.half,pf.y);ctx.lineTo(pf.x+pf.half,pf.y);ctx.lineTo(pn.x+pn.half,pn.y);ctx.lineTo(pn.x-pn.half,pn.y);ctx.closePath();ctx.fill();
  }
+ drawChaseEdgeDepthPass(riderWx,look);
  drawChaseSurfaceMaterialPass(riderWx,look);
  // Edge definition and sport-specific surface cues.
  ctx.lineWidth=2;ctx.strokeStyle=mode==='snow'?'rgba(101,139,160,.72)':mode==='bike'?'rgba(74,52,36,.74)':'rgba(226,222,210,.38)';
@@ -4935,6 +5376,21 @@ function drawChaseScene(){
  // Near-field speed streaks are driven by actual velocity; no blur and no gameplay effect.
  const speedStrength=Math.max(0,Math.min(1,(speed-6.2)/3.8));if(speedStrength>.03){ctx.strokeStyle=`rgba(245,248,250,${.04+speedStrength*.10})`;ctx.lineWidth=1.2;for(let i=0;i<8;i++){const y=H*(.64+i*.038),len=18+speedStrength*45,side=i%2?-1:1;ctx.beginPath();ctx.moveTo(W*.5+side*W*(.20+i*.025),y);ctx.lineTo(W*.5+side*(W*(.20+i*.025)+len),y+4);ctx.stroke()}}
  ctx.fillStyle='rgba(8,11,15,.72)';ctx.fillRect(9,9,90,18);ctx.strokeStyle='rgba(242,184,75,.80)';ctx.strokeRect(9.5,9.5,89,17);ctx.fillStyle='#f2b84b';ctx.font='900 8px system-ui';ctx.textAlign='center';ctx.fillText('CHASE VIEW · BETA',54,21);
+}
+function chaseLandingRecoveryEnvelope(timer=landingRecoveryTimer,kind=landingRecoveryKind,impact=landingRecoveryImpact,onGround=player.onGround){
+ // v221-A54 Jimmy & animation: CHASE BETA now keeps the touchdown load -> recovery -> settle
+ // sequence that SIDE already communicates. This envelope is visual-only and reads the existing
+ // landing recovery state without changing speed, stability, score, collision, or input timing.
+ const active=!!onGround&&timer>0;
+ const phase=active?Math.max(0,Math.min(1,1-timer/.52)):1;
+ const load=active?Math.pow(1-phase,2)*impact:0;
+ const rise=active?Math.sin(phase*Math.PI)*impact:0;
+ return{
+  active,phase,kind:active?kind:'none',load,rise,
+  correction:active&&kind==='rough'?rise:0,
+  flow:active&&kind==='flow'?rise:0,
+  absorb:active&&kind==='absorb'?rise:0
+ };
 }
 function chaseRiderPose(){
  // v221-A37 Jimmy & animation: CHASE BETA now carries the same experienced terrain-reading
@@ -4973,7 +5429,10 @@ function chaseRiderPose(){
   const brace=landingLoadBrace(player.vy,speed,terrainSlopeAt(probeX),spot);
   landing=spot*(.38+.62*brace);
  }
- return{rampLoad,rampPop,terrainLoad,terrainRelease,landing,rampRollLoad,rampRollSettle};
+ const recovery=chaseLandingRecoveryEnvelope();
+ return{rampLoad,rampPop,terrainLoad,terrainRelease,landing,rampRollLoad,rampRollSettle,
+  recoveryActive:recovery.active,recoveryKind:recovery.kind,recoveryLoad:recovery.load,
+  recoveryRise:recovery.rise,recoveryCorrection:recovery.correction,recoveryFlow:recovery.flow,recoveryAbsorb:recovery.absorb};
 }
 function drawChasePlayer(){
  const clearance=Math.max(0,(groundY(player.x)-player.h)-player.y),airLift=Math.min(H*.16,clearance*.55),x=W*.5,y=H*.82-airLift;
@@ -4984,9 +5443,10 @@ function drawChasePlayer(){
  const crouch=Math.max(0,
   brake*5+send*2+(player.onGround?0:2.5)+pose.rampLoad*6.4+pose.terrainLoad*3.2+pose.landing*6.0
   +(pose.rampRollLoad||0)*4.8-(pose.rampRollSettle||0)*1.7-pose.rampPop*4.8-pose.terrainRelease*1.7
+  +(pose.recoveryLoad||0)*5.1-(pose.recoveryFlow||0)*3.0-(pose.recoveryAbsorb||0)*.7
  );
- const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94+(pose.rampRollLoad||0)*.72);
- const extension=Math.min(1,pose.rampPop+pose.terrainRelease*.42+(rising?.18:0));
+ const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94+(pose.rampRollLoad||0)*.72+(pose.recoveryLoad||0)*.72+(pose.recoveryAbsorb||0)*.24);
+ const extension=Math.min(1,pose.rampPop+pose.terrainRelease*.42+(rising?.18:0)+(pose.recoveryFlow||0)*.34);
  ctx.save();ctx.translate(x,y);ctx.globalAlpha=.98;
  // Ground/contact shadow follows the rider but drops away in airtime.
  ctx.fillStyle=`rgba(0,0,0,${player.onGround?.28:.10})`;ctx.beginPath();ctx.ellipse(0,20+airLift*.08,36+speed*1.1,7,0,0,Math.PI*2);ctx.fill();
@@ -5004,12 +5464,20 @@ function drawChasePlayer(){
  // Snow stays quiet and forward; MTB opens the elbows; longboard opens from tuck only when needed.
  let armL=-18-brake*4,armR=18+brake*4,armY=-2+send*3;
  if(mode==='snow'){
-  armL=-16+extension*2;armR=16+extension*2;armY=-2+shoulderLoad*5-extension*3;
+  // Flow landings quietly reopen down-course; absorb stays compact; rough landings get one
+  // controlled counter-sweep instead of snapping straight back to the neutral silhouette.
+  armL=-16+extension*2-(pose.recoveryCorrection||0)*6-(pose.recoveryFlow||0)*2;
+  armR=16+extension*2+(pose.recoveryCorrection||0)*5+(pose.recoveryFlow||0)*4;
+  armY=-2+shoulderLoad*5-extension*3+(pose.recoveryAbsorb||0)*4-(pose.recoveryFlow||0)*5;
  }else if(mode==='bike'){
-  armL=-18-shoulderLoad*7+extension*2;armR=18+shoulderLoad*7-extension*2;armY=-3+shoulderLoad*4-extension*4;
+  armL=-18-shoulderLoad*7+extension*2-(pose.recoveryCorrection||0)*5;
+  armR=18+shoulderLoad*7-extension*2+(pose.recoveryCorrection||0)*5;
+  armY=-3+shoulderLoad*4-extension*4+(pose.recoveryAbsorb||0)*3-(pose.recoveryFlow||0)*4;
  }else{
-  const tuck=send&&!brake?1:0,open=Math.max(shoulderLoad,pose.landing);
-  armL=-13+tuck*5-open*9;armR=14-tuck*4+open*10;armY=-2-open*3+extension*2;
+  const tuck=send&&!brake?1:0,open=Math.max(shoulderLoad,pose.landing,(pose.recoveryCorrection||0)*.9,(pose.recoveryAbsorb||0)*.45);
+  armL=-13+tuck*5-open*9-(pose.recoveryCorrection||0)*5-(pose.recoveryFlow||0)*2;
+  armR=14-tuck*4+open*10+(pose.recoveryCorrection||0)*5+(pose.recoveryFlow||0)*4;
+  armY=-2-open*3+extension*2+(pose.recoveryAbsorb||0)*4-(pose.recoveryFlow||0)*4;
  }
  const hipY=4+crouch*.36,shoulderY=-14+crouch*.62,headY=-34+crouch*.52;
  ctx.strokeStyle='#20262b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-20+crouch*.52);ctx.lineTo(0,hipY+2);ctx.stroke();ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,shoulderY);ctx.lineTo(armL,armY);ctx.moveTo(0,shoulderY);ctx.lineTo(armR,armY+(mode==='board'?2:0));ctx.stroke();ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(0,hipY);ctx.lineTo(-12,18+crouch*.18);ctx.moveTo(0,hipY);ctx.lineTo(13,18+crouch*.18);ctx.stroke();
@@ -5024,6 +5492,48 @@ function drawChasePhysicsCue(){
 }
 function drawChaseCrashPlayer(progress,hit){
  const p=Math.max(0,Math.min(1,progress)),x=W*.5+Math.sin(p*11)*W*.025,y=H*.80+p*H*.06,spin=p*Math.PI*(hit==='wobble'?1.4:2.2);ctx.save();ctx.translate(x,y);ctx.rotate(spin);ctx.strokeStyle='#20262b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-25);ctx.lineTo(0,10);ctx.moveTo(0,-12);ctx.lineTo(-22,2);ctx.moveTo(0,-12);ctx.lineTo(22,4);ctx.moveTo(0,8);ctx.lineTo(-16,24);ctx.moveTo(0,8);ctx.lineTo(16,24);ctx.stroke();ctx.fillStyle='#c69572';ctx.beginPath();ctx.arc(0,-35,9,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(242,184,75,.75)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-6,28+p*35,0,Math.PI*2);ctx.stroke();ctx.restore();
+}
+
+function drawChaseImpactScan(progress,hit){
+ // v221-A50 UI/Sound/Polish: CHASE BETA now gets the same short, stylized impact-scan
+ // language as SIDE. This is a visual debrief cue only; it does not change crash physics,
+ // collision, scoring, recovery timing, or the result-page diagnosis disclaimer.
+ const t=Math.max(0,Math.min(1,progress));
+ if(t<.10||t>.56)return;
+ const q=(t-.10)/.46,pulse=Math.sin(q*Math.PI),spin=t*Math.PI*(hit==='wobble'?1.4:2.2);
+ const x=W*.5+Math.sin(t*11)*W*.025,y=H*.80+t*H*.06;
+ const impact=crashImpactReview(hit),cause=impact.label;
+ let ix=0,iy=8;
+ if(hit==='landing'){ix=0;iy=20}
+ else if(hit==='edgewash'){ix=-11;iy=13}
+ else if(hit==='frontload'){ix=11;iy=-5}
+ else if(hit==='wobble'){ix=-2;iy=6}
+ else if(['rock','log','roots','curb','pothole'].includes(hit)){ix=7;iy=15}
+ else if(['tree','snowgun','trailpost'].includes(hit)){ix=10;iy=-7}
+ else if(['skier','hiker','pedestrian','snowcat','trailcart','utilityvan','bear','lion'].includes(hit)){ix=7;iy=1}
+
+ ctx.save();
+ ctx.globalCompositeOperation='screen';
+ ctx.translate(x,y);ctx.rotate(spin);
+ ctx.globalAlpha=.90*pulse;ctx.shadowColor='rgba(190,238,255,.95)';ctx.shadowBlur=11+17*pulse;
+ ctx.strokeStyle='rgba(223,248,255,.98)';ctx.fillStyle='rgba(203,241,255,.13)';ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();ctx.ellipse(0,-5,31,49,0,0,Math.PI*2);ctx.fill();
+ ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(0,-35,8.2,0,Math.PI*2);ctx.stroke();
+ ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-26);ctx.quadraticCurveTo(-2,-9,0,10);ctx.stroke();
+ ctx.lineWidth=1.7;for(let i=0;i<4;i++){const yy=-20+i*5.2,ww=11-i*.9;ctx.beginPath();ctx.ellipse(0,yy,ww,4.2,0,0,Math.PI*2);ctx.stroke()}
+ ctx.lineWidth=3;for(const b of [[0,-16,-21,-1],[0,-16,21,2],[0,9,-16,27],[0,9,16,27]]){ctx.beginPath();ctx.moveTo(b[0],b[1]);ctx.lineTo(b[2]*.52,b[3]*.52+b[1]*.48);ctx.lineTo(b[2],b[3]);ctx.stroke()}
+ ctx.fillStyle='rgba(240,252,255,.98)';for(const pt of [[0,-26],[0,9],[-11,-8],[11,-7],[-8,18],[8,18]]){ctx.beginPath();ctx.arc(pt[0],pt[1],1.9,0,Math.PI*2);ctx.fill()}
+ const ring=7+11*q;ctx.strokeStyle=`rgba(255,255,255,${.94*pulse})`;ctx.lineWidth=2.3;ctx.beginPath();ctx.arc(ix,iy,ring,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(ix-ring-4,iy);ctx.lineTo(ix+ring+4,iy);ctx.moveTo(ix,iy-ring-4);ctx.lineTo(ix,iy+ring+4);ctx.stroke();
+ ctx.restore();
+
+ // Keep the readout screen-stable while the rider spins, so it remains legible on phones.
+ ctx.save();ctx.globalAlpha=.90*pulse;const boxW=Math.min(148,Math.max(116,W*.30)),boxH=31,bx=Math.max(8,Math.min(W-boxW-8,x+38)),by=Math.max(36,Math.min(H-boxH-14,y-82));
+ ctx.fillStyle='rgba(7,13,19,.82)';ctx.strokeStyle='rgba(210,247,255,.86)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(bx,by,boxW,boxH,5);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#f6fbff';ctx.font=`900 ${Math.max(7,Math.min(9,W*.016))}px system-ui`;ctx.textAlign='left';ctx.fillText('IMPACT SCAN',bx+7,by+11);
+ ctx.fillStyle='#bfefff';ctx.font=`850 ${Math.max(6,Math.min(8,W*.014))}px system-ui`;ctx.fillText(cause,bx+7,by+23);
+ ctx.restore();
+
+ ctx.save();ctx.globalAlpha=.13*pulse;const scanY=y-45+q*92,grad=ctx.createLinearGradient(0,scanY-7,0,scanY+7);grad.addColorStop(0,'rgba(210,246,255,0)');grad.addColorStop(.5,'rgba(230,252,255,1)');grad.addColorStop(1,'rgba(210,246,255,0)');ctx.fillStyle=grad;ctx.fillRect(0,scanY-7,W,14);ctx.restore();
 }
 
 const VISUAL_PASS_ERRORS=new Set();
@@ -5385,7 +5895,7 @@ function drawObstacle(o){
   const cx=x+o.w*.5,tagW=o.maintenance?64:58,tagY=y-28;
   ctx.globalAlpha=.80+.16*pulse;ctx.fillStyle='rgba(18,21,24,.86)';ctx.strokeStyle='rgba(242,184,75,.86)';ctx.lineWidth=1.2;
   ctx.beginPath();ctx.roundRect(cx-tagW*.5,tagY,tagW,13,5);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#f2c66b';ctx.font='900 6px system-ui';ctx.textAlign='center';ctx.fillText(o.maintenance?'COMMITTING':'CROSSING',cx,tagY+9);
+  ctx.fillStyle='#f2c66b';ctx.font='900 6px system-ui';ctx.textAlign='center';ctx.fillText(o.yieldResume?'RESUMING':(o.maintenance?'COMMITTING':'CROSSING'),cx,tagY+9);
 
   if(o.type==='snowcat'){
    // Active groomer beacon and leading-edge marker.
@@ -6012,7 +6522,7 @@ function drawCrashXray(progress,hit){
 function drawParticles(frozen=false){for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/70);ctx.fillStyle=mode==='snow'?'#fff':mode==='bike'?'#d6ad79':'#bbb';ctx.fillRect(p.x,p.y,5,5);if(!frozen){p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.life--}}ctx.globalAlpha=1;if(!frozen)particles=particles.filter(p=>p.life>0)}
 
 // v221-A6 QA hook is exposed only when ?qa=1 is present; production behavior is unchanged.
-if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampRollAnimationEnvelope:(u,releaseU,active)=>({...rampRollAnimationEnvelope(u,releaseU,active)}),rampRollAnimationPose:()=>({...rampRollAnimationPose(world+player.x+18)}),rampRollPoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,sbh=brakeHold,si=sendIt,sq=rampPopQueued,sqa=rampPopQueuedAt,sql=rampPopFeatureLabel,src=rampRollCueFeature;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const release=mode==='snow'?.69:mode==='bike'?.57:.71,center=player.x+player.w*.5,setAt=(u,roll,committed=false)=>{world=(f.x+f.width*u)-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;speed=roll?4.45:6;braking=roll;brakeHold=roll?.34:0;sendIt=false;rampPopQueued=false;rampPopFeatureLabel='';rampRollCueFeature=committed?(f.label||('ramp-'+Math.round(f.x))):'';return{roll:{...rampRollAnimationPose(world+player.x+18)},chase:{...chaseRiderPose()}}};const out={label:f.label||'RAMP',release,pre:setAt(Math.max(.25,release-.13),true,false),normal:setAt(Math.max(.25,release-.13),false,false),post:setAt(Math.min(1,release+.16),false,true)};world=sw;player=sp;speed=ss;braking=sb;brakeHold=sbh;sendIt=si;rampPopQueued=sq;rampPopQueuedAt=sqa;rampPopFeatureLabel=sql;rampRollCueFeature=src;return out},rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseRiderPose:()=>({...chaseRiderPose()}),chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},setPaused:(value)=>setPaused(value),forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
+if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length,brakePointerIntent,sendPointerIntent,brakeKeyIntent:keyIntent(brakeKeys),sendKeyIntent:keyIntent(sendKeys),brakeActive:brakeBtn.classList.contains('active'),sendActive:sendBtn.classList.contains('active')}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),landingMomentumCarry:(vy,slope,error=0,absorbing=false,rideMode=mode)=>({...landingMomentumCarry(vy,slope,error,absorbing,rideMode)}),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampPreloadQuality:(u,rideMode=mode)=>rampPreloadQuality(u,rideMode),rampMomentumTransfer:(v,angle,send=false,manual=true,prepared=0,rideMode=mode,quality=1)=>({...rampMomentumTransfer(v,angle,send,manual,prepared,rideMode,quality)}),rampRollAnimationEnvelope:(u,releaseU,active)=>({...rampRollAnimationEnvelope(u,releaseU,active)}),rampRollAnimationPose:()=>({...rampRollAnimationPose(world+player.x+18)}),rampRollPoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,sbh=brakeHold,si=sendIt,sq=rampPopQueued,sqa=rampPopQueuedAt,sql=rampPopFeatureLabel,sqq=rampPopQuality,src=rampRollCueFeature;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const release=mode==='snow'?.69:mode==='bike'?.57:.71,center=player.x+player.w*.5,setAt=(u,roll,committed=false)=>{world=(f.x+f.width*u)-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;speed=roll?4.45:6;braking=roll;brakeHold=roll?.34:0;sendIt=false;rampPopQueued=false;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature=committed?(f.label||('ramp-'+Math.round(f.x))):'';return{roll:{...rampRollAnimationPose(world+player.x+18)},chase:{...chaseRiderPose()}}};const out={label:f.label||'RAMP',release,pre:setAt(Math.max(.25,release-.13),true,false),normal:setAt(Math.max(.25,release-.13),false,false),post:setAt(Math.min(1,release+.16),false,true)};world=sw;player=sp;speed=ss;braking=sb;brakeHold=sbh;sendIt=si;rampPopQueued=sq;rampPopQueuedAt=sqa;rampPopFeatureLabel=sql;rampPopQuality=sqq;rampRollCueFeature=src;return out},rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},rampSetupLanes:()=>{const runIn=mode==='snow'?140:mode==='bike'?135:130,minGap=mode==='snow'?130:mode==='bike'?110:140;return terrainFeatures.filter(f=>f.kind==='ramp'&&f.complex&&f.complexId!==undefined).map(f=>{let prev=null;for(const g of terrainFeatures){if(g.complexId!==f.complexId||g.x>=f.x)continue;if(!prev||g.x+g.width>prev.x+prev.width)prev=g}const gap=prev?Math.round((f.x-runIn)-(prev.x+prev.width)):null;return{label:f.label||'RAMP',complexId:f.complexId,gap,minGap,pass:gap===null||gap>=minGap}})},brakeEndProbe:(kind='cancel')=>{const snap={running,ended,introActive,paused,onGround:player.onGround,sendIt,speed,world,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed,physicsCue,physicsCueTimer};let px=world+player.x+38,bestSlope=terrainSlopeAt(px);for(let wx=120;wx<41000&&bestSlope<=.055;wx+=40){const s=terrainSlopeAt(wx);if(s>bestSlope){bestSlope=s;px=wx}}running=true;ended=false;introActive=false;paused=false;player.onGround=true;sendIt=false;world=px-player.x-38;speed=6.2;braking=true;brakeHold=.40;brakeEntrySpeed=8.0;brakeMinSpeed=5.7;physicsCue='PROBE BASE';physicsCueTimer=0;if(kind==='release')releaseBrakeTechnique();else clearBrakeTechnique();const out={kind,slope:terrainSlopeAt(world+player.x+38),speed,physicsCue,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed};running=snap.running;ended=snap.ended;introActive=snap.introActive;paused=snap.paused;player.onGround=snap.onGround;sendIt=snap.sendIt;speed=snap.speed;world=snap.world;braking=snap.braking;brakeHold=snap.brakeHold;brakeEntrySpeed=snap.brakeEntrySpeed;brakeMinSpeed=snap.brakeMinSpeed;physicsCue=snap.physicsCue;physicsCueTimer=snap.physicsCueTimer;return out},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),motionSoundRecipe:(m=mode)=>({...motionSoundRecipe(m)}),motionBufferSignature:(kind=mode)=>{const ac=ensureAudio();return ac?motionBufferSignature(ac,kind):null},speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),stagedWarningPlan:(kind='encounter',pace=6,rideMode=mode)=>({...stagedWarningPlan(kind,pace,rideMode)}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseRiderPose:()=>({...chaseRiderPose()}),chaseLandingRecoveryEnvelope:(timer=.26,kind='flow',impact=.85,onGround=true)=>({...chaseLandingRecoveryEnvelope(timer,kind,impact,onGround)}),chaseRecoveryFrame:(kind='flow',timer=.26,impact=.85)=>{const old={player:{...player},timer:landingRecoveryTimer,kind:landingRecoveryKind,impact:landingRecoveryImpact};player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;landingRecoveryTimer=timer;landingRecoveryKind=kind;landingRecoveryImpact=impact;drawChaseScene();drawChasePlayer();const out={...chaseRiderPose()};player=old.player;landingRecoveryTimer=old.timer;landingRecoveryKind=old.kind;landingRecoveryImpact=old.impact;return out},chaseImpactScanFrame:(progress=.3,hit='tree',scan=true)=>{drawChaseScene();drawChaseCrashPlayer(progress,hit);if(scan)drawChaseImpactScan(progress,hit);return{hit,label:crashImpactReview(hit).label,progress,scan:!!scan}},chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},yieldActorSafelyBehind:(w,sx,riderX=120)=>yieldActorSafelyBehind({w},sx,riderX),clearLinePaceReward:(pace)=>({...clearLinePaceReward(pace)}),yieldLifecycleProbe:(type='hiker',pace=6)=>{const old={mode,world,player:{...player},speed,braking,brakeEntrySpeed,sendIt,brakeHold,score,trafficReads,trafficReadPoints,meter,physicsCue,physicsCueTimer};const maintenance=['snowcat','trailcart','utilityvan'].includes(type);const defs={skier:{m:'snow',w:38,h:54,vx:-38},hiker:{m:'bike',w:30,h:54,vx:-28},pedestrian:{m:'board',w:32,h:56,vx:-18},snowcat:{m:'snow',w:108,h:48,vx:-22},trailcart:{m:'bike',w:74,h:42,vx:-10},utilityvan:{m:'board',w:98,h:48,vx:-34}};const d=defs[type]||defs.hiker;mode=d.m;world=0;player={...player,x:120,w:28,onGround:true};speed=pace;braking=true;brakeEntrySpeed=pace;sendIt=false;brakeHold=.3;score=0;trafficReads=0;trafficReadPoints=0;meter=0;const o={wx:430,type,w:d.w,h:d.h,vx:d.vx,event:!maintenance,wildlife:false,maintenance,decor:false,reacted:false,reactionTimer:0};let sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const yielded={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldSide:o.yieldSide||0,vx:o.vx,resumeVx:o.resumeVx};o.wx=player.x-Math.max(4,d.w*.45);sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const held={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,trailingEdge:o.wx+d.w,riderX:player.x};o.wx=player.x-d.w-18;sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const resumed={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,vx:o.vx,trailingEdge:o.wx+d.w,riderX:player.x};mode=old.mode;world=old.world;player=old.player;speed=old.speed;braking=old.braking;brakeEntrySpeed=old.brakeEntrySpeed;sendIt=old.sendIt;brakeHold=old.brakeHold;score=old.score;trafficReads=old.trafficReads;trafficReadPoints=old.trafficReadPoints;meter=old.meter;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;return{type,pace,yielded,held,resumed}},crashDialoguePool:(hit='default',context=null)=>[...crashLinePool(hit,context)],crashDialogueNext:(hit='default',context=null)=>crashLine(hit,context),setPaused:(value)=>setPaused(value),cleanLandingProbe:()=>{const old={running,ended,introActive,paused,world,player:{...player},speed,airTime,airLineSet,jumpTapCount,airTrick,braking,brakeHold,sendIt,score,meter,stability,physicsCue,physicsCueTimer,flowChain,flowTimer,bestFlowChain};const originalCarry=landingMomentumCarry,originalSlope=terrainSlopeAt;running=true;ended=false;introActive=false;paused=false;world=0;speed=5.6;airTime=.40;airLineSet=0;jumpTapCount=0;airTrick='';braking=false;brakeHold=0;sendIt=false;stability=100;score=0;meter=0;flowChain=0;flowTimer=0;physicsCue='PROBE';physicsCueTimer=0;terrainSlopeAt=()=>.10;landingMomentumCarry=()=>({eligible:false,gain:0,budget:0,cleanliness:1});player={...player,onGround:false,rot:Math.atan(.10),vy:3.25};player.y=groundY(player.x)-player.h+1;let out;try{update(1/60);out={ok:true,onGround:player.onGround,score,physicsCue,airTime,speed,stability}}catch(error){out={ok:false,error:String(error&&error.message||error)}}finally{landingMomentumCarry=originalCarry;terrainSlopeAt=originalSlope}running=old.running;ended=old.ended;introActive=old.introActive;paused=old.paused;world=old.world;player=old.player;speed=old.speed;airTime=old.airTime;airLineSet=old.airLineSet;jumpTapCount=old.jumpTapCount;airTrick=old.airTrick;braking=old.braking;brakeHold=old.brakeHold;sendIt=old.sendIt;score=old.score;meter=old.meter;stability=old.stability;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;flowChain=old.flowChain;flowTimer=old.flowTimer;bestFlowChain=old.bestFlowChain;return out},forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
 
 // v221-A5: composed controls + exact mobile canvas sizing + fixed-step physics clock.
 const FIXED_DT=1/60,MAX_FRAME_DT=.05,MAX_FRAME_STEPS=3;
