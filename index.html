@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A64</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A69</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -266,7 +266,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A64';
+const BUILD_VERSION='v221-A69';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -320,7 +320,7 @@ const scoreEl=$('score'),speedEl=$('speed'),meterFill=$('meterFill'),alertEl=$('
 let W=900,H=500,mode='snow',running=false,paused=false,ended=false,score=0,meter=0,speed=6,runTime=0,world=0;
 let terrain=[],terrainFeatures=[],complexBounds=[],terrainFeaturePastReach=0,obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,maintenanceUsed=false,surfaceEventUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,brakeEntrySpeed=0,brakeMinSpeed=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,glanceAlert='',flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
 let jumpTapCount=0,lastJumpTap=0,airTrick='',tricksLanded=0;
-let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,activeExpertTransfer='';
+let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,activeExpertTransfer='',chaseReads=0,chaseReadPoints=0,chaseReadStreak=0,bestChaseReadStreak=0;
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
 let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampPopQuality=0,rampRollCueFeature='';
 // v169 recovery: low-pass the major authored riding poses so Jimmy transitions through them instead of snapping frame-to-frame.
@@ -2083,25 +2083,30 @@ function start(){
  $('viewMode').onclick=()=>{chaseView=!chaseView;$('viewMode').textContent='VIEW · '+(chaseView?'CHASE BETA':'SIDE')};
  $('rules').onclick=()=>alert('Each sport has its own persistent mastery title, built from your best run rating and Signature clear. LINECRAFT is persistent course IQ: surface reads, line shots, expert transfers and clear-line reads all count, but the upper ranks require variety instead of farming one event. A clear-line read only banks after Jimmy completes the yielded pass; the brake read alone does not score. Clean reads made from higher approach pace earn a modest pace bonus based on the speed Jimmy carried into the brake set, not the slower speed after he has already checked up. RIDER RANGE carries that idea across all three sports: upper ranks require comparable Linecraft on snow, dirt and pavement. ROUTE RANGE records the best finished run that pairs FAST and CONTROL clears in the same run; crashes and separate one-sided runs do not combine. BRAKE cuts speed hard and visibly. At high speed, sharp terrain transitions can load the snowboard edge, bike front end, or longboard trucks; braking or SET THE LINE restores stability before the feature. Briefly set the brakes before takeoff to SET THE LINE; a well-set line gives Jimmy more precise air attitude for the landing, at the cost of entry speed. A short, deliberate brake set released into a downhill transition converts back into momentum: CARVE RELEASE on snow, PUMP RELEASE on the bike, and TUCK RELEASE on the longboard. JUMP clears hazards. Land with the downhill transition to carry speed. Chain clean landings, close calls and special encounters within a few seconds to build FLOW. Carry useful speed through a complete named technical section to earn LINE MASTERY; brake too deeply and you can still survive, but the mastery streak resets. SEND IT raises speed, score, airtime potential and risk.');
 }
-function begin(m){mode=m;appEl.classList.remove('postrun');clearPauseState();ensureAudio();overlay.style.display='none';resize();reset()}
+function begin(m){mode=m;appEl.classList.remove('postrun');clearPauseState();ensureAudio();overlay.style.display='none';resize();reset(true)}
+function activateRunNow(){
+ introActive=false;running=true;signatureTrack.style.display='block';last=performance.now();hud();
+ return true;
+}
 function startLocationIntro(){
  releaseControls();
  introActive=true;introStarted=performance.now();running=false;
  signatureTrack.style.display='none';
+ runIntro();
 }
 function activateRunFromIntro(){
  // v150 blocker hotfix: controls are visible during the location intro, so the first real input
  // must immediately hand control to the player instead of being silently ignored.
  if(!introActive)return false;
- introActive=false;running=true;signatureTrack.style.display='block';last=performance.now();hud();
- return true;
+ return activateRunNow();
 }
-function reset(){
+function reset(showLocationIntro=false){
+ // v221-A65 blocker fix: the signature vehicle is an entry cinematic, not a lap/retry cinematic.
+ // Explicit sport selection requests it; ONE MORE RUN and double-tap restart enter gameplay directly.
  releaseControls();resetFrameClock();resetPoseContinuity();disposeSpeedSoundscape(.035);clearPauseState();
  signatureTrack.style.display='none';
- runIntro();
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
- player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();startLocationIntro()
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';chaseReads=0;chaseReadPoints=0;chaseReadStreak=0;bestChaseReadStreak=0;lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageSignatureFilmer();stageExpertTransferSpotter();
+ player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();if(showLocationIntro)startLocationIntro();else activateRunNow()
 }
 function postGameJumpRestart(){
  // v149 Bryan controls: during the short crash animation, double-tap JUMP to immediately rerun.
@@ -2109,7 +2114,7 @@ function postGameJumpRestart(){
  if(!ended||running)return false;
  const now=performance.now();
  if(now-lastPostJumpTap<360){
-  lastPostJumpTap=0;appEl.classList.remove('postrun');overlay.style.display='none';resize();reset();return true;
+  lastPostJumpTap=0;appEl.classList.remove('postrun');overlay.style.display='none';resize();reset(false);return true;
  }
  lastPostJumpTap=now;return false;
 }
@@ -2784,6 +2789,9 @@ function jump(){
     return;
    }
   }
+ // A69: the scoring read is captured at the player's actual jump decision, before the
+ // generic jump changes onGround. Rideable-ramp preloads remain their own skill system.
+ armChaseJumpRead();
  ensureAudio();sfx('jump');jumpBtn.classList.add('active');setTimeout(()=>jumpBtn.classList.remove('active'),120);
  airLineSet=lineSet;lineSet=0;lineSetReady=false;
  // v39 transition pop: Jimmy gets more lift when he jumps off a rising face and a flatter,
@@ -3608,7 +3616,9 @@ function update(dt){
   if(!terrainLaunchProp&&!o.decor&&!o.passed&&sx+o.w<player.x){
    o.passed=true;
    // Do not award a close call or clean-pass points for a marker Jimmy actually clipped.
-   if(o.hit)continue;
+   // A69 also breaks the OTS read chain on a clipped cue hazard.
+   if(o.hit){if(chaseView&&CHASE_JUMP_HAZARDS.has(o.type))chaseReadStreak=0;continue}
+   resolveChaseJumpRead(o);
    let clear=Math.abs((player.y+player.h)-oy);
    if(clear<26){closeCalls++;meter=Math.min(100,meter+8);skillAward(180,'CLOSE CALL')}else score+=80;
    if(o.wildlife){meter=Math.min(100,meter+18);skillAward(750,'WILDLIFE ENCOUNTER');physicsCueTimer=1.05}
@@ -3772,6 +3782,9 @@ function results(crashed,injury,hit,snapshot=null){
  const runExpertTransferPoints=snapshot?.expertTransferPoints??expertTransferPoints;
  const runTrafficReads=snapshot?.trafficReads??trafficReads;
  const runTrafficReadPoints=snapshot?.trafficReadPoints??trafficReadPoints;
+ const runChaseReads=snapshot?.chaseReads??chaseReads;
+ const runChaseReadPoints=snapshot?.chaseReadPoints??chaseReadPoints;
+ const runBestChaseReadStreak=snapshot?.bestChaseReadStreak??bestChaseReadStreak;
  // v90 Scoring/Progression: compare this run with the sport-specific best BEFORE save() updates it.
  // The feedback is folded into existing result elements so portrait-phone results do not grow taller.
  const beforeRecords=records();
@@ -3810,17 +3823,17 @@ function results(crashed,injury,hit,snapshot=null){
  let jimmyCrash=snapshot?.jimmyCrash||crashLine(hit,crashContext),impact=impactReadout(hit);
  card.innerHTML=`<div class="location">${MODES[mode].name} — ${MODES[mode].tag}</div><h2>${crashed?'RUN TERMINATED':'JIMMY LIVES'}</h2>
  <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><p class="jimmy-note"><span class="jimmy-read">${crashRead}</span><b>Jimmy debrief:</b> “${jimmyCrash}”</p>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
- <div class="result-summary"><div class="run-rating">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'}${runLineBalance.points?' · '+runLineBalance.label+' +'+runLineBalance.points:''}${finishBonus.points?' · '+finishBonus.label+' +'+finishBonus.points:''}${varietyBonus.points?' · '+varietyBonus.label+' +'+varietyBonus.points:''} · ${streakStatus} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}${riderRangeAdvanced?' · RIDER RANGE UP: '+riderRangeAfter.title:''}${routeRangeAdvanced?' · ROUTE RANGE UP: '+routeRangeAfter.title:''}${adaptationAdvanced?' · ADAPTATION UP: '+adaptationAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
+ <div class="result-summary"><div class="run-rating">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'}${runLineBalance.points?' · '+runLineBalance.label+' +'+runLineBalance.points:''}${finishBonus.points?' · '+finishBonus.label+' +'+finishBonus.points:''}${varietyBonus.points?' · '+varietyBonus.label+' +'+varietyBonus.points:''}${runChaseReads?' · OTS READS '+runChaseReads+' +'+runChaseReadPoints:''} · ${streakStatus} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}${riderRangeAdvanced?' · RIDER RANGE UP: '+riderRangeAfter.title:''}${routeRangeAdvanced?' · ROUTE RANGE UP: '+routeRangeAfter.title:''}${adaptationAdvanced?' · ADAPTATION UP: '+adaptationAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
  <div class="result-actions"><button id="again">ONE MORE RUN</button><button id="menu">CHANGE SPORT</button><button id="details">FULL RUN STATS</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
- $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset()};$('menu').onclick=start;
- $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
- $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints});
+ $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset(false)};$('menu').onclick=start;
+ $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak});
+ $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,jimmyCrash,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak});
  if(!snapshot)maybeTriggerJimCut();
 }
 function showRunDetails(run){
  const career=careerProgress();
  card.className='card run-details';
- card.innerHTML=`<div class="details-head"><div class="location">${MODES[mode].name} · FULL RUN STATS</div><h2>${run.title}</h2></div><div class="details-ratings"><div class="run-rating">RUN RATING <b>${run.rating.name}</b><span>${run.rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${run.signature.name}</b><span>${run.signature.complete?'CLEARED · +'+run.signature.reward+' points':run.signature.progress}</span></div><div class="run-rating">CONSISTENCY <b>${run.consistencyAfter?.title||'OPEN'}</b><span>${run.streakStatus||'STREAK 0 · OPEN'}${run.consistencyAfter&&!run.consistencyAfter.maxed?' · NEXT BEST '+run.consistencyAfter.nextAt:''}</span></div><div class="run-rating">ROUTE RANGE <b>${run.routeRangeAfter?.title||routeRangeProgress(records()[mode]).title}</b><span>${run.routeRangeAfter?.progress||routeRangeProgress(records()[mode]).progress}${run.routeRangeAdvanced?' · RANK UP':''}${run.routeRangeAfter&&!run.routeRangeAfter.maxed?' · NEXT '+run.routeRangeAfter.next:''}</span></div><div class="run-rating">ADAPTATION <b>${run.adaptationAfter?.title||adaptationProgress(records()[mode]).title}</b><span>${run.adaptationAfter?.progress||adaptationProgress(records()[mode]).progress}${run.adaptationAdvanced?' · RANK UP':''}${run.adaptationAfter&&!run.adaptationAfter.maxed?' · NEXT '+run.adaptationAfter.next:''}</span></div><div class="run-rating">RIDER RANGE <b>${run.riderRangeAfter?.title||riderRangeProgress().title}</b><span>${run.riderRangeAfter?.progress||riderRangeProgress().progress}${run.riderRangeAdvanced?' · RANK UP':''}${run.riderRangeAfter&&!run.riderRangeAfter.maxed?' · NEXT '+run.riderRangeAfter.next:''}</span></div><div class="run-rating">JIMMY CAREER <b>${career.title}</b><span>SIGNATURE STAMPS ${career.stamps}/3${career.complete?' · ALL-TERRAIN COMPLETE':' · NEXT: '+career.next}</span></div><div class="run-rating">ALL-TERRAIN TOUR <b>${career.tourTitle}</b><span>TOUR ${career.tourScore.toLocaleString()} · BALANCE +${career.balanceBonus.toLocaleString()} · ${career.tourMax?'TOP TIER':'NEXT '+career.nextTerrain}</span></div></div><div class="stats details-stats"><div class="stat">${run.isNewBest?'NEW PB':run.tiedBest?'TIED PB':'Score'}<b>${run.final}</b></div><div class="stat">Finish streak<b>${run.consistencyAfter?.current||0} · BEST ${run.consistencyAfter?.best||0}</b></div><div class="stat">Line balance<b>${run.lineBalance?.points?'+'+run.lineBalance.points+' · '+run.lineBalance.paired+' pair'+(run.lineBalance.paired===1?'':'s'):'0'}</b></div><div class="stat">Route range<b>${run.routeRangeAfter?.best||0} paired</b></div><div class="stat">Line switches<b>${bestRouteSwitchChain}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Tricks landed<b>${tricksLanded}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div><div class="stat">Surface read<b>${run.surfaceReads?run.surfaceReads+' · +'+run.surfaceReadPoints:'0'}</b></div><div class="stat">Line shot<b>${run.lineShots?run.lineShots+' · +'+run.lineShotPoints:'0'}</b></div><div class="stat">Expert transfer<b>${run.expertTransfers?run.expertTransfers+' · +'+run.expertTransferPoints:'0'}</b></div><div class="stat">Clear-line read<b>${run.trafficReads?run.trafficReads+' · +'+run.trafficReadPoints:'0'}</b></div></div><div class="secondary details-actions"><button id="detailsBack">BACK TO RESULTS</button><button id="scoreBtn">SCOREBOARD</button></div>`;
+ card.innerHTML=`<div class="details-head"><div class="location">${MODES[mode].name} · FULL RUN STATS</div><h2>${run.title}</h2></div><div class="details-ratings"><div class="run-rating">RUN RATING <b>${run.rating.name}</b><span>${run.rating.why}</span></div><div class="run-rating">SIGNATURE: <b>${run.signature.name}</b><span>${run.signature.complete?'CLEARED · +'+run.signature.reward+' points':run.signature.progress}</span></div><div class="run-rating">CONSISTENCY <b>${run.consistencyAfter?.title||'OPEN'}</b><span>${run.streakStatus||'STREAK 0 · OPEN'}${run.consistencyAfter&&!run.consistencyAfter.maxed?' · NEXT BEST '+run.consistencyAfter.nextAt:''}</span></div><div class="run-rating">ROUTE RANGE <b>${run.routeRangeAfter?.title||routeRangeProgress(records()[mode]).title}</b><span>${run.routeRangeAfter?.progress||routeRangeProgress(records()[mode]).progress}${run.routeRangeAdvanced?' · RANK UP':''}${run.routeRangeAfter&&!run.routeRangeAfter.maxed?' · NEXT '+run.routeRangeAfter.next:''}</span></div><div class="run-rating">ADAPTATION <b>${run.adaptationAfter?.title||adaptationProgress(records()[mode]).title}</b><span>${run.adaptationAfter?.progress||adaptationProgress(records()[mode]).progress}${run.adaptationAdvanced?' · RANK UP':''}${run.adaptationAfter&&!run.adaptationAfter.maxed?' · NEXT '+run.adaptationAfter.next:''}</span></div><div class="run-rating">RIDER RANGE <b>${run.riderRangeAfter?.title||riderRangeProgress().title}</b><span>${run.riderRangeAfter?.progress||riderRangeProgress().progress}${run.riderRangeAdvanced?' · RANK UP':''}${run.riderRangeAfter&&!run.riderRangeAfter.maxed?' · NEXT '+run.riderRangeAfter.next:''}</span></div><div class="run-rating">JIMMY CAREER <b>${career.title}</b><span>SIGNATURE STAMPS ${career.stamps}/3${career.complete?' · ALL-TERRAIN COMPLETE':' · NEXT: '+career.next}</span></div><div class="run-rating">ALL-TERRAIN TOUR <b>${career.tourTitle}</b><span>TOUR ${career.tourScore.toLocaleString()} · BALANCE +${career.balanceBonus.toLocaleString()} · ${career.tourMax?'TOP TIER':'NEXT '+career.nextTerrain}</span></div></div><div class="stats details-stats"><div class="stat">${run.isNewBest?'NEW PB':run.tiedBest?'TIED PB':'Score'}<b>${run.final}</b></div><div class="stat">Finish streak<b>${run.consistencyAfter?.current||0} · BEST ${run.consistencyAfter?.best||0}</b></div><div class="stat">Line balance<b>${run.lineBalance?.points?'+'+run.lineBalance.points+' · '+run.lineBalance.paired+' pair'+(run.lineBalance.paired===1?'':'s'):'0'}</b></div><div class="stat">Route range<b>${run.routeRangeAfter?.best||0} paired</b></div><div class="stat">Line switches<b>${bestRouteSwitchChain}</b></div><div class="stat">Jimmy Meter<b>${Math.round(meter)}%</b></div><div class="stat">Close calls<b>${closeCalls}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Best Flow<b>x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Tricks landed<b>${tricksLanded}</b></div><div class="stat">Line streak<b>${bestMasteryStreak}</b></div><div class="stat">Mastered lines<b>${masteredSections}</b></div><div class="stat">Fast clears<b>${fastLineClears}</b></div><div class="stat">Control clears<b>${controlLineClears}</b></div><div class="stat">Surface read<b>${run.surfaceReads?run.surfaceReads+' · +'+run.surfaceReadPoints:'0'}</b></div><div class="stat">Line shot<b>${run.lineShots?run.lineShots+' · +'+run.lineShotPoints:'0'}</b></div><div class="stat">Expert transfer<b>${run.expertTransfers?run.expertTransfers+' · +'+run.expertTransferPoints:'0'}</b></div><div class="stat">Clear-line read<b>${run.trafficReads?run.trafficReads+' · +'+run.trafficReadPoints:'0'}</b></div><div class="stat">OTS jump reads<b>${run.chaseReads?run.chaseReads+' · +'+run.chaseReadPoints+' · BEST x'+run.bestChaseReadStreak:'0'}</b></div></div><div class="secondary details-actions"><button id="detailsBack">BACK TO RESULTS</button><button id="scoreBtn">SCOREBOARD</button></div>`;
  $('detailsBack').onclick=()=>results(run.crashed,run.injury,run.hit,run);$('scoreBtn').onclick=showScores
 }
 function showShareCard(run){
@@ -5290,6 +5303,55 @@ function drawChaseSurfaceMaterialPass(riderWx,look){
  }
  ctx.restore();
 }
+// v221-A67 Environment Graphics: CHASE BETA now gets a world-anchored depth rhythm on the
+// actual ride surface. These marks are environment-native rather than UI: groomer compression
+// on snow, shallow tire/rut ripples on dirt, and pavement seam/reflector cadence on the street.
+// Their spacing is fixed in course coordinates, so perspective growth and pass-under motion give
+// the player a much clearer read of closing speed and obstacle distance without touching physics.
+function chaseDepthRhythmProfile(rideMode=mode){
+ if(rideMode==='snow')return{spacing:148,phase:41,nearLimit:1500,span:.62};
+ if(rideMode==='bike')return{spacing:164,phase:57,nearLimit:1480,span:.50};
+ return{spacing:188,phase:73,nearLimit:1540,span:.56};
+}
+function chaseDepthRhythmAnchors(riderWx=world+player.x+player.w*.5,look=chaseLookahead(),rideMode=mode){
+ const profile=chaseDepthRhythmProfile(rideMode),limit=Math.min(look,profile.nearLimit);
+ const first=Math.ceil((riderWx+52-profile.phase)/profile.spacing)*profile.spacing+profile.phase;
+ const out=[];
+ for(let wx=first;wx<riderWx+limit;wx+=profile.spacing){
+  const gap=wx-riderWx,p=chaseProjection(gap);
+  if(p.scale<.135)continue;
+  out.push({wx,gap,x:p.x,y:p.y,half:p.half,scale:p.scale,span:profile.span});
+ }
+ return out;
+}
+function drawChaseDepthRhythmPass(riderWx,look){
+ const marks=chaseDepthRhythmAnchors(riderWx,look,mode);
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ for(let i=0;i<marks.length;i++){
+  const m=marks[i],sc=m.scale,half=m.half*m.span;
+  const near=Math.max(0,Math.min(1,(sc-.13)/.87));
+  const alpha=.075+near*.28;
+  if(mode==='snow'){
+   const bow=Math.max(.45,2.6*sc),sep=Math.max(1.2,3.8*sc);
+   ctx.strokeStyle=`rgba(86,132,157,${alpha})`;ctx.lineWidth=Math.max(.7,1.55*sc);
+   for(const dy of [0,sep]){ctx.beginPath();ctx.moveTo(m.x-half,m.y+dy);ctx.quadraticCurveTo(m.x,m.y+dy+bow,m.x+half,m.y+dy);ctx.stroke()}
+   if(i%3===0){ctx.strokeStyle=`rgba(250,254,255,${alpha*.78})`;ctx.lineWidth=Math.max(.55,1.05*sc);ctx.beginPath();ctx.moveTo(m.x-half*.34,m.y-sep*.36);ctx.lineTo(m.x+half*.22,m.y-sep*.12);ctx.stroke()}
+  }else if(mode==='bike'){
+   const bow=Math.max(.55,3.4*sc),gap=Math.max(5,11*sc),seg=half*.45;
+   ctx.strokeStyle=`rgba(69,48,34,${alpha*.92})`;ctx.lineWidth=Math.max(.75,1.75*sc);
+   ctx.beginPath();ctx.moveTo(m.x-gap-seg,m.y);ctx.quadraticCurveTo(m.x-gap-seg*.45,m.y+bow,m.x-gap,m.y+bow*.48);ctx.stroke();
+   ctx.beginPath();ctx.moveTo(m.x+gap,m.y+bow*.48);ctx.quadraticCurveTo(m.x+gap+seg*.55,m.y+bow,m.x+gap+seg,m.y);ctx.stroke();
+   if(i%2===0){ctx.fillStyle=`rgba(151,112,76,${alpha*.62})`;const r=Math.max(.65,1.9*sc);ctx.beginPath();ctx.ellipse(m.x-half*.58,m.y+1.5*sc,r*1.7,r,.2,0,Math.PI*2);ctx.fill()}
+  }else{
+   const seam=half*.78;
+   ctx.strokeStyle=`rgba(31,35,38,${alpha*.82})`;ctx.lineWidth=Math.max(.75,1.55*sc);ctx.beginPath();ctx.moveTo(m.x-seam,m.y+1.2*sc);ctx.lineTo(m.x+seam,m.y+1.2*sc);ctx.stroke();
+   const dotY=m.y+.4*sc,dotX=m.half*.64,r=Math.max(.7,2.2*sc);
+   ctx.fillStyle=`rgba(225,211,178,${alpha*.88})`;ctx.beginPath();ctx.ellipse(m.x-dotX,dotY,r*1.7,r*.68,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(m.x+dotX,dotY,r*1.7,r*.68,0,0,Math.PI*2);ctx.fill();
+  }
+ }
+ ctx.restore();
+}
+
 function drawChaseEnvironmentProp(p,seed,side){
  const x=p.x+side*(p.half+10*p.scale),y=p.y,sc=p.scale;
  ctx.save();ctx.translate(x,y);
@@ -5310,6 +5372,142 @@ function chaseObstacleClass(o){
  if(o.type==='cone'||o.type==='snowmarker'||o.type==='trailflag')return'marker';
  if(o.advisory||String(o.type).includes('warning')||o.type==='slalomsign'||o.type==='slowzone')return'advisory';
  return'hazard';
+}
+// v221-A68 Props/Hazards/Events: CHASE BETA no longer renders every solid obstacle as the
+// same generic ground lump. The jumpable hazard set now has distinct, sport-readable silhouettes
+// and a grounded contact shadow so Jimmy can identify what is coming before A66's timing cue fires.
+// Rendering only: collision boxes, spawn logic, jump timing, scoring, wildlife, and physics are unchanged.
+function chaseHazardSilhouetteProfile(type){
+ const profiles={
+  tree:{family:'tree',wide:.72,tall:1.00,label:'TREE'},
+  rock:{family:'rock',wide:1.00,tall:.56,label:'ROCK'},
+  snowgun:{family:'snowgun',wide:.78,tall:1.00,label:'SNOW GUN'},
+  parkrail:{family:'rail',wide:1.18,tall:.50,label:'PARK RAIL'},
+  log:{family:'log',wide:1.16,tall:.46,label:'LOG'},
+  trailpost:{family:'post',wide:.58,tall:1.00,label:'TRAIL POST'},
+  trashcan:{family:'bin',wide:.70,tall:1.00,label:'TRASH CAN'},
+  curb:{family:'curb',wide:1.20,tall:.38,label:'CURB'}
+ };
+ return profiles[type]||{family:'mass',wide:1,tall:.52,label:String(type||'HAZARD').toUpperCase()};
+}
+function drawChaseHazardProp(o,w,h,sc){
+ const p=chaseHazardSilhouetteProfile(o.type),ww=w*p.wide,hh=h*p.tall;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ // Contact shadow gives even far props a clear ground plane in the perspective view.
+ ctx.fillStyle='rgba(12,15,17,.22)';ctx.beginPath();ctx.ellipse(0,1.8*sc,Math.max(4,ww*.60),Math.max(1.2,hh*.075),0,0,Math.PI*2);ctx.fill();
+ if(p.family==='tree'){
+  ctx.fillStyle='#6d5842';ctx.fillRect(-ww*.11,-hh*.58,ww*.22,hh*.58);
+  ctx.fillStyle='#29483a';
+  for(const q of [[0,-hh*.98,ww*.45,hh*.42],[0,-hh*.76,ww*.56,hh*.42],[0,-hh*.54,ww*.64,hh*.40]]){ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(-q[2],q[1]+q[3]);ctx.lineTo(q[2],q[1]+q[3]);ctx.closePath();ctx.fill()}
+ }else if(p.family==='rock'){
+  ctx.fillStyle=mode==='snow'?'#7c8990':'#62574f';ctx.beginPath();ctx.moveTo(-ww*.54,0);ctx.lineTo(-ww*.38,-hh*.46);ctx.lineTo(-ww*.08,-hh*.78);ctx.lineTo(ww*.38,-hh*.55);ctx.lineTo(ww*.55,-hh*.12);ctx.lineTo(ww*.36,0);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(238,242,244,.28)';ctx.lineWidth=Math.max(.7,1.1*sc);ctx.beginPath();ctx.moveTo(-ww*.15,-hh*.63);ctx.lineTo(ww*.18,-hh*.43);ctx.stroke();
+ }else if(p.family==='snowgun'){
+  ctx.strokeStyle='#546b78';ctx.lineWidth=Math.max(1.5,ww*.16);ctx.beginPath();ctx.moveTo(-ww*.12,0);ctx.lineTo(-ww*.03,-hh*.68);ctx.stroke();
+  ctx.fillStyle='#d1dde3';ctx.save();ctx.translate(0,-hh*.72);ctx.rotate(-.24);ctx.fillRect(-ww*.10,-hh*.10,ww*.72,hh*.18);ctx.fillStyle='#6c8897';ctx.fillRect(ww*.43,-hh*.13,ww*.20,hh*.24);ctx.restore();
+  ctx.fillStyle='#27343b';ctx.fillRect(-ww*.30,-hh*.09,ww*.60,hh*.10);
+ }else if(p.family==='rail'){
+  ctx.strokeStyle='#aeb6bb';ctx.lineWidth=Math.max(1.2,hh*.16);ctx.beginPath();ctx.moveTo(-ww*.56,-hh*.56);ctx.lineTo(ww*.56,-hh*.56);ctx.stroke();
+  ctx.strokeStyle='#6e777c';ctx.lineWidth=Math.max(1,hh*.12);for(const x of [-ww*.38,ww*.38]){ctx.beginPath();ctx.moveTo(x,-hh*.52);ctx.lineTo(x,0);ctx.stroke()}
+ }else if(p.family==='log'){
+  ctx.fillStyle='#684730';ctx.beginPath();ctx.roundRect(-ww*.56,-hh*.58,ww*1.12,hh*.58,Math.max(2,hh*.18));ctx.fill();
+  ctx.fillStyle='#9a7252';ctx.beginPath();ctx.ellipse(ww*.49,-hh*.29,Math.max(1.5,ww*.12),Math.max(1.2,hh*.27),0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(72,45,28,.75)';ctx.lineWidth=Math.max(.6,.8*sc);ctx.beginPath();ctx.arc(ww*.49,-hh*.29,Math.max(1,ww*.06),0,Math.PI*2);ctx.stroke();
+ }else if(p.family==='post'){
+  ctx.fillStyle='#6b513b';ctx.fillRect(-ww*.12,-hh*.86,ww*.24,hh*.86);
+  ctx.fillStyle='#d77934';ctx.fillRect(-ww*.36,-hh*.90,ww*.72,hh*.20);
+  ctx.fillStyle='#f3d2a7';ctx.fillRect(-ww*.22,-hh*.84,ww*.44,Math.max(1.5,hh*.045));
+ }else if(p.family==='bin'){
+  ctx.fillStyle='#45514f';ctx.beginPath();ctx.moveTo(-ww*.34,0);ctx.lineTo(-ww*.28,-hh*.80);ctx.lineTo(ww*.28,-hh*.80);ctx.lineTo(ww*.34,0);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#232a2b';ctx.fillRect(-ww*.39,-hh*.88,ww*.78,hh*.12);ctx.fillRect(-ww*.12,-hh*.96,ww*.24,hh*.09);
+ }else if(p.family==='curb'){
+  ctx.fillStyle='#8f918d';ctx.fillRect(-ww*.58,-hh*.52,ww*1.16,hh*.52);ctx.fillStyle='#cacbc6';ctx.beginPath();ctx.moveTo(-ww*.58,-hh*.52);ctx.lineTo(-ww*.43,-hh*.70);ctx.lineTo(ww*.58,-hh*.70);ctx.lineTo(ww*.58,-hh*.52);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(57,61,62,.65)';ctx.lineWidth=Math.max(.7,1.0*sc);ctx.beginPath();ctx.moveTo(0,-hh*.68);ctx.lineTo(0,-hh*.03);ctx.stroke();
+ }else{
+  ctx.fillStyle=mode==='snow'?'#bccdd7':mode==='bike'?'#604a38':'#34393d';ctx.beginPath();ctx.ellipse(0,-hh*.18,ww*.56,hh*.22,0,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+// v221-A66 Jimmy & animation: CHASE BETA now gives Jimmy a readable jump setup against
+// true stand-up collision hazards. The timing gate is visual-only: it never changes the jump,
+// obstacle, collision, score, or spawn state. Low-profile BRAKE/SET hazards, soft markers,
+// people, operations traffic, wildlife, advisory signs, and rideable terrain are intentionally
+// excluded so the cue teaches the existing control language rather than flattening every read to JUMP.
+const CHASE_JUMP_HAZARDS=new Set(['tree','rock','snowgun','parkrail','log','trailpost','trashcan','curb']);
+function chaseJumpTiming(gap,currentSpeed=speed){
+ const pace=Math.max(1.35,Math.min(11.1,currentSpeed));
+ const lead=Math.max(112,Math.min(220,78+pace*14));
+ const window=Math.max(38,Math.min(72,26+pace*4.4));
+ const preview=Math.max(390,lead+250);
+ if(!(gap>0&&gap<=preview))return null;
+ const prep=Math.max(0,Math.min(1,(preview-gap)/Math.max(1,preview-lead)));
+ const timing=Math.max(0,1-Math.abs(gap-lead)/window);
+ const late=gap<lead-window?Math.max(0,Math.min(1,(lead-window-gap)/Math.max(45,lead-window))):0;
+ const label=gap>lead+window?'LOAD':gap>=lead-window?'JUMP':'LATE';
+ return{gap,lead,window,preview,prep,timing,late,label,takeoffDistance:Math.max(0,gap-lead)};
+}
+function chaseJumpRead(){
+ if(!running||!player.onGround)return null;
+ const riderWx=world+player.x+player.w*.5;
+ let nearest=null;
+ for(const o of obstacles){
+  if(!o||o.decor||o.advisory||o.hit||o.yieldClear||o.event||o.maintenance||o.wildlife||!CHASE_JUMP_HAZARDS.has(o.type))continue;
+  const gap=o.wx-riderWx;
+  if(gap<=0)continue;
+  const timing=chaseJumpTiming(gap,speed);
+  if(!timing)continue;
+  if(!nearest||gap<nearest.gap)nearest={o,gap,...timing};
+ }
+ return nearest;
+}
+// v221-A69 Scoring/Progression: CHASE BETA now pays for reading A66's actual jump window,
+// not simply for using the camera. Pressing JUMP while the in-world cue says JUMP arms that
+// specific hazard; the bonus is banked only after Jimmy clears it cleanly. Early/late guesses,
+// collisions, and SIDE-view play receive no read bonus, so core scoring remains available in both views.
+function armChaseJumpRead(){
+ if(!chaseView||!running||!player.onGround)return null;
+ const read=chaseJumpRead();
+ if(!read||read.label!=='JUMP')return null;
+ read.o.chaseReadArmed=true;
+ read.o.chaseReadTiming=Math.max(0,Math.min(1,read.timing||0));
+ return read;
+}
+function chaseReadAwardValue(timing,streak){
+ const precision=Math.max(0,Math.min(1,timing||0));
+ const chain=Math.max(1,Math.min(5,streak||1));
+ return 180+(chain-1)*35+Math.round(precision*70);
+}
+function resolveChaseJumpRead(o){
+ if(!o||!CHASE_JUMP_HAZARDS.has(o.type))return 0;
+ if(!o.chaseReadArmed){if(chaseView)chaseReadStreak=0;return 0}
+ if(o.chaseReadAwarded)return 0;
+ o.chaseReadAwarded=true;
+ chaseReads++;
+ chaseReadStreak++;
+ bestChaseReadStreak=Math.max(bestChaseReadStreak,chaseReadStreak);
+ const pts=chaseReadAwardValue(o.chaseReadTiming,chaseReadStreak);
+ chaseReadPoints+=pts;score+=pts;meter=Math.min(100,meter+3);
+ physicsCue='OTS READ x'+chaseReadStreak+'  +'+pts;physicsCueTimer=.95;sfx('skill');
+ return pts;
+}
+function drawChaseJumpTimingCue(read){
+ if(!read)return;
+ const gate=chaseProjection(read.takeoffDistance),obstacle=chaseProjection(read.gap),pulse=.5+.5*Math.sin(animClock*10.5);
+ const gateAlpha=.22+read.prep*.30+read.timing*(.28+.16*pulse);
+ const gateHalf=Math.max(16,gate.half*.68),sc=Math.max(.18,gate.scale);
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ // Projected takeoff stripe: fixed in world space at the existing safe jump lead.
+ ctx.globalAlpha=Math.min(.95,gateAlpha);ctx.strokeStyle=read.label==='LATE'?'#d5dde2':'#f2b84b';ctx.lineWidth=Math.max(1.2,2.7*sc);
+ ctx.setLineDash([Math.max(4,10*sc),Math.max(3,7*sc)]);ctx.beginPath();ctx.moveTo(gate.x-gateHalf,gate.y);ctx.lineTo(gate.x+gateHalf,gate.y);ctx.stroke();ctx.setLineDash([]);
+ // Two compact chevrons make the stripe read as a launch cue rather than a lane boundary.
+ const ch=8+8*sc,spread=Math.max(12,gate.half*.28);ctx.lineWidth=Math.max(1.2,2.2*sc);
+ for(const side of [-1,1]){const cx=gate.x+side*spread;ctx.beginPath();ctx.moveTo(cx-ch*.65,gate.y+ch*.55);ctx.lineTo(cx,gate.y);ctx.lineTo(cx+ch*.65,gate.y+ch*.55);ctx.stroke()}
+ // The obstacle receives only a restrained focus bracket; Jimmy still has to read the object itself.
+ ctx.globalAlpha=.16+read.prep*.24+read.timing*.22;ctx.strokeStyle='#f6d281';ctx.lineWidth=Math.max(1,1.8*obstacle.scale);
+ const ow=Math.max(9,obstacle.half*.12),oh=Math.max(5,7*obstacle.scale);ctx.beginPath();ctx.moveTo(obstacle.x-ow,obstacle.y-oh);ctx.lineTo(obstacle.x-ow,obstacle.y+2);ctx.moveTo(obstacle.x+ow,obstacle.y-oh);ctx.lineTo(obstacle.x+ow,obstacle.y+2);ctx.stroke();
+ // Keep text tiny, in-world, and stage-specific. The posture + stripe do most of the teaching.
+ if(read.prep>.10){const label=read.label;ctx.globalAlpha=Math.min(.98,.48+read.prep*.28+read.timing*.22);ctx.fillStyle='rgba(10,13,17,.78)';ctx.strokeStyle=read.label==='LATE'?'rgba(215,225,231,.72)':'rgba(242,184,75,.82)';ctx.lineWidth=1;ctx.font=`900 ${Math.max(7,Math.min(11,7+sc*5))}px system-ui`;ctx.textAlign='center';const tw=Math.max(42,ctx.measureText(label).width+16),ty=gate.y-18-8*sc;ctx.beginPath();ctx.roundRect(gate.x-tw*.5,ty-9,tw,15,5);ctx.fill();ctx.stroke();ctx.fillStyle=read.label==='LATE'?'#e6ecef':'#f2c768';ctx.fillText(label,gate.x,ty+2)}
+ ctx.restore();
 }
 function drawChaseObstacle(o){
  const riderWx=world+player.x+player.w*.5,gap=o.wx-riderWx;
@@ -5339,7 +5537,7 @@ function drawChaseObstacle(o){
  }else if(kind==='advisory'){
   ctx.fillStyle='#f2b84b';ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(-w*.48,-h*.20);ctx.lineTo(w*.48,-h*.20);ctx.closePath();ctx.fill();ctx.strokeStyle='#34383b';ctx.lineWidth=Math.max(1,2*sc);ctx.stroke();
  }else{
-  ctx.fillStyle=mode==='snow'?'#bccdd7':mode==='bike'?'#604a38':'#34393d';ctx.beginPath();ctx.ellipse(0,-h*.18,w*.56,h*.22,0,0,Math.PI*2);ctx.fill();
+  drawChaseHazardProp(o,w,h,sc);
  }
  if(gap<520&&!o.decor){
   const label=kind==='vehicle'?(o.type==='snowcat'?'GROOMER':o.type==='trailcart'?'TRAIL CREW':o.type==='utilityvan'?'DRIVEWAY':'VEHICLE'):kind==='wildlife'?(o.yieldClear?'WILDLIFE CLEAR':o.type==='bear'?'BLACK BEAR':'MOUNTAIN LION'):kind==='person'?(o.type==='skier'?'SKIER':o.type==='hiker'?'HIKER':'PEDESTRIAN'):kind==='marker'?'SOFT MARKER':kind==='advisory'?'COURSE INFO':'';
@@ -5362,6 +5560,7 @@ function drawChaseScene(){
  }
  drawChaseEdgeDepthPass(riderWx,look);
  drawChaseSurfaceMaterialPass(riderWx,look);
+ drawChaseDepthRhythmPass(riderWx,look);
  // Edge definition and sport-specific surface cues.
  ctx.lineWidth=2;ctx.strokeStyle=mode==='snow'?'rgba(101,139,160,.72)':mode==='bike'?'rgba(74,52,36,.74)':'rgba(226,222,210,.38)';
  for(const side of [-1,1]){ctx.beginPath();for(let i=0;i<=28;i++){const p=chaseProjection(look-(i/28)*look),x=p.x+side*p.half;i?ctx.lineTo(x,p.y):ctx.moveTo(x,p.y)}ctx.stroke()}
@@ -5373,6 +5572,9 @@ function drawChaseScene(){
  // Authored terrain gets a restrained lip/section trace so ramps and catches remain legible.
  for(const f of terrainFeatures){const gap=f.x-riderWx;if(gap<-100)continue;if(gap>look)break;if(!['ramp','tabletop','drop','stepdown','crest','dip','gully','streetsteps'].includes(f.kind))continue;const p=chaseProjection(Math.max(0,gap));ctx.strokeStyle=f.kind==='ramp'?'rgba(242,184,75,.85)':'rgba(238,242,244,.28)';ctx.lineWidth=Math.max(1,2.4*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.76,p.y);ctx.lineTo(p.x+p.half*.76,p.y);ctx.stroke();if(f.label&&gap<780){ctx.fillStyle='rgba(12,15,18,.66)';ctx.fillRect(p.x-46,p.y-17,92,12);ctx.fillStyle='#eef1f3';ctx.font='800 6px system-ui';ctx.textAlign='center';ctx.fillText(f.label,p.x,p.y-8)}}
  obstacles.forEach(drawChaseObstacle);
+ // A66: the takeoff stripe sits between Jimmy and the nearest true jump hazard, then tightens
+ // into a JUMP read as the existing physics-safe lead reaches him. This is render-only.
+ drawChaseJumpTimingCue(chaseJumpRead());
  // Near-field speed streaks are driven by actual velocity; no blur and no gameplay effect.
  const speedStrength=Math.max(0,Math.min(1,(speed-6.2)/3.8));if(speedStrength>.03){ctx.strokeStyle=`rgba(245,248,250,${.04+speedStrength*.10})`;ctx.lineWidth=1.2;for(let i=0;i<8;i++){const y=H*(.64+i*.038),len=18+speedStrength*45,side=i%2?-1:1;ctx.beginPath();ctx.moveTo(W*.5+side*W*(.20+i*.025),y);ctx.lineTo(W*.5+side*(W*(.20+i*.025)+len),y+4);ctx.stroke()}}
  ctx.fillStyle='rgba(8,11,15,.72)';ctx.fillRect(9,9,90,18);ctx.strokeStyle='rgba(242,184,75,.80)';ctx.strokeRect(9.5,9.5,89,17);ctx.fillStyle='#f2b84b';ctx.font='900 8px system-ui';ctx.textAlign='center';ctx.fillText('CHASE VIEW · BETA',54,21);
@@ -5430,7 +5632,8 @@ function chaseRiderPose(){
   landing=spot*(.38+.62*brace);
  }
  const recovery=chaseLandingRecoveryEnvelope();
- return{rampLoad,rampPop,terrainLoad,terrainRelease,landing,rampRollLoad,rampRollSettle,
+ const jumpRead=chaseJumpRead(),jumpPrep=jumpRead?jumpRead.prep:0,jumpCommit=jumpRead?jumpRead.timing:0;
+ return{rampLoad,rampPop,terrainLoad,terrainRelease,landing,rampRollLoad,rampRollSettle,jumpPrep,jumpCommit,
   recoveryActive:recovery.active,recoveryKind:recovery.kind,recoveryLoad:recovery.load,
   recoveryRise:recovery.rise,recoveryCorrection:recovery.correction,recoveryFlow:recovery.flow,recoveryAbsorb:recovery.absorb};
 }
@@ -5444,8 +5647,9 @@ function drawChasePlayer(){
   brake*5+send*2+(player.onGround?0:2.5)+pose.rampLoad*6.4+pose.terrainLoad*3.2+pose.landing*6.0
   +(pose.rampRollLoad||0)*4.8-(pose.rampRollSettle||0)*1.7-pose.rampPop*4.8-pose.terrainRelease*1.7
   +(pose.recoveryLoad||0)*5.1-(pose.recoveryFlow||0)*3.0-(pose.recoveryAbsorb||0)*.7
+  +(pose.jumpPrep||0)*2.8+(pose.jumpCommit||0)*1.9
  );
- const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94+(pose.rampRollLoad||0)*.72+(pose.recoveryLoad||0)*.72+(pose.recoveryAbsorb||0)*.24);
+ const shoulderLoad=Math.min(1,pose.rampLoad*.82+pose.terrainLoad*.58+pose.landing*.94+(pose.rampRollLoad||0)*.72+(pose.recoveryLoad||0)*.72+(pose.recoveryAbsorb||0)*.24+(pose.jumpPrep||0)*.24+(pose.jumpCommit||0)*.18);
  const extension=Math.min(1,pose.rampPop+pose.terrainRelease*.42+(rising?.18:0)+(pose.recoveryFlow||0)*.34);
  ctx.save();ctx.translate(x,y);ctx.globalAlpha=.98;
  // Ground/contact shadow follows the rider but drops away in airtime.
@@ -5479,9 +5683,14 @@ function drawChasePlayer(){
   armR=14-tuck*4+open*10+(pose.recoveryCorrection||0)*5+(pose.recoveryFlow||0)*4;
   armY=-2-open*3+extension*2+(pose.recoveryAbsorb||0)*4-(pose.recoveryFlow||0)*4;
  }
+ // A66 hazard anticipation: the rider visibly loads before the projected gate, then opens a touch
+ // at the timing window. It is subtle enough to preserve sport posture and never drives physics.
+ const jumpAnticipation=(pose.jumpPrep||0)*.72+(pose.jumpCommit||0)*.56;
+ armL-=jumpAnticipation*(mode==='bike'?4.8:3.2);armR+=jumpAnticipation*(mode==='bike'?4.8:3.2);armY+=jumpAnticipation*1.8;
  const hipY=4+crouch*.36,shoulderY=-14+crouch*.62,headY=-34+crouch*.52;
  ctx.strokeStyle='#20262b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-20+crouch*.52);ctx.lineTo(0,hipY+2);ctx.stroke();ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,shoulderY);ctx.lineTo(armL,armY);ctx.moveTo(0,shoulderY);ctx.lineTo(armR,armY+(mode==='board'?2:0));ctx.stroke();ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(0,hipY);ctx.lineTo(-12,18+crouch*.18);ctx.moveTo(0,hipY);ctx.lineTo(13,18+crouch*.18);ctx.stroke();
  ctx.fillStyle=mode==='snow'?(retroSnow?'#d87c37':'#35556d'):mode==='bike'?'#6a8747':'#435460';ctx.beginPath();ctx.ellipse(0,-11+crouch*.55,14,19,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c69572';ctx.beginPath();ctx.arc(0,headY,9,0,Math.PI*2);ctx.fill();ctx.fillStyle=mode==='snow'?'#1e2d37':'#252a2e';ctx.beginPath();ctx.arc(0,headY-3,9,Math.PI,Math.PI*2);ctx.fill();
+ if(player.onGround&&(pose.jumpPrep||0)>.08){const jp=pose.jumpPrep||0,jc=pose.jumpCommit||0,p=.5+.5*Math.sin(animClock*11);ctx.strokeStyle=`rgba(242,184,75,${Math.min(.82,.16+jp*.23+jc*(.25+.12*p))})`;ctx.lineWidth=1.5+jc*.8;ctx.beginPath();ctx.arc(0,4,35+jp*5,-2.65,-.55);ctx.stroke();ctx.beginPath();ctx.arc(0,4,35+jp*5,.55,2.65);ctx.stroke()}
  if(!player.onGround){ctx.strokeStyle=`rgba(242,184,75,${.56+.18*pose.landing})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-4,44+Math.min(20,clearance*.1),0,Math.PI*2);ctx.stroke()}
  ctx.restore();
 }
@@ -6522,7 +6731,7 @@ function drawCrashXray(progress,hit){
 function drawParticles(frozen=false){for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/70);ctx.fillStyle=mode==='snow'?'#fff':mode==='bike'?'#d6ad79':'#bbb';ctx.fillRect(p.x,p.y,5,5);if(!frozen){p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.life--}}ctx.globalAlpha=1;if(!frozen)particles=particles.filter(p=>p.life>0)}
 
 // v221-A6 QA hook is exposed only when ?qa=1 is present; production behavior is unchanged.
-if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length,brakePointerIntent,sendPointerIntent,brakeKeyIntent:keyIntent(brakeKeys),sendKeyIntent:keyIntent(sendKeys),brakeActive:brakeBtn.classList.contains('active'),sendActive:sendBtn.classList.contains('active')}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),landingMomentumCarry:(vy,slope,error=0,absorbing=false,rideMode=mode)=>({...landingMomentumCarry(vy,slope,error,absorbing,rideMode)}),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampPreloadQuality:(u,rideMode=mode)=>rampPreloadQuality(u,rideMode),rampMomentumTransfer:(v,angle,send=false,manual=true,prepared=0,rideMode=mode,quality=1)=>({...rampMomentumTransfer(v,angle,send,manual,prepared,rideMode,quality)}),rampRollAnimationEnvelope:(u,releaseU,active)=>({...rampRollAnimationEnvelope(u,releaseU,active)}),rampRollAnimationPose:()=>({...rampRollAnimationPose(world+player.x+18)}),rampRollPoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,sbh=brakeHold,si=sendIt,sq=rampPopQueued,sqa=rampPopQueuedAt,sql=rampPopFeatureLabel,sqq=rampPopQuality,src=rampRollCueFeature;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const release=mode==='snow'?.69:mode==='bike'?.57:.71,center=player.x+player.w*.5,setAt=(u,roll,committed=false)=>{world=(f.x+f.width*u)-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;speed=roll?4.45:6;braking=roll;brakeHold=roll?.34:0;sendIt=false;rampPopQueued=false;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature=committed?(f.label||('ramp-'+Math.round(f.x))):'';return{roll:{...rampRollAnimationPose(world+player.x+18)},chase:{...chaseRiderPose()}}};const out={label:f.label||'RAMP',release,pre:setAt(Math.max(.25,release-.13),true,false),normal:setAt(Math.max(.25,release-.13),false,false),post:setAt(Math.min(1,release+.16),false,true)};world=sw;player=sp;speed=ss;braking=sb;brakeHold=sbh;sendIt=si;rampPopQueued=sq;rampPopQueuedAt=sqa;rampPopFeatureLabel=sql;rampPopQuality=sqq;rampRollCueFeature=src;return out},rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},rampSetupLanes:()=>{const runIn=mode==='snow'?140:mode==='bike'?135:130,minGap=mode==='snow'?130:mode==='bike'?110:140;return terrainFeatures.filter(f=>f.kind==='ramp'&&f.complex&&f.complexId!==undefined).map(f=>{let prev=null;for(const g of terrainFeatures){if(g.complexId!==f.complexId||g.x>=f.x)continue;if(!prev||g.x+g.width>prev.x+prev.width)prev=g}const gap=prev?Math.round((f.x-runIn)-(prev.x+prev.width)):null;return{label:f.label||'RAMP',complexId:f.complexId,gap,minGap,pass:gap===null||gap>=minGap}})},brakeEndProbe:(kind='cancel')=>{const snap={running,ended,introActive,paused,onGround:player.onGround,sendIt,speed,world,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed,physicsCue,physicsCueTimer};let px=world+player.x+38,bestSlope=terrainSlopeAt(px);for(let wx=120;wx<41000&&bestSlope<=.055;wx+=40){const s=terrainSlopeAt(wx);if(s>bestSlope){bestSlope=s;px=wx}}running=true;ended=false;introActive=false;paused=false;player.onGround=true;sendIt=false;world=px-player.x-38;speed=6.2;braking=true;brakeHold=.40;brakeEntrySpeed=8.0;brakeMinSpeed=5.7;physicsCue='PROBE BASE';physicsCueTimer=0;if(kind==='release')releaseBrakeTechnique();else clearBrakeTechnique();const out={kind,slope:terrainSlopeAt(world+player.x+38),speed,physicsCue,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed};running=snap.running;ended=snap.ended;introActive=snap.introActive;paused=snap.paused;player.onGround=snap.onGround;sendIt=snap.sendIt;speed=snap.speed;world=snap.world;braking=snap.braking;brakeHold=snap.brakeHold;brakeEntrySpeed=snap.brakeEntrySpeed;brakeMinSpeed=snap.brakeMinSpeed;physicsCue=snap.physicsCue;physicsCueTimer=snap.physicsCueTimer;return out},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),motionSoundRecipe:(m=mode)=>({...motionSoundRecipe(m)}),motionBufferSignature:(kind=mode)=>{const ac=ensureAudio();return ac?motionBufferSignature(ac,kind):null},speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),stagedWarningPlan:(kind='encounter',pace=6,rideMode=mode)=>({...stagedWarningPlan(kind,pace,rideMode)}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseRiderPose:()=>({...chaseRiderPose()}),chaseLandingRecoveryEnvelope:(timer=.26,kind='flow',impact=.85,onGround=true)=>({...chaseLandingRecoveryEnvelope(timer,kind,impact,onGround)}),chaseRecoveryFrame:(kind='flow',timer=.26,impact=.85)=>{const old={player:{...player},timer:landingRecoveryTimer,kind:landingRecoveryKind,impact:landingRecoveryImpact};player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;landingRecoveryTimer=timer;landingRecoveryKind=kind;landingRecoveryImpact=impact;drawChaseScene();drawChasePlayer();const out={...chaseRiderPose()};player=old.player;landingRecoveryTimer=old.timer;landingRecoveryKind=old.kind;landingRecoveryImpact=old.impact;return out},chaseImpactScanFrame:(progress=.3,hit='tree',scan=true)=>{drawChaseScene();drawChaseCrashPlayer(progress,hit);if(scan)drawChaseImpactScan(progress,hit);return{hit,label:crashImpactReview(hit).label,progress,scan:!!scan}},chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},yieldActorSafelyBehind:(w,sx,riderX=120)=>yieldActorSafelyBehind({w},sx,riderX),clearLinePaceReward:(pace)=>({...clearLinePaceReward(pace)}),yieldLifecycleProbe:(type='hiker',pace=6)=>{const old={mode,world,player:{...player},speed,braking,brakeEntrySpeed,sendIt,brakeHold,score,trafficReads,trafficReadPoints,meter,physicsCue,physicsCueTimer};const maintenance=['snowcat','trailcart','utilityvan'].includes(type);const defs={skier:{m:'snow',w:38,h:54,vx:-38},hiker:{m:'bike',w:30,h:54,vx:-28},pedestrian:{m:'board',w:32,h:56,vx:-18},snowcat:{m:'snow',w:108,h:48,vx:-22},trailcart:{m:'bike',w:74,h:42,vx:-10},utilityvan:{m:'board',w:98,h:48,vx:-34}};const d=defs[type]||defs.hiker;mode=d.m;world=0;player={...player,x:120,w:28,onGround:true};speed=pace;braking=true;brakeEntrySpeed=pace;sendIt=false;brakeHold=.3;score=0;trafficReads=0;trafficReadPoints=0;meter=0;const o={wx:430,type,w:d.w,h:d.h,vx:d.vx,event:!maintenance,wildlife:false,maintenance,decor:false,reacted:false,reactionTimer:0};let sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const yielded={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldSide:o.yieldSide||0,vx:o.vx,resumeVx:o.resumeVx};o.wx=player.x-Math.max(4,d.w*.45);sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const held={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,trailingEdge:o.wx+d.w,riderX:player.x};o.wx=player.x-d.w-18;sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const resumed={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,vx:o.vx,trailingEdge:o.wx+d.w,riderX:player.x};mode=old.mode;world=old.world;player=old.player;speed=old.speed;braking=old.braking;brakeEntrySpeed=old.brakeEntrySpeed;sendIt=old.sendIt;brakeHold=old.brakeHold;score=old.score;trafficReads=old.trafficReads;trafficReadPoints=old.trafficReadPoints;meter=old.meter;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;return{type,pace,yielded,held,resumed}},crashDialoguePool:(hit='default',context=null)=>[...crashLinePool(hit,context)],crashDialogueNext:(hit='default',context=null)=>crashLine(hit,context),setPaused:(value)=>setPaused(value),cleanLandingProbe:()=>{const old={running,ended,introActive,paused,world,player:{...player},speed,airTime,airLineSet,jumpTapCount,airTrick,braking,brakeHold,sendIt,score,meter,stability,physicsCue,physicsCueTimer,flowChain,flowTimer,bestFlowChain};const originalCarry=landingMomentumCarry,originalSlope=terrainSlopeAt;running=true;ended=false;introActive=false;paused=false;world=0;speed=5.6;airTime=.40;airLineSet=0;jumpTapCount=0;airTrick='';braking=false;brakeHold=0;sendIt=false;stability=100;score=0;meter=0;flowChain=0;flowTimer=0;physicsCue='PROBE';physicsCueTimer=0;terrainSlopeAt=()=>.10;landingMomentumCarry=()=>({eligible:false,gain:0,budget:0,cleanliness:1});player={...player,onGround:false,rot:Math.atan(.10),vy:3.25};player.y=groundY(player.x)-player.h+1;let out;try{update(1/60);out={ok:true,onGround:player.onGround,score,physicsCue,airTime,speed,stability}}catch(error){out={ok:false,error:String(error&&error.message||error)}}finally{landingMomentumCarry=originalCarry;terrainSlopeAt=originalSlope}running=old.running;ended=old.ended;introActive=old.introActive;paused=old.paused;world=old.world;player=old.player;speed=old.speed;airTime=old.airTime;airLineSet=old.airLineSet;jumpTapCount=old.jumpTapCount;airTrick=old.airTrick;braking=old.braking;brakeHold=old.brakeHold;sendIt=old.sendIt;score=old.score;meter=old.meter;stability=old.stability;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;flowChain=old.flowChain;flowTimer=old.flowTimer;bestFlowChain=old.bestFlowChain;return out},forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
+if(new URLSearchParams(location.search).get('qa')==='1')window.CRASHN_JIMMY_QA={pose:()=>({...poseBlend}),state:()=>({running,paused,ended,introActive,onGround:player.onGround,braking,sendIt,lineSet,speed,mode,chaseView,runTime,world,score,playerY:player.y,playerVy:player.vy,particleCount:particles.length,brakePointerIntent,sendPointerIntent,brakeKeyIntent:keyIntent(brakeKeys),sendKeyIntent:keyIntent(sendKeys),brakeActive:brakeBtn.classList.contains('active'),sendActive:sendBtn.classList.contains('active'),chaseReads,chaseReadPoints,chaseReadStreak,bestChaseReadStreak}),landingLoadBrace:(vy,forward,slope,spot)=>landingLoadBrace(vy,forward,slope,spot),slopeMatchedLandingLoad:(vy,forward,slope)=>slopeMatchedLandingLoad(vy,forward,slope),landingMomentumCarry:(vy,slope,error=0,absorbing=false,rideMode=mode)=>({...landingMomentumCarry(vy,slope,error,absorbing,rideMode)}),rampControlRollThrough:(v,brake,hold,send,manualPop,rideMode)=>rampControlRollThrough(v,brake,hold,send,manualPop,rideMode),rampPreloadQuality:(u,rideMode=mode)=>rampPreloadQuality(u,rideMode),rampMomentumTransfer:(v,angle,send=false,manual=true,prepared=0,rideMode=mode,quality=1)=>({...rampMomentumTransfer(v,angle,send,manual,prepared,rideMode,quality)}),rampRollAnimationEnvelope:(u,releaseU,active)=>({...rampRollAnimationEnvelope(u,releaseU,active)}),rampRollAnimationPose:()=>({...rampRollAnimationPose(world+player.x+18)}),rampRollPoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,sbh=brakeHold,si=sendIt,sq=rampPopQueued,sqa=rampPopQueuedAt,sql=rampPopFeatureLabel,sqq=rampPopQuality,src=rampRollCueFeature;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const release=mode==='snow'?.69:mode==='bike'?.57:.71,center=player.x+player.w*.5,setAt=(u,roll,committed=false)=>{world=(f.x+f.width*u)-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;speed=roll?4.45:6;braking=roll;brakeHold=roll?.34:0;sendIt=false;rampPopQueued=false;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature=committed?(f.label||('ramp-'+Math.round(f.x))):'';return{roll:{...rampRollAnimationPose(world+player.x+18)},chase:{...chaseRiderPose()}}};const out={label:f.label||'RAMP',release,pre:setAt(Math.max(.25,release-.13),true,false),normal:setAt(Math.max(.25,release-.13),false,false),post:setAt(Math.min(1,release+.16),false,true)};world=sw;player=sp;speed=ss;braking=sb;brakeHold=sbh;sendIt=si;rampPopQueued=sq;rampPopQueuedAt=sqa;rampPopFeatureLabel=sql;rampPopQuality=sqq;rampRollCueFeature=src;return out},rampReconnectProfile:()=>{const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const lip=mode==='snow'?.70:mode==='bike'?.58:.72,samples=[];for(let i=0;i<=24;i++){const u=lip+(1-lip)*(i/24);samples.push(featureShape(f,f.x+f.width*u))}let reverseSegments=0;for(let i=1;i<samples.length;i++)if(samples[i]<samples[i-1]-1e-9)reverseSegments++;return{label:f.label||'RAMP',reverseSegments,start:samples[0],end:samples[samples.length-1],max:Math.max(...samples),min:Math.min(...samples)}},rampSetupLanes:()=>{const runIn=mode==='snow'?140:mode==='bike'?135:130,minGap=mode==='snow'?130:mode==='bike'?110:140;return terrainFeatures.filter(f=>f.kind==='ramp'&&f.complex&&f.complexId!==undefined).map(f=>{let prev=null;for(const g of terrainFeatures){if(g.complexId!==f.complexId||g.x>=f.x)continue;if(!prev||g.x+g.width>prev.x+prev.width)prev=g}const gap=prev?Math.round((f.x-runIn)-(prev.x+prev.width)):null;return{label:f.label||'RAMP',complexId:f.complexId,gap,minGap,pass:gap===null||gap>=minGap}})},brakeEndProbe:(kind='cancel')=>{const snap={running,ended,introActive,paused,onGround:player.onGround,sendIt,speed,world,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed,physicsCue,physicsCueTimer};let px=world+player.x+38,bestSlope=terrainSlopeAt(px);for(let wx=120;wx<41000&&bestSlope<=.055;wx+=40){const s=terrainSlopeAt(wx);if(s>bestSlope){bestSlope=s;px=wx}}running=true;ended=false;introActive=false;paused=false;player.onGround=true;sendIt=false;world=px-player.x-38;speed=6.2;braking=true;brakeHold=.40;brakeEntrySpeed=8.0;brakeMinSpeed=5.7;physicsCue='PROBE BASE';physicsCueTimer=0;if(kind==='release')releaseBrakeTechnique();else clearBrakeTechnique();const out={kind,slope:terrainSlopeAt(world+player.x+38),speed,physicsCue,braking,brakeHold,brakeEntrySpeed,brakeMinSpeed};running=snap.running;ended=snap.ended;introActive=snap.introActive;paused=snap.paused;player.onGround=snap.onGround;sendIt=snap.sendIt;speed=snap.speed;world=snap.world;braking=snap.braking;brakeHold=snap.brakeHold;brakeEntrySpeed=snap.brakeEntrySpeed;brakeMinSpeed=snap.brakeMinSpeed;physicsCue=snap.physicsCue;physicsCueTimer=snap.physicsCueTimer;return out},speedSoundProfile:(v,onGroundNow,brakingNow,sendNow,m,runningNow=true,audioEnabled=true)=>speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEnabled),motionSoundRecipe:(m=mode)=>({...motionSoundRecipe(m)}),motionBufferSignature:(kind=mode)=>{const ac=ensureAudio();return ac?motionBufferSignature(ac,kind):null},speedSoundState:()=>({created:!!speedBed,last:speedBedLastProfile,audioOn}),stagedWarningPlan:(kind='encounter',pace=6,rideMode=mode)=>({...stagedWarningPlan(kind,pace,rideMode)}),disposeSpeedSoundscape:(time=.01)=>disposeSpeedSoundscape(time),chaseProjection:(distance)=>({...chaseProjection(distance)}),chaseLookahead:()=>chaseLookahead(),chaseDepthRhythmProfile:(rideMode=mode)=>({...chaseDepthRhythmProfile(rideMode)}),chaseDepthRhythmAnchors:(rideMode=mode)=>chaseDepthRhythmAnchors(world+player.x+player.w*.5,chaseLookahead(),rideMode).map(m=>({...m})),chaseHazardProfile:(type='rock')=>({...chaseHazardSilhouetteProfile(type)}),chaseHazardProfiles:()=>[...CHASE_JUMP_HAZARDS].map(type=>({type,...chaseHazardSilhouetteProfile(type)})),chaseJumpTiming:(gap,pace=speed)=>{const r=chaseJumpTiming(gap,pace);return r?{...r}:null},chaseJumpRead:()=>{const r=chaseJumpRead();return r?{type:r.o.type,gap:r.gap,lead:r.lead,window:r.window,preview:r.preview,prep:r.prep,timing:r.timing,late:r.late,label:r.label,takeoffDistance:r.takeoffDistance}:null},chaseJumpCueProbe:(gap=170,type='rock',pace=6)=>{const old={running,onGround:player.onGround,speed,obstacles,world,player:{...player}};running=true;player.onGround=true;speed=pace;const riderWx=world+player.x+player.w*.5;obstacles=[{wx:riderWx+gap,type,w:36,h:34,decor:false,advisory:false,event:false,maintenance:false,wildlife:false,hit:false,yieldClear:false}];const r=chaseJumpRead(),pose={...chaseRiderPose()};running=old.running;player=old.player;speed=old.speed;obstacles=old.obstacles;world=old.world;return{read:r?{type:r.o.type,gap:r.gap,lead:r.lead,window:r.window,preview:r.preview,prep:r.prep,timing:r.timing,late:r.late,label:r.label,takeoffDistance:r.takeoffDistance}:null,pose}},chaseReadAwardValue:(timing=.8,streak=1)=>chaseReadAwardValue(timing,streak),chaseReadScoreProbe:(gap=162,type='rock',pace=6)=>{const old={running,introActive,ended,paused,speed,obstacles,world,player:{...player},chaseView,score,meter,chaseReads,chaseReadPoints,chaseReadStreak,bestChaseReadStreak,physicsCue,physicsCueTimer,lineSet,airLineSet,jumpTapCount,lastJumpTap,airTrick,audioOn};running=true;introActive=false;ended=false;paused=false;player.onGround=true;player.vy=0;speed=pace;chaseView=true;score=0;meter=0;lineSet=0;airLineSet=0;jumpTapCount=0;lastJumpTap=0;airTrick='';audioOn=false;chaseReads=0;chaseReadPoints=0;chaseReadStreak=0;bestChaseReadStreak=0;const riderWx=world+player.x+player.w*.5,o={wx:riderWx+gap,type,w:36,h:34,decor:false,advisory:false,event:false,maintenance:false,wildlife:false,hit:false,yieldClear:false};obstacles=[o];const preview=chaseJumpRead();jump();const armed=!!o.chaseReadArmed;const pts=resolveChaseJumpRead(o);const result={armed,label:preview?.label||null,timing:o.chaseReadTiming||0,pts,score,chaseReads,chaseReadPoints,chaseReadStreak,bestChaseReadStreak,cue:physicsCue,jumped:!player.onGround};running=old.running;introActive=old.introActive;ended=old.ended;paused=old.paused;player=old.player;speed=old.speed;obstacles=old.obstacles;world=old.world;chaseView=old.chaseView;score=old.score;meter=old.meter;lineSet=old.lineSet;airLineSet=old.airLineSet;jumpTapCount=old.jumpTapCount;lastJumpTap=old.lastJumpTap;airTrick=old.airTrick;audioOn=old.audioOn;chaseReads=old.chaseReads;chaseReadPoints=old.chaseReadPoints;chaseReadStreak=old.chaseReadStreak;bestChaseReadStreak=old.bestChaseReadStreak;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;return result},chaseRiderPose:()=>({...chaseRiderPose()}),chaseLandingRecoveryEnvelope:(timer=.26,kind='flow',impact=.85,onGround=true)=>({...chaseLandingRecoveryEnvelope(timer,kind,impact,onGround)}),chaseRecoveryFrame:(kind='flow',timer=.26,impact=.85)=>{const old={player:{...player},timer:landingRecoveryTimer,kind:landingRecoveryKind,impact:landingRecoveryImpact};player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h;landingRecoveryTimer=timer;landingRecoveryKind=kind;landingRecoveryImpact=impact;drawChaseScene();drawChasePlayer();const out={...chaseRiderPose()};player=old.player;landingRecoveryTimer=old.timer;landingRecoveryKind=old.kind;landingRecoveryImpact=old.impact;return out},chaseImpactScanFrame:(progress=.3,hit='tree',scan=true)=>{drawChaseScene();drawChaseCrashPlayer(progress,hit);if(scan)drawChaseImpactScan(progress,hit);return{hit,label:crashImpactReview(hit).label,progress,scan:!!scan}},chasePoseSamples:()=>{const sw=world,sp={...player},ss=speed,sb=braking,si=sendIt;const f=terrainFeatures.find(x=>x.kind==='ramp');if(!f)return null;const center=player.x+player.w*.5,setWorld=(riderWx)=>{world=riderWx-center;player.onGround=true;player.vy=0;player.y=groundY(player.x)-player.h};speed=8;braking=false;sendIt=false;setWorld(f.x-95);const approach={...chaseRiderPose()};setWorld(f.x+f.width*.52);const lip={...chaseRiderPose()};setWorld(f.x+f.width+220);player.onGround=false;player.vy=6.4;const riderWx=world+center,probeX=riderWx+Math.max(34,speed*7.5),gy=groundY(probeX-world);player.y=gy-player.h-40;const landing={...chaseRiderPose()};world=sw;player=sp;speed=ss;braking=sb;sendIt=si;return{approach,lip,landing}},setChase:(value)=>{chaseView=!!value;return chaseView},yieldActorSafelyBehind:(w,sx,riderX=120)=>yieldActorSafelyBehind({w},sx,riderX),clearLinePaceReward:(pace)=>({...clearLinePaceReward(pace)}),yieldLifecycleProbe:(type='hiker',pace=6)=>{const old={mode,world,player:{...player},speed,braking,brakeEntrySpeed,sendIt,brakeHold,score,trafficReads,trafficReadPoints,meter,physicsCue,physicsCueTimer};const maintenance=['snowcat','trailcart','utilityvan'].includes(type);const defs={skier:{m:'snow',w:38,h:54,vx:-38},hiker:{m:'bike',w:30,h:54,vx:-28},pedestrian:{m:'board',w:32,h:56,vx:-18},snowcat:{m:'snow',w:108,h:48,vx:-22},trailcart:{m:'bike',w:74,h:42,vx:-10},utilityvan:{m:'board',w:98,h:48,vx:-34}};const d=defs[type]||defs.hiker;mode=d.m;world=0;player={...player,x:120,w:28,onGround:true};speed=pace;braking=true;brakeEntrySpeed=pace;sendIt=false;brakeHold=.3;score=0;trafficReads=0;trafficReadPoints=0;meter=0;const o={wx:430,type,w:d.w,h:d.h,vx:d.vx,event:!maintenance,wildlife:false,maintenance,decor:false,reacted:false,reactionTimer:0};let sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const yielded={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldSide:o.yieldSide||0,vx:o.vx,resumeVx:o.resumeVx};o.wx=player.x-Math.max(4,d.w*.45);sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const held={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,trailingEdge:o.wx+d.w,riderX:player.x};o.wx=player.x-d.w-18;sx=o.wx-world;if(maintenance)updateMaintenanceBehavior(o,sx,1/60);else updateEncounterBehavior(o,sx,1/60);const resumed={yieldClear:!!o.yieldClear,readArmed:!!o.readArmed,readAwarded:!!o.readAwarded,readPace:o.readPace||0,score,trafficReads,trafficReadPoints,yieldResume:!!o.yieldResume,yieldResumed:!!o.yieldResumed,vx:o.vx,trailingEdge:o.wx+d.w,riderX:player.x};mode=old.mode;world=old.world;player=old.player;speed=old.speed;braking=old.braking;brakeEntrySpeed=old.brakeEntrySpeed;sendIt=old.sendIt;brakeHold=old.brakeHold;score=old.score;trafficReads=old.trafficReads;trafficReadPoints=old.trafficReadPoints;meter=old.meter;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;return{type,pace,yielded,held,resumed}},crashDialoguePool:(hit='default',context=null)=>[...crashLinePool(hit,context)],crashDialogueNext:(hit='default',context=null)=>crashLine(hit,context),setPaused:(value)=>setPaused(value),cleanLandingProbe:()=>{const old={running,ended,introActive,paused,world,player:{...player},speed,airTime,airLineSet,jumpTapCount,airTrick,braking,brakeHold,sendIt,score,meter,stability,physicsCue,physicsCueTimer,flowChain,flowTimer,bestFlowChain};const originalCarry=landingMomentumCarry,originalSlope=terrainSlopeAt;running=true;ended=false;introActive=false;paused=false;world=0;speed=5.6;airTime=.40;airLineSet=0;jumpTapCount=0;airTrick='';braking=false;brakeHold=0;sendIt=false;stability=100;score=0;meter=0;flowChain=0;flowTimer=0;physicsCue='PROBE';physicsCueTimer=0;terrainSlopeAt=()=>.10;landingMomentumCarry=()=>({eligible:false,gain:0,budget:0,cleanliness:1});player={...player,onGround:false,rot:Math.atan(.10),vy:3.25};player.y=groundY(player.x)-player.h+1;let out;try{update(1/60);out={ok:true,onGround:player.onGround,score,physicsCue,airTime,speed,stability}}catch(error){out={ok:false,error:String(error&&error.message||error)}}finally{landingMomentumCarry=originalCarry;terrainSlopeAt=originalSlope}running=old.running;ended=old.ended;introActive=old.introActive;paused=old.paused;world=old.world;player=old.player;speed=old.speed;airTime=old.airTime;airLineSet=old.airLineSet;jumpTapCount=old.jumpTapCount;airTrick=old.airTrick;braking=old.braking;brakeHold=old.brakeHold;sendIt=old.sendIt;score=old.score;meter=old.meter;stability=old.stability;physicsCue=old.physicsCue;physicsCueTimer=old.physicsCueTimer;flowChain=old.flowChain;flowTimer=old.flowTimer;bestFlowChain=old.bestFlowChain;return out},forceCrash:(type='tree')=>{if(running)crash({type,wx:world+player.x+12,w:36,h:52});return true}};
 
 // v221-A5: composed controls + exact mobile canvas sizing + fixed-step physics clock.
 const FIXED_DT=1/60,MAX_FRAME_DT=.05,MAX_FRAME_STEPS=3;
