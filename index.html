@@ -997,7 +997,8 @@ const crashNextLapPools={
  ],
  snowProp:[
   "Keep the mountain pace. Finish the release before the corridor narrows.",
-  "Same speed, six inches more exit room, and the fixed object goes back to scenery.",  "Use the sightline sooner and preserve the width through the feature.",
+  "Same speed, six inches more exit room, and the fixed object goes back to scenery.",
+  "Use the sightline sooner and preserve the width through the feature.",
   "The line stays aggressive. I just stop borrowing margin from mountain infrastructure."
  ],
  bikeProp:[
@@ -1996,7 +1997,8 @@ function trackRampSetSetup(riderWx){
 function releaseRampSetTechnique(held){
  if(!rampSetState.armed||rampSetState.released||sendIt||!player.onGround)return false;
  const target=terrainFeatures.find(f=>f.kind==='ramp'&&(f.label||'RAMP')===rampSetState.label);
- const riderWx=world+player.x+18; const scrub=Math.max(0,rampSetState.entrySpeed-rampSetState.minSpeed);
+ const riderWx=world+player.x+18;
+ const scrub=Math.max(0,rampSetState.entrySpeed-rampSetState.minSpeed);
  if(!target||!rampSetReleaseEligible(held,scrub,riderWx,target.x))return false;
  rampSetState.released=true;rampSetState.releaseSpeed=speed;
  physicsCue='RAMP SET · RELEASE';physicsCueTimer=.72;sfx('rampcoach','set');
@@ -2995,7 +2997,8 @@ function terrainComposureBonus(crashed=false,count=composedHazards){
  // Jimmy repeatedly absorbs those features cleanly. Rough ride-throughs do not count, and a crash
  // never converts partial progress into points, so the incentive is composure rather than farming.
  const clean=Math.max(0,Math.floor(count||0));
- if(crashed)return{points:0,count:clean,label:'NO FINISH'}; if(clean<2)return{points:0,count:clean,label:clean?'ONE CLEAN ABSORB':'OPEN'};
+ if(crashed)return{points:0,count:clean,label:'NO FINISH'};
+ if(clean<2)return{points:0,count:clean,label:clean?'ONE CLEAN ABSORB':'OPEN'};
  const points=clean>=4?420:clean===3?320:220;
  return{points,count:clean,label:clean>=4?'TERRAIN COMMAND':clean===3?'COMPOSED TERRAIN':'CONTROLLED TERRAIN'};
 }
@@ -3994,7 +3997,8 @@ function releaseControls(){
  brakeBtn.classList.remove('active');jumpBtn.classList.remove('active');sendBtn.classList.remove('active');
 }
 // v78 mobile QA: do not release every control when any one finger lifts.
-// Brake and Send It use pointer capture and release themselves, so simultaneous touch inputs// (for example Brake + Jump or Send It + Jump) remain held until their own pointer ends.
+// Brake and Send It use pointer capture and release themselves, so simultaneous touch inputs
+// (for example Brake + Jump or Send It + Jump) remain held until their own pointer ends.
 window.addEventListener('blur',()=>{if(running&&!ended&&!introActive&&!paused)setPaused(true);else{releaseControls();resetFrameClock()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!ended&&!introActive&&!paused)setPaused(true);else if(document.hidden)releaseControls();resetFrameClock()});
 window.addEventListener('pagehide',()=>{releaseControls();resetFrameClock()});
@@ -4993,7 +4997,8 @@ function crashSceneMarkup(hit,variant=0){
   <rect width="320" height="86" fill="${palette.sky}"/>
   <path d="M0 51 C48 45 83 54 125 48 C178 40 220 51 320 43 L320 86 L0 86 Z" fill="${palette.ground}"/>
   <path d="M0 63 C60 57 110 66 166 59 C226 52 267 60 320 54" fill="none" stroke="${palette.trail}" stroke-width="12" opacity=".88"/>
-  ${skid}  ${evidence}
+  ${skid}
+  ${evidence}
   ${impactOverlay}
   <g transform="translate(${p.tx} ${p.ty}) rotate(${p.rot})">
    <g class="jimmy-settle" stroke="#171a20" stroke-linecap="round" stroke-linejoin="round">
@@ -5992,7 +5997,8 @@ function pumpTransferLightingPass(){
     ctx.strokeStyle='#f0c39a';ctx.lineWidth=1.2;
     for(let i=0;i<4;i++){
      const x=lipX-24+i*18, y=groundY(Math.max(0,Math.min(W,x)))+4;
-     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+18,y-1);ctx.stroke();    }
+     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+18,y-1);ctx.stroke();
+    }
    }
    ctx.globalAlpha=1;
   }
@@ -6991,7 +6997,8 @@ function chaseCrossingIntentPlans(riderWx=world+player.x+player.w*.5,look=chaseL
  return out.sort((a,b)=>b.gap-a.gap);
 }
 function drawChaseCrossingIntentPass(riderWx,look){
- const plans=chaseCrossingIntentPlans(riderWx,look,mode);if(!plans.length)return; ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ const plans=chaseCrossingIntentPlans(riderWx,look,mode);if(!plans.length)return;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  for(const q of plans){
   const p=chaseProjection(q.gap);if(p.scale<.12)continue;
   const sc=p.scale,half=p.half*q.p.span,side=q.sourceSide||1;
@@ -7990,7 +7997,8 @@ function drawObstacle(o){
   // Brand-neutral early-'90s snowboard leaning against a small trail marker.
   ctx.save();ctx.translate(x+o.w*.5,y+o.h*.55);ctx.rotate(-.16);
   ctx.fillStyle='#26323a';ctx.fillRect(-3,-22,6,39);
-  ctx.fillStyle='#e5b847';ctx.beginPath();ctx.roundRect(-8,-23,16,44,7);ctx.fill();  ctx.fillStyle='#1d2730';ctx.fillRect(-7,-5,14,4);ctx.fillRect(-7,7,14,4);
+  ctx.fillStyle='#e5b847';ctx.beginPath();ctx.roundRect(-8,-23,16,44,7);ctx.fill();
+  ctx.fillStyle='#1d2730';ctx.fillRect(-7,-5,14,4);ctx.fillRect(-7,7,14,4);
   ctx.restore();ctx.fillStyle='#6f4f35';ctx.fillRect(x+44,y+10,5,36);ctx.fillStyle='#d6c397';ctx.fillRect(x+35,y+7,23,11);
  }
  else if(o.type==='garagebike'){
@@ -8989,7 +8997,8 @@ function loop(now){
  let steps=0;
  if(running&&!paused){
   frameAccumulator=Math.min(MAX_FRAME_DT,frameAccumulator+frameDt);
-  while(frameAccumulator>=FIXED_DT&&steps<MAX_FRAME_STEPS){update(FIXED_DT);frameAccumulator-=FIXED_DT;steps++} }else frameAccumulator=0;
+  while(frameAccumulator>=FIXED_DT&&steps<MAX_FRAME_STEPS){update(FIXED_DT);frameAccumulator-=FIXED_DT;steps++}
+ }else frameAccumulator=0;
  // v221-A111 QA/mobile: A103 stopped duplicate active-run paints, but the initial menu still
  // repainted the same static canvas on every RAF while running=false. Sleep all non-animated canvas
  // states after their first dirty paint. Active gameplay still paints after a fixed physics step,
