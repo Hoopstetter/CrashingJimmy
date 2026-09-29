@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A127</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A129</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -334,7 +334,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A127';
+const BUILD_VERSION='v221-A129';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -400,6 +400,9 @@ let lastNamedSectionCue='';
 const INTRO_DURATION=3.6; // any gameplay control now skips the intro and starts riding immediately
 
 let audioOn=true,audioCtx=null,lastToneAt=0,noiseBuffer=null,speedBed=null,motionBedBuffers={},speedBedClock=0,speedBedLastProfile=null;
+// v221-A128 QA/mobile: keep the display awake only while Jimmy is actively riding.
+// The Screen Wake Lock API is optional; unsupported/rejected requests fail closed with no gameplay impact.
+let runWakeLock=null,wakeLockWanted=false,wakeLockRequest=null;
 // v147 JIM'S CUT: unlisted feature gate. This is privacy by URL obscurity, not authentication.
 const JIM_CUT_QUERY=new URLSearchParams(location.search);
 const JIM_CUT_ENABLED=JIM_CUT_QUERY.get('jim')==='1'||location.hash.startsWith('#jim');
@@ -1111,10 +1114,10 @@ function ensureAudio(){
   return audioCtx;
  }catch(_){return null}
 }
-// v221-A60 blocker fix: the A33/A44 speed bed used two filtered loops of raw white noise.
-// On real phone speakers that read as radio/static rather than snow, tires, wheels, or wind.
-// Keep the lightweight Web Audio architecture, but replace that bed with deterministic colored,
-// rhythmic motion textures. Surface/contact is now the audible anchor; wind only rises at real pace.
+// v221-A129 blocker regression fix: A60 reduced the original static bed, but its continuous buffers
+// still contained pseudo-random colored noise that could collapse back into white-noise-like hiss on phones.
+// Continuous riding audio is now fully deterministic and harmonic/pulsed: snow edge + packed crunch,
+// bike tire + chain/trail chatter, longboard bearings + pavement seams. Wind is tonal and only appears at speed.
 function motionSoundRecipe(m){
  return m==='snow'
   ?{kind:'snow',label:'SNOW EDGE / PACKED POWDER',surfaceBase:.0048,surfaceSpan:.0108,brakeLift:1.34,baseRate:.78,rateSpan:.34,filterBase:1280,filterSpan:520}
@@ -1127,8 +1130,8 @@ function speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEn
  const active=runningNow&&audioEnabled;
  const spec=motionSoundRecipe(m);
  // Wind is deliberately absent at low/medium cruise. It should read as speed, not a permanent hiss.
- const windPace=Math.max(0,(pace-.38)/.62);
- const windGain=active?Math.pow(windPace,1.55)*.0064*(sendNow?1.12:1):0;
+ const windPace=Math.max(0,(pace-.55)/.45);
+ const windGain=active?Math.pow(windPace,1.65)*.0034*(sendNow?1.10:1):0;
  const surfaceGain=active&&onGroundNow?(spec.surfaceBase+pace*spec.surfaceSpan)*(brakingNow?spec.brakeLift:1):0;
  return{
   pace,windGain,surfaceGain,
@@ -1140,44 +1143,39 @@ function speedSoundProfile(v,onGroundNow,brakingNow,sendNow,m,runningNow,audioEn
   active
  }
 }
-function motionPRNG(seed){
- let s=seed>>>0;
- return()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^(s>>>15),1|s);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296}
-}
 function buildMotionBuffer(ac,kind){
- const cacheKey=kind+':'+ac.sampleRate;
+ const cacheKey=kind+':a129:'+ac.sampleRate;
  if(motionBedBuffers[cacheKey])return motionBedBuffers[cacheKey];
- const duration=2.4,length=Math.ceil(ac.sampleRate*duration),b=ac.createBuffer(1,length,ac.sampleRate),d=b.getChannelData(0);
- const seeds={wind:0xA60A11,snow:0xA60B22,bike:0xA60C33,board:0xA60D44};
- const rnd=motionPRNG(seeds[kind]||0xA60E55),sr=ac.sampleRate;
- let slow=0,mid=0;
+ const duration=3.2,length=Math.ceil(ac.sampleRate*duration),b=ac.createBuffer(1,length,ac.sampleRate),d=b.getChannelData(0),sr=ac.sampleRate;
  for(let i=0;i<length;i++){
-  const t=i/sr,n=rnd()*2-1;
-  slow+=.012*(n-slow);mid+=.085*(n-mid);
-  const colored=.72*slow+.28*mid;
-  let s=0;
+  const t=i/sr;
+  let sample=0;
   if(kind==='wind'){
-   // Low, breathing air movement with slight colored turbulence; no full-band static bed.
-   const swell=.62+.22*Math.sin(Math.PI*2*.43*t)+.12*Math.sin(Math.PI*2*.71*t+1.1);
-   s=swell*(.16*Math.sin(Math.PI*2*118*t)+.10*Math.sin(Math.PI*2*187*t+.6)+.055*Math.sin(Math.PI*2*302*t+1.7))+.24*colored;
+   // Tonal air movement: slow swells and inharmonic partials, with no random/noise source.
+   const swell=.52+.18*Math.sin(Math.PI*2*.31*t)+.10*Math.sin(Math.PI*2*.47*t+1.2);
+   sample=swell*(.105*Math.sin(Math.PI*2*132*t)+.052*Math.sin(Math.PI*2*198.5*t+.7)+.028*Math.sin(Math.PI*2*271*t+1.8));
   }else if(kind==='snow'){
-   // Edge scrape plus granular packed-snow crunches.
-   const scrape=(.12*Math.sin(Math.PI*2*410*t)+.08*Math.sin(Math.PI*2*635*t+.9))*(.70+.18*Math.sin(Math.PI*2*2.15*t));
-   const phase=(t*7.2)%1,crunch=phase<.055?Math.exp(-phase*64)*(.55*mid+.18*Math.sin(Math.PI*2*1180*t)):0;
-   s=.34*colored+scrape+crunch;
+   // Edge song plus compact packed-snow crunches. The pulse reads as contact, not a static wash.
+   const edgeMod=.58+.18*Math.sin(Math.PI*2*2.1*t)+.10*Math.sin(Math.PI*2*3.7*t+.6);
+   const edge=.105*Math.sin(Math.PI*2*286*t)+.062*Math.sin(Math.PI*2*412*t+.9);
+   const phase=(t*7.15)%1;
+   const crunch=phase<.06?Math.exp(-phase*58)*(.18*Math.sin(Math.PI*2*760*t)+.085*Math.sin(Math.PI*2*1120*t+.4)):0;
+   sample=edgeMod*edge+crunch;
   }else if(kind==='bike'){
-   // Tire casing rumble with regular chain/freehub ticks and trail chatter.
-   const wheel=.27*Math.sin(Math.PI*2*61*t)+.12*Math.sin(Math.PI*2*93*t+.4);
-   const phase=(t*10.6)%1,click=phase<.035?Math.exp(-phase*105)*(.42*Math.sin(Math.PI*2*1320*t)+.24*Math.sin(Math.PI*2*1780*t)):0;
-   const chatter=.10*Math.sin(Math.PI*2*215*t)*(0.5+0.5*Math.sin(Math.PI*2*5.3*t));
-   s=wheel+click+chatter+.12*colored;
+   // Tire-casing rumble, freehub/chain ticks, and trail-load pulses.
+   const wheel=.215*Math.sin(Math.PI*2*61*t)+.095*Math.sin(Math.PI*2*122*t+.35);
+   const load=.055*Math.sin(Math.PI*2*214*t)*(0.5+0.5*Math.sin(Math.PI*2*4.9*t+.8));
+   const phase=(t*10.8)%1;
+   const tick=phase<.032?Math.exp(-phase*112)*(.17*Math.sin(Math.PI*2*1280*t)+.09*Math.sin(Math.PI*2*1740*t+.5)):0;
+   sample=wheel+load+tick;
   }else{
-   // Four-wheel/bearing hum with pavement seam pulses. Tonal on purpose, never a hiss loop.
-   const bearings=.23*Math.sin(Math.PI*2*86*t)+.11*Math.sin(Math.PI*2*172*t+.3)+.055*Math.sin(Math.PI*2*258*t+1.0);
-   const phase=(t*6.35)%1,seam=phase<.055?Math.exp(-phase*76)*(.34*Math.sin(Math.PI*2*520*t)+.17*Math.sin(Math.PI*2*1040*t)):0;
-   s=bearings+seam+.10*colored;
+   // Longboard wheel/bearing hum with discrete pavement seam contacts.
+   const bearings=.205*Math.sin(Math.PI*2*86*t)+.092*Math.sin(Math.PI*2*172*t+.3)+.045*Math.sin(Math.PI*2*258*t+1.0);
+   const phase=(t*6.4)%1;
+   const seam=phase<.05?Math.exp(-phase*82)*(.19*Math.sin(Math.PI*2*520*t)+.085*Math.sin(Math.PI*2*1040*t+.25)):0;
+   sample=bearings+seam;
   }
-  d[i]=Math.max(-.92,Math.min(.92,s));
+  d[i]=Math.max(-.88,Math.min(.88,sample));
  }
  motionBedBuffers[cacheKey]=b;
  return b
@@ -1462,6 +1460,33 @@ audioBtn.addEventListener('click',e=>{e.preventDefault();audioOn=!audioOn;update
 document.addEventListener('visibilitychange',()=>{if(document.hidden)disposeSpeedSoundscape(.035)});
 updateAudioButton();
 
+// v221-A128 QA/mobile: a phone dimming or locking mid-line is effectively a dropped-control failure.
+// Request a screen wake lock for active runs, release it immediately on pause/finish/crash/page exit,
+// and tolerate browsers (including older iOS) that do not expose or grant the API.
+function wakeLockSupported(){return !!(navigator.wakeLock&&typeof navigator.wakeLock.request==='function')}
+function requestRunWakeLock(){
+ if(paused||ended||document.hidden){wakeLockWanted=false;return Promise.resolve(false)}
+ wakeLockWanted=true;
+ if(!wakeLockSupported()||runWakeLock||wakeLockRequest)return Promise.resolve(!!runWakeLock);
+ wakeLockRequest=navigator.wakeLock.request('screen').then(lock=>{
+  wakeLockRequest=null;
+  if(!wakeLockWanted||document.hidden||paused||ended){
+   try{const p=lock.release();if(p&&p.catch)p.catch(()=>{})}catch(_){}
+   return false;
+  }
+  runWakeLock=lock;
+  lock.addEventListener('release',()=>{if(runWakeLock===lock)runWakeLock=null});
+  return true;
+ }).catch(()=>{wakeLockRequest=null;return false});
+ return wakeLockRequest;
+}
+function releaseRunWakeLock(){
+ wakeLockWanted=false;
+ const lock=runWakeLock;runWakeLock=null;
+ if(lock){try{const p=lock.release();if(p&&p.catch)p.catch(()=>{})}catch(_){}}
+ return !!lock;
+}
+
 // v221-A41 UI/Sound/Polish: true player-controlled pause. Pause is a hard simulation freeze,
 // not just an overlay: fixed-step updates stop, controls release, the continuous speed bed is
 // disposed, and the frame clock is reset so resuming cannot create a catch-up physics spike.
@@ -1476,7 +1501,7 @@ function setPaused(next){
  if(next===paused){updatePauseButton();return paused}
  if(next){
   if(!running||ended||introActive)return false;
-  paused=true;releaseControls();disposeSpeedSoundscape(.035);resetFrameClock();
+  paused=true;releaseControls();disposeSpeedSoundscape(.035);releaseRunWakeLock();resetFrameClock();
   canvasFrameDirty=true;
   appEl.classList.add('paused');pauseOverlay.classList.add('show');pauseOverlay.setAttribute('aria-hidden','false');
  }else{
@@ -1484,7 +1509,7 @@ function setPaused(next){
   paused=false;resetFrameClock();canvasFrameDirty=true;
   appEl.classList.remove('paused');pauseOverlay.classList.remove('show');pauseOverlay.setAttribute('aria-hidden','true');
   if(pauseReason)pauseReason.textContent='RUN PAUSED';
-  if(audioOn)ensureAudio();
+  if(audioOn)ensureAudio();requestRunWakeLock();
  }
  updatePauseButton();
  return paused;
@@ -2921,7 +2946,7 @@ function start(){
 }
 function begin(m){mode=m;appEl.classList.remove('postrun');clearPauseState();ensureAudio();overlay.style.display='none';resize();reset(true)}
 function activateRunNow(){
- introActive=false;running=true;signatureTrack.style.display='block';last=performance.now();canvasFrameDirty=true;hud();
+ introActive=false;running=true;requestRunWakeLock();signatureTrack.style.display='block';last=performance.now();canvasFrameDirty=true;hud();
  return true;
 }
 function startLocationIntro(){
@@ -4044,8 +4069,8 @@ function releaseControls(){
 // (for example Brake + Jump or Send It + Jump) remain held until their own pointer ends.
 window.addEventListener('blur',()=>{if(running&&!ended&&!introActive&&!paused)setPaused(true);else{releaseControls();resetFrameClock()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!ended&&!introActive&&!paused)setPaused(true);else if(document.hidden)releaseControls();resetFrameClock()});
-window.addEventListener('pagehide',()=>{releaseControls();resetFrameClock()});
-window.addEventListener('pageshow',resetFrameClock);
+window.addEventListener('pagehide',()=>{releaseControls();releaseRunWakeLock();resetFrameClock()});
+window.addEventListener('pageshow',()=>{resetFrameClock();if(running&&!paused&&!ended)requestRunWakeLock()});
 document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#controls'))e.preventDefault()});
 
 function skillAward(base,label,boost=.25){
@@ -4894,14 +4919,14 @@ function update(dt){
 
 function crash(o){
  clearPauseState();clearRampCoachDisplay();lastCrashContext=makeCrashContext(o);
- disposeSpeedSoundscape(.03);
+ disposeSpeedSoundscape(.03);releaseRunWakeLock();
  sfx('crash',o&&o.type?o.type:'obstacle');setTimeout(playCrashVoice,520);running=false;ended=true;updatePauseButton();lastPostJumpTap=0;
  physicsCue='DOUBLE-TAP JUMP · RESTART';physicsCueTimer=.78;
  let injury=injuries[Math.floor(Math.random()*injuries.length)];
  for(let i=0;i<32;i++)particles.push({x:player.x+18,y:player.y+25,vx:rand(-6,6),vy:rand(-8,2),life:rand(38,70)});
  let n=0,t=setInterval(()=>{if(chaseView){drawChaseScene();player.y+=2.7;drawChaseCrashPlayer(n/22,o.type);drawChaseImpactScan(n/22,o.type)}else{drawScene();player.x+=2.4;player.y+=2.7;drawCrashPlayer(n/22,o.type);drawCrashXray(n/22,o.type);drawParticles()}if(++n>22){clearInterval(t);results(true,injury,o.type)}},30)
 }
-function finish(){clearPauseState();clearRampCoachDisplay();disposeSpeedSoundscape(.04);running=false;ended=true;updatePauseButton();results(false,null,null)}
+function finish(){clearPauseState();clearRampCoachDisplay();disposeSpeedSoundscape(.04);releaseRunWakeLock();running=false;ended=true;updatePauseButton();results(false,null,null)}
 
 function crashImpactReview(hit){
  // v221-A25 UI/Sound/Polish: the result-page impact scan now points to the part of the
@@ -7841,7 +7866,7 @@ function drawLocationIntro(now){
   for(const wx of [-34,34]){ctx.fillStyle='#111';ctx.beginPath();ctx.arc(wx,37,11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8c9296';ctx.lineWidth=2;ctx.beginPath();ctx.arc(wx,37,5,0,Math.PI*2);ctx.stroke()}
  }
  ctx.restore();
- if(t>=1){introActive=false;running=true;signatureTrack.style.display='block';last=performance.now();hud()}
+ if(t>=1){introActive=false;running=true;requestRunWakeLock();signatureTrack.style.display='block';last=performance.now();hud()}
 }
 
 function drawObstacle(o){
