@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A137</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A138</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -334,7 +334,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A137';
+const BUILD_VERSION='v221-A138';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -395,6 +395,46 @@ function sideCameraProfile(width=W,height=H){
  const scaleX=portrait?.76+portraitT*.08:1;
  const visualDescent=portrait?SCREEN_DESCENT:Math.min(SCREEN_DESCENT,(height*.12)/Math.max(1,width));
  return{portrait,scaleX,virtualWidth:width/scaleX,visualDescent,shearY:visualDescent-SCREEN_DESCENT,forwardGain:1/scaleX};
+}
+// v221-A138 blocker/readability: establish a strict SIDE-view visual hierarchy on phones.
+// Background scenery is quieter, course-adjacent/non-colliding props recede, true hazards stay crisp,
+// floating section cards disappear on phone play, and short landscape uses a very faint nearest ridge.
+function sideReadabilityProfile(width=(lastCanvasCssW||W),height=(lastCanvasCssH||H)){
+ const portrait=height>width*1.08&&width<600;
+ const landscape=height<520&&width>height*1.28;
+ const phone=portrait||landscape||Math.min(width,height)<560;
+ return{
+  phone,portrait,landscape,
+  backgroundAlpha:phone?(landscape?.54:.67):1,
+  backgroundSaturation:phone?(landscape?.64:.72):1,
+  nearMountainAlpha:phone?(landscape?.12:.24):1,
+  adjacentOpacity:phone?(landscape?.46:.56):.78,
+  adjacentSaturation:phone?.58:.78,
+  hazardSaturation:phone?1.14:1,
+  hazardContrast:phone?1.07:1,
+  hideFloatingSection:phone,
+  compactCue:phone
+ };
+}
+function drawSideBackgroundPass(name,fn){
+ const p=sideReadabilityProfile();
+ ctx.save();
+ if(p.phone){
+  ctx.globalAlpha*=p.backgroundAlpha;
+  ctx.filter=`saturate(${p.backgroundSaturation}) contrast(.92)`;
+ }
+ safeVisualPass(name,fn);
+ ctx.restore();
+}
+function drawSideMountainLayer(color,base,amp,parallax,detail,near=false){
+ const p=sideReadabilityProfile();
+ ctx.save();
+ if(p.phone){
+  ctx.globalAlpha*=near?p.nearMountainAlpha:(p.landscape?.58:.72);
+  ctx.filter=`saturate(${p.backgroundSaturation}) contrast(.90)`;
+ }
+ mountain(color,base,amp,parallax,detail);
+ ctx.restore();
 }
 function beginSideCourseCamera(){
  const p=sideCameraProfile(W,H);
@@ -6241,6 +6281,9 @@ function pumpTransferLightingPass(){
 function namedSectionWayfindingPass(){
  // v121 Environment Graphics: larger floating section markers are intentionally translucent and
  // tethered to terrain so they read as wayfinding rather than collision objects.
+ // A138: phone play already carries section/line information in the fixed HUD; suppress this
+ // duplicate floating card so it cannot mask the decision corridor.
+ if(sideReadabilityProfile().hideFloatingSection)return;
  let chosen=null,best=1e9;
  const rider=world+player.x+player.w;
  for(const f of terrainFeatures){
@@ -8014,10 +8057,10 @@ function safeVisualPass(name,fn){
 }
 function drawScene(){
  let d=MODES[mode],g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,d.sky1);g.addColorStop(1,d.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);skyAtmosphere();
- if(mode==='snow'){mountain('#7897aa',H*.48,82,.028,.2);mountain('#607d91',H*.56,62,.06,1.4);mountain('#4c6779',H*.64,42,.105,2.2)}
- else if(mode==='bike'){mountain('#99947b',H*.49,72,.025,.5);mountain('#79775d',H*.57,56,.058,1.7);mountain('#5d6449',H*.64,39,.108,2.5)}
- else{mountain('#98918b',H*.49,58,.022,.8);mountain('#797a78',H*.56,43,.052,1.9);mountain('#5b6163',H*.63,30,.098,2.8)}
- safeVisualPass('background',background);safeVisualPass('environmentIdentity',environmentIdentity);safeVisualPass('sectionAtmosphere',sectionAtmosphereSignaturePass);safeVisualPass('landmarks',locationLandmarks);safeVisualPass('expertScenery',expertTransferSceneryPass);safeVisualPass('cinematic',cinematicVisualPass);safeVisualPass('premium',premiumVisualPass);
+ if(mode==='snow'){drawSideMountainLayer('#7897aa',H*.48,82,.028,.2,false);drawSideMountainLayer('#607d91',H*.56,62,.06,1.4,false);drawSideMountainLayer('#4c6779',H*.64,42,.105,2.2,true)}
+ else if(mode==='bike'){drawSideMountainLayer('#99947b',H*.49,72,.025,.5,false);drawSideMountainLayer('#79775d',H*.57,56,.058,1.7,false);drawSideMountainLayer('#5d6449',H*.64,39,.108,2.5,true)}
+ else{drawSideMountainLayer('#98918b',H*.49,58,.022,.8,false);drawSideMountainLayer('#797a78',H*.56,43,.052,1.9,false);drawSideMountainLayer('#5b6163',H*.63,30,.098,2.8,true)}
+ drawSideBackgroundPass('background',background);drawSideBackgroundPass('environmentIdentity',environmentIdentity);drawSideBackgroundPass('sectionAtmosphere',sectionAtmosphereSignaturePass);drawSideBackgroundPass('landmarks',locationLandmarks);drawSideBackgroundPass('expertScenery',expertTransferSceneryPass);drawSideBackgroundPass('cinematic',cinematicVisualPass);drawSideBackgroundPass('premium',premiumVisualPass);
  const sideCameraState=beginSideCourseCamera();
  try{
  let pts=[];for(let x=0;x<=W+20;x+=10)pts.push({x,y:groundY(x)});
@@ -8026,7 +8069,7 @@ function drawScene(){
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle);safeVisualPass('environmentSignature',environmentSignaturePass);safeVisualPass('foregroundDepth',foregroundDepth);safeVisualPass('speedDepthCue',speedDepthCuePass);safeVisualPass('dynamicAtmosphere',dynamicAtmospherePass)
+ ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('speedDepthCue',speedDepthCuePass);drawSideBackgroundPass('environmentSignature',environmentSignaturePass);drawSideBackgroundPass('foregroundDepth',foregroundDepth);drawSideBackgroundPass('dynamicAtmosphere',dynamicAtmospherePass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle)
  }finally{endSideCourseCamera(sideCameraState)}
 }
 function drawLocationIntro(now){
@@ -8086,6 +8129,14 @@ function drawObstacle(o){
  if(o.hazardPreview)return;
  // In SIDE view, paired lateral lip markers collapse to the same profile position; draw one.
  if((o.rampLipMarker||o.rampCatchMarker)&&o.courseSide>0)return;
+ const visualProfile=sideReadabilityProfile();
+ const courseAdjacent=!!(o.decor||o.advisory||o.rampLipMarker||o.rampCatchMarker||o.signatureFilmer||o.expertSpotter||o.yieldClear);
+ ctx.save();
+ if(courseAdjacent){
+  ctx.filter=`opacity(${visualProfile.adjacentOpacity}) saturate(${visualProfile.adjacentSaturation}) contrast(.92)`;
+ }else if(visualProfile.phone){
+  ctx.filter=`saturate(${visualProfile.hazardSaturation}) contrast(${visualProfile.hazardContrast})`;
+ }
  const terrainY=groundY(o.wx-world);
  let x=o.wx-world,y=terrainY-o.h+(o.breakawayOffsetY||0);
  if(o.signatureFilmer)y-=o.visualLift||0;
@@ -8415,6 +8466,7 @@ function drawObstacle(o){
   }
   ctx.restore();
  }
+ ctx.restore();
 }
 function brakeSpray(){
  if(!running||!braking||!player.onGround)return;let bx=player.x-8,by=groundY(player.x)-3;
@@ -8439,28 +8491,32 @@ function cueLines(text,maxWidth,font){
 function drawPhysicsCue(){
  const physicsActive=physicsCueTimer>0&&physicsCue;
  const hazardActive=running&&glanceAlert;
- const cue=physicsActive?physicsCue:hazardActive?glanceAlert:'';
+ // A138: a real hazard warning always outranks a score/technique confirmation.
+ const cue=hazardActive?glanceAlert:physicsActive?physicsCue:'';
  if(!cue)return;
- const a=physicsActive?Math.min(1,physicsCueTimer*2.4):.94;
- const fontSize=W<520?15:17,font=`950 ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
- const maxCardW=Math.min(252,Math.max(168,W*.56));
+ const rp=sideReadabilityProfile(),compact=rp.compactCue;
+ const important=hazardActive;
+ const a=important?.96:physicsActive?Math.min(compact?.78:1,physicsCueTimer*2.2):.90;
+ const fontSize=compact?(rp.landscape?10:12):(W<520?15:17);
+ const font=`950 ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
+ const maxCardW=compact?Math.min(rp.landscape?202:218,W*.54):Math.min(252,Math.max(168,W*.56));
  ctx.save();ctx.font=font;
- const lines=cueLines(cue,maxCardW-30,font);
- const lineH=fontSize+3,cardH=lines.length*lineH+18;
- const cardW=Math.min(maxCardW,Math.max(142,...lines.map(line=>ctx.measureText(line).width+30)));
- // Bias left of Jimmy so the cue sits where the player's eyes already are, not in the far-right HUD.
- const left=Math.max(9,Math.min(W-cardW-9,player.x-cardW*.56));
- const drift=physicsActive?(1.05-physicsCueTimer)*7:0;
- const top=Math.max(34,Math.min(H-cardH-12,player.y-cardH-22-drift));
+ const lines=cueLines(cue,maxCardW-(compact?22:30),font);
+ const lineH=fontSize+(compact?2:3),cardH=lines.length*lineH+(compact?12:18);
+ const minW=compact?112:142;
+ const cardW=Math.min(maxCardW,Math.max(minW,...lines.map(line=>ctx.measureText(line).width+(compact?22:30))));
+ const left=compact?8:Math.max(9,Math.min(W-cardW-9,player.x-cardW*.56));
+ const drift=!compact&&physicsActive?(1.05-physicsCueTimer)*7:0;
+ const top=compact?8:Math.max(34,Math.min(H-cardH-12,player.y-cardH-22-drift));
  ctx.globalAlpha=a;
- ctx.fillStyle='rgba(10,13,18,.88)';
- ctx.strokeStyle=hazardActive&&!physicsActive?'rgba(215,230,239,.86)':'rgba(242,184,75,.88)';
- ctx.lineWidth=2;
- ctx.beginPath();ctx.roundRect(left,top,cardW,cardH,9);ctx.fill();ctx.stroke();
- ctx.fillStyle=hazardActive&&!physicsActive?'#d7e6ef':'#f2b84b';
- ctx.fillRect(left+8,top+8,4,cardH-16);
+ ctx.fillStyle=important?'rgba(10,13,18,.84)':compact?'rgba(10,13,18,.68)':'rgba(10,13,18,.88)';
+ ctx.strokeStyle=important?'rgba(215,230,239,.88)':compact?'rgba(242,184,75,.58)':'rgba(242,184,75,.88)';
+ ctx.lineWidth=compact?1.2:2;
+ ctx.beginPath();ctx.roundRect(left,top,cardW,cardH,compact?6:9);ctx.fill();ctx.stroke();
+ ctx.fillStyle=important?'#d7e6ef':'#f2b84b';
+ ctx.fillRect(left+(compact?6:8),top+(compact?5:8),compact?3:4,cardH-(compact?10:16));
  ctx.textAlign='left';ctx.textBaseline='middle';ctx.font=font;
- const textX=left+20,startY=top+9+lineH*.5;
+ const textX=left+(compact?15:20),startY=top+(compact?5:9)+lineH*.5;
  lines.forEach((line,i)=>ctx.fillText(line,textX,startY+i*lineH));
  ctx.restore();
 }
@@ -9188,6 +9244,11 @@ if(window.CRASHN_JIMMY_QA){
   const el=card.querySelector('.run-rating.precision-rankup'),tag=el?getComputedStyle(el,'::after').content:'';
   const out={rideMode,tier:t,hasClass:!!el,tag,text:el?.textContent||'',cardWidth:card.getBoundingClientRect().width,cardHeight:card.getBoundingClientRect().height,viewport:[innerWidth,innerHeight]};mode=oldMode;return out;
  };
+}
+
+// A138 visual hierarchy QA: deterministic phone/desktop profile inspection.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideReadabilityProfile=(width=lastCanvasCssW||W,height=lastCanvasCssH||H)=>({...sideReadabilityProfile(width,height)});
 }
 
 // A116 validation probes: deterministic harmless marker-wake physics and SIDE/CHASE projection.
