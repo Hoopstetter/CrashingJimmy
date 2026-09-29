@@ -1777,8 +1777,8 @@ function buildTerrain(){
   const rampRunInLength=mode==='snow'?140:mode==='bike'?135:130;
   const rampSetupGap=mode==='snow'?130:mode==='bike'?110:140;
   // v221-A131 higher-refinement Terrain/Course: extend the clean sightline runway before every
-  // authored ramp without moving the established SET/compression window itself. At normal pace this
-  // buys roughly another half-second to recognize the face, choose BRAKE/SET or SEND IT, and line up
+  // authored ramp without moving the established SET/compression window itself. The extra runway
+  // adds meaningful decision margin to recognize the face, choose BRAKE/SET or SEND IT, and line up
   // the launch. The extra space is course pacing only: ramp/catch geometry, launch physics, hazards,
   // braking strength, scoring and recovery gaps are unchanged.
   const rampReadAheadGap=mode==='snow'?300:mode==='bike'?280:320;
