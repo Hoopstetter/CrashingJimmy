@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A138</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A141</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -222,6 +222,21 @@ button:active{transform:translateY(1px)}
  .secondary{margin:3px 0;gap:4px}.secondary button{padding:5px;font-size:8px}.scoreboard{grid-template-columns:repeat(3,1fr);gap:5px}.board{padding:5px}.board h3{font-size:10px}.row{font-size:7px;padding:2px 0}
 }
 
+/* v221-A139 UI/Sound/Polish: short-landscape Focus HUD.
+   Keep decision-critical telemetry and remove secondary progression noise during live play. */
+@media(orientation:landscape) and (max-height:500px){
+ #hud{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+ #flowHud,#rideState,#ratingHud{display:none}
+ #hud>div:not(#alert):not(#section):not(#flowHud):not(#rideState):not(#ratingHud){flex:0 0 auto}
+ #section{min-width:122px;max-width:190px;padding:3px 8px;overflow:hidden;text-overflow:ellipsis}
+ #alert{min-width:0;width:auto;max-width:126px;padding:3px 7px;overflow:hidden;text-overflow:ellipsis;transition:opacity .12s ease,max-width .12s ease,padding .12s ease}
+ #alert:not(.active){max-width:0;padding-left:0;padding-right:0;border-width:0}
+ #audioBtn,#pauseBtn{flex:0 0 auto}
+ #hud>div:last-child{min-width:60px}
+ #signatureTrack{width:min(360px,42%);opacity:.66;box-shadow:none;backdrop-filter:none}
+ #signatureTrack.cleared{opacity:.78}
+}
+
 @media(max-width:600px) and (orientation:portrait){
  #overlay{align-items:flex-start;overflow:hidden;padding:4px 8px calc(76px + env(safe-area-inset-bottom))}
  #card{max-height:calc(100dvh - 148px);overflow:auto;padding:7px 8px;border-radius:11px;scrollbar-width:none}
@@ -334,7 +349,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A138';
+const BUILD_VERSION='v221-A141';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1666,23 +1681,22 @@ pauseResume.addEventListener('click',e=>{e.preventDefault();setPaused(false)});
 
 function rand(a,b){return a+Math.random()*(b-a)}
 function hash(n){let x=Math.sin(n*12.9898)*43758.5453;return x-Math.floor(x)}
-// v221-A71 QA/mobile: keep the canvas backing store inside a predictable phone GPU budget.
-// Recent CHASE passes add more perspective marks, silhouettes and cue drawing, so rendering every
-// modern iPhone at a full 2x backing scale can spend pixels the player cannot meaningfully read at
-// speed. CSS size, HUD, controls and physics stay untouched; only the internal canvas resolution is
-// trimmed on phone-like touch layouts, with a slightly tighter budget in CHASE than SIDE.
+// v221-A140 QA/mobile: short phone landscape now uses a tighter backing-store budget.
+// Portrait retains the established quality target. CSS size, camera geometry, simulation,
+// hitboxes, controls, scoring and gameplay timing are unchanged.
 function renderScaleProfile(cssW,cssH,deviceDpr=window.devicePixelRatio||1,touchPoints=navigator.maxTouchPoints||0,view=chaseView){
  const nativeDpr=Math.max(1,Number(deviceDpr)||1),cappedDpr=Math.min(nativeDpr,2);
  const cssPixels=Math.max(1,cssW*cssH);
  const phoneLike=Number(touchPoints)>0&&Math.min(cssW,cssH)<=500&&Math.max(cssW,cssH)<=1000;
- const pixelBudget=phoneLike?(view?900000:1150000):null;
+ const shortLandscape=phoneLike&&cssW>cssH*1.28&&cssH<=500;
+ const pixelBudget=phoneLike?(shortLandscape?(view?760000:900000):(view?900000:1150000)):null;
  let dpr=cappedDpr;
  if(pixelBudget){
   const budgetDpr=Math.sqrt(pixelBudget/cssPixels);
-  const floor=Math.min(cappedDpr,1.5);
+  const floor=Math.min(cappedDpr,shortLandscape?1.35:1.5);
   dpr=Math.max(floor,Math.min(cappedDpr,budgetDpr));
  }
- return{dpr,phoneLike,pixelBudget,cssPixels,backingPixels:Math.round(cssPixels*dpr*dpr),nativeDpr,cappedDpr,view:view?'chase':'side'};
+ return{dpr,phoneLike,shortLandscape,pixelBudget,cssPixels,backingPixels:Math.round(cssPixels*dpr*dpr),nativeDpr,cappedDpr,view:view?'chase':'side'};
 }
 let lastCanvasCssW=0,lastCanvasCssH=0,lastCanvasDpr=0;
 // v221-A103 QA/mobile: the simulation advances at a fixed 60 Hz, but ProMotion/high-refresh
@@ -2722,40 +2736,46 @@ function rampPreloadQuality(u,rideMode){
  const raw=1-Math.abs(u-ideal)/span;
  return Math.max(.35,Math.min(1,raw));
 }
-function rampMomentumTransfer(currentSpeed,faceAngle,sending,manualPop,prepared,rideMode,popQuality=1){
+function rampBrakeLaunchProfile(currentSpeed,brakingNow,brakeTime,sending,manualPop,rideMode,entrySpeed=currentSpeed){
+ const rollCeiling=rideMode==='bike'?4.60:rideMode==='snow'?4.80:4.90;
+ const hold=Math.max(0,Math.min(1,(Math.max(0,brakeTime)-.14)/.48));
+ const scrub=Math.max(0,(Number(entrySpeed)||currentSpeed)-currentSpeed);
+ const scrubNorm=Math.max(0,Math.min(1,scrub/1.4));
+ const trim=Math.max(0,Math.min(1,hold*.72+scrubNorm*.38));
+ const roll=!!(brakingNow&&!sending&&!manualPop&&brakeTime>=.18&&currentSpeed<=rollCeiling);
+ const active=!!(brakingNow&&!sending&&!manualPop&&!roll&&brakeTime>=.14&&trim>.06);
+ return{active,trim:active?trim:0,roll,hold,scrub,scrubNorm,rollCeiling};
+}
+function rampMomentumTransfer(currentSpeed,faceAngle,sending,manualPop,prepared,rideMode,popQuality=1,brakeTrim=0){
  const modeLift=rideMode==='bike'?1.04:rideMode==='snow'?.98:.92;
+ const brakeSet=Math.max(0,Math.min(1,Number(brakeTrim)||0));
  const geometryPop=(.48+Math.min(.28,faceAngle*.95))*modeLift;
  const speedCarry=Math.max(0,currentSpeed-3.8)*.04;
  const quality=manualPop?Math.max(.35,Math.min(1,popQuality)):0;
  const manualLift=manualPop?.12*(.65+.55*quality):0;
- const pop=geometryPop+speedCarry+(sending?.16:0)+manualLift-prepared*.08;
+ // A141: a deliberate brake set above roll-through speed produces a flatter, lower release.
+ // It does not cancel the launch, manufacture speed, or override JUMP/SEND IT.
+ const pop=geometryPop+speedCarry+(sending?.16:0)+manualLift-prepared*.08-brakeSet*.10;
  const maxLift=manualPop?7.60:7.15;
  const requestedImpulse=Math.max(0,Math.min(maxLift,currentSpeed*pop));
  const baseTransfer=rideMode==='bike'?.16:rideMode==='snow'?.13:.11;
  const manualTransfer=manualPop?.025*(.70+.60*quality):0;
- // v221-A104 higher-refinement gameplay/physics: the authored ramp face now caps the launch
- // vector instead of allowing a nearly vertical generic pop to overpower a shallow terrain lip.
- // Forward speed and the designed face angle establish the base trajectory; JUMP preload and
- // SEND IT may add a bounded rider-pop angle, while a prepared line trims excess loft. The result
- // still uses the established momentum-transfer budget, but a low SoCal wedge leaves flatter than
- // a trail lip and a trail lip leaves flatter than an arbitrary button-driven moon-shot.
  const riderAngle=rideMode==='bike'?.23:rideMode==='snow'?.25:.28;
  const manualAngle=manualPop?.055+.075*quality:0;
  const sendAngle=sending?.06:0;
  const setTrim=Math.max(0,Math.min(1,prepared||0))*.025;
- const trajectoryCap=Math.max(.16,Math.min(.72,faceAngle+riderAngle+manualAngle+sendAngle-setTrim));
+ const brakeAngleTrim=brakeSet*(rideMode==='bike'?.075:rideMode==='snow'?.068:.060);
+ const trajectoryCap=Math.max(.16,Math.min(.72,faceAngle+riderAngle+manualAngle+sendAngle-setTrim-brakeAngleTrim));
  let liftRatio=Math.max(0,Math.min(1,requestedImpulse/7.6));
- let transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+manualTransfer-prepared*.04));
+ let transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+manualTransfer-prepared*.04-brakeSet*.018));
  let exitSpeed=Math.max(3.1,currentSpeed-transfer);
  let verticalImpulse=Math.min(requestedImpulse,exitSpeed*Math.tan(trajectoryCap));
- // Reconcile the forward transfer once more against the actual geometry-limited lift so the
- // ramp cannot spend momentum on vertical energy it no longer produces.
  liftRatio=Math.max(0,Math.min(1,verticalImpulse/7.6));
- transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+manualTransfer-prepared*.04));
+ transfer=Math.max(.045,Math.min(.28,baseTransfer*liftRatio+(sending?.035:0)+manualTransfer-prepared*.04-brakeSet*.018));
  exitSpeed=Math.max(3.1,currentSpeed-transfer);
  verticalImpulse=Math.min(verticalImpulse,exitSpeed*Math.tan(trajectoryCap));
  const trajectoryAngle=Math.atan2(verticalImpulse,Math.max(.001,exitSpeed));
- return{verticalImpulse,exitSpeed,transfer,popQuality:quality,trajectoryAngle,trajectoryCap,requestedImpulse};
+ return{verticalImpulse,exitSpeed,transfer,popQuality:quality,trajectoryAngle,trajectoryCap,requestedImpulse,brakeTrim:brakeSet};
 }
 // v221-A106 Jimmy & animation: A104 made authored-ramp launches follow the actual face vector.
 // Carry that same departure character into Jimmy's first moments of flight so a shallow SoCal
@@ -4874,7 +4894,8 @@ function update(dt){
     // physics result. A60 reused the same identifier for both, so the takeoff path attempted
     // to assign true to a block-scoped const and threw at the lip. Ramps now release normally
     // without changing any launch tuning, terrain geometry, scoring, or control behavior.
-    const launchPhysics=rampMomentumTransfer(speed,faceAngle,sendIt,manualRampPop,prepared,mode,manualRampPop?rampPopQuality:1);
+    const brakeLaunch=rampBrakeLaunchProfile(speed,braking,brakeHold,sendIt,manualRampPop,mode,brakeEntrySpeed||speed);
+    const launchPhysics=rampMomentumTransfer(speed,faceAngle,sendIt,manualRampPop,prepared,mode,manualRampPop?rampPopQuality:1,brakeLaunch.trim);
     airLineSet=lineSet;lineSet=0;lineSetReady=false;
     player.onGround=false;
     player.vy=-launchPhysics.verticalImpulse;
@@ -4885,7 +4906,7 @@ function update(dt){
     // visual follow-through after the authored lip. Stronger/timed pops carry a little more
     // extension, but this does not alter velocity, rotation, stability, scoring or collisions.
     poseBlend.rampRelease=Math.max(poseBlend.rampRelease,Math.max(.72,Math.min(1,.68+(launchPhysics.verticalImpulse-5.4)*.085+(manualRampPop?.08:0))));
-    stability=Math.min(100,stability+prepared*7+(manualRampPop?2:0));
+    stability=Math.min(100,stability+prepared*7+(manualRampPop?2:0)+(brakeLaunch.active?brakeLaunch.trim*3:0));
     const launchNow=performance.now();
     lastAutoLaunch=world;lastAutoLaunchTime=launchNow;
     jumpTapCount=manualRampPop?1:0;lastJumpTap=manualRampPop?launchNow:lastJumpTap;airTrick='';rampLaunch=true;
@@ -4897,7 +4918,7 @@ function update(dt){
     activeExpertTransfer=rampFeature.label===expertLaunch?expertLaunch:'';
     if(manualRampPop)beginRampSetLaunch(rampFeature,launchPhysics.popQuality,speed);
     else if(rampSetState.label===(rampFeature.label||'RAMP'))clearRampSetState();
-    physicsCue=manualRampPop?(sendIt?'TIMED RAMP POP · SEND IT':launchPhysics.popQuality>=.82?'TIMED RAMP POP · SWEET SPOT':'TIMED RAMP POP'):sendIt?'RAMP POP · SEND IT':prepared>.55?'RAMP POP · LINE SET':'RAMP POP';
+    physicsCue=manualRampPop?(sendIt?'TIMED RAMP POP · SEND IT':launchPhysics.popQuality>=.82?'TIMED RAMP POP · SWEET SPOT':'TIMED RAMP POP'):sendIt?'RAMP POP · SEND IT':brakeLaunch.active?'RAMP POP · BRAKE SET':prepared>.55?'RAMP POP · LINE SET':'RAMP POP';
     physicsCueTimer=manualRampPop?.84:.72;
    }
   }
@@ -5084,6 +5105,7 @@ function update(dt){
  glanceAlert=nearLabel||'';
  alertEl.textContent=nearLabel||'CAUTION';
  alertEl.style.opacity=nearLabel?'1':'0';
+ alertEl.classList.toggle('active',!!nearLabel);
  alertEl.classList.toggle('surface-read',surfacePrompt);
  const activeSectionLabel=sectionLabel();
  sectionEl.textContent=activeSectionLabel;
