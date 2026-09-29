@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A129</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A131</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -334,7 +334,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A129';
+const BUILD_VERSION='v221-A131';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -391,7 +391,7 @@ let jumpTapCount=0,lastJumpTap=0,airTrick='',tricksLanded=0;
 let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,activeExpertTransfer='',chaseReads=0,chaseReadPoints=0,chaseReadStreak=0,bestChaseReadStreak=0,composedHazards=0;
 let rampLines=0,rampLinePoints=0,rampSetState={label:'',armed:false,released:false,entrySpeed:0,minSpeed:0,releaseSpeed:0},activeRampSet=null,rampCoachKey='';
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
-let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampPopQuality=0,rampRollCueFeature='',rampReleaseTrajectoryAngle=0,quickPopAnimTimer=0,quickPopAnimIntensity=0,quickPopAnimType='';
+let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampPopQuality=0,rampRollCueFeature='',rampRollGroundLatchEnd=-Infinity,rampReleaseTrajectoryAngle=0,quickPopAnimTimer=0,quickPopAnimIntensity=0,quickPopAnimType='';
 // v169 recovery: low-pass the major authored riding poses so Jimmy transitions through them instead of snapping frame-to-frame.
 let poseBlend={brake:0,send:0,line:0,air:0,airForward:0,airBack:0,landing:0,rampRelease:0};
 // v74 Props/Hazards/Events: short location-opening vehicle arrival cinematic.
@@ -1776,7 +1776,12 @@ function buildTerrain(){
   // bounds, launch physics, hazards, BRAKE/JUMP/SEND IT behavior and route-choice amplitudes are unchanged.
   const rampRunInLength=mode==='snow'?140:mode==='bike'?135:130;
   const rampSetupGap=mode==='snow'?130:mode==='bike'?110:140;
-  const rampReadAheadGap=mode==='snow'?220:mode==='bike'?200:235;
+  // v221-A131 higher-refinement Terrain/Course: extend the clean sightline runway before every
+  // authored ramp without moving the established SET/compression window itself. At normal pace this
+  // buys roughly another half-second to recognize the face, choose BRAKE/SET or SEND IT, and line up
+  // the launch. The extra space is course pacing only: ramp/catch geometry, launch physics, hazards,
+  // braking strength, scoring and recovery gaps are unchanged.
+  const rampReadAheadGap=mode==='snow'?300:mode==='bike'?280:320;
   let phraseShift=0,protectedUntil=-Infinity,tail=0,lastPlacedEnd=-Infinity;
   for(const spec of group){
    let placedDx=spec.dx+phraseShift;
@@ -2657,6 +2662,26 @@ function rampControlRollThrough(currentSpeed,brakingNow,brakeTime,sending,manual
  const rollCeiling=rideMode==='bike'?4.60:rideMode==='snow'?4.80:4.90;
  return !!(brakingNow&&!sending&&!manualPop&&brakeTime>=.18&&currentSpeed<=rollCeiling);
 }
+// v221-A130 higher-refinement gameplay physics: once a deliberate BRAKE line commits to
+// rolling a genuine terrain ramp, keep Jimmy attached through the lip and the first part of the
+// authored catch. Previously the ramp itself stayed rideable, but the generic natural-release
+// detector could fire one frame after the ramp feature ended and pop a controlled roll airborne.
+// The latch is distance-based (not frame/time-based), so portrait/landscape and 60/120 Hz play
+// resolve the same way. Manual JUMP still overrides because this only suppresses automatic release.
+function rampRollGroundLatchDistance(f,rideMode=mode){
+ const apron=f&&f.apron?(f.apronLength||(rideMode==='snow'?390:rideMode==='bike'?340:380)):0;
+ const cap=rideMode==='bike'?105:rideMode==='snow'?125:115;
+ return Math.min(cap,Math.max(72,apron*.24));
+}
+function armRampRollGroundLatch(f,riderWx=world+player.x+18){
+ if(!f||f.kind!=='ramp')return false;
+ const end=f.x+f.width+rampRollGroundLatchDistance(f,mode);
+ rampRollGroundLatchEnd=Math.max(rampRollGroundLatchEnd,end);
+ return riderWx<=rampRollGroundLatchEnd;
+}
+function rampRollGroundLatchActive(riderWx=world+player.x+18){
+ return Number.isFinite(rampRollGroundLatchEnd)&&riderWx<=rampRollGroundLatchEnd;
+}
 // v221-A45 Jimmy & animation: a controlled A43/A44 ramp roll now has its own grounded
 // absorption/recenter envelope instead of borrowing the launch extension pose. This is visual-only:
 // the envelope reads existing ramp-roll state and never changes speed, terrain contact, launch rules,
@@ -2967,7 +2992,7 @@ function reset(showLocationIntro=false){
  releaseControls();resetFrameClock();resetPoseContinuity();disposeSpeedSoundscape(.035);clearPauseState();
  signatureTrack.style.display='none';
  score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;airAbsorbSetTimer=0;airAbsorbSetAge=0;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';chaseReads=0;chaseReadPoints=0;chaseReadStreak=0;bestChaseReadStreak=0;composedHazards=0;rampLines=0;rampLinePoints=0;clearRampSetState();activeRampSet=null;clearRampCoachDisplay();lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';rampReleaseTrajectoryAngle=0;quickPopAnimTimer=0;quickPopAnimIntensity=0;quickPopAnimType='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageRampLipMarkers();stageSignatureFilmer();stageExpertTransferSpotter();
- player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;physicsCue='';physicsCueTimer=0;ended=false;hud();if(showLocationIntro)startLocationIntro();else activateRunNow()
+ player={x:Math.min(140,W*.18),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;rampRollGroundLatchEnd=-Infinity;physicsCue='';physicsCueTimer=0;ended=false;hud();if(showLocationIntro)startLocationIntro();else activateRunNow()
 }
 function postGameJumpRestart(){
  // v149 Bryan controls: during the short crash animation, double-tap JUMP to immediately rerun.
@@ -4665,6 +4690,7 @@ function update(dt){
    const minLaunchSpeed=manualRampPop?3.35:3.8;
    const controlledRoll=rampControlRollThrough(speed,braking,brakeHold,sendIt,manualRampPop,mode);
    if(controlledRoll&&ru>=releaseU&&ru<=.79){
+    armRampRollGroundLatch(rampFeature,world+player.x+18);
     const rollKey=rampFeature.label||('ramp-'+Math.round(rampFeature.x));
     if(rampRollCueFeature!==rollKey){
      rampRollCueFeature=rollKey;
@@ -4711,7 +4737,7 @@ function update(dt){
   const onRampFace=!!(rampFeature&&rampFeature.kind==='ramp');
   if(!onRampFace)rampRollCueFeature='';
   const minReleaseSpeed=sendIt?4.8:5.05;
-  if(!rampLaunch&&!onRampFace&&speed>minReleaseSpeed&&world-lastAutoLaunch>230&&releaseDemand>releaseThreshold){
+  if(!rampLaunch&&!onRampFace&&!rampRollGroundLatchActive(world+player.x+18)&&speed>minReleaseSpeed&&world-lastAutoLaunch>230&&releaseDemand>releaseThreshold){
    activeExpertTransfer='';
    airLineSet=lineSet;lineSet=0;lineSetReady=false;
    player.onGround=false;
@@ -6481,9 +6507,11 @@ function chaseShoulderColor(){return mode==='snow'?'#b6cbd7':mode==='bike'?'#675
 // verge material subtly converges toward the existing SET/run-in transition. The riding ribbon, terrain,
 // obstacle list, collision, ramp geometry, BRAKE/JUMP/SEND IT behavior, scoring and camera math are unchanged.
 function chaseRampSightlineProfile(rideMode=mode){
- if(rideMode==='snow')return{runIn:140,readAhead:220,edgeSpan:.115,edge:'#e9f5fa',shadow:'#8fb2c2'};
- if(rideMode==='bike')return{runIn:135,readAhead:200,edgeSpan:.105,edge:'#b78d65',shadow:'#6c4f39'};
- return{runIn:130,readAhead:235,edgeSpan:.095,edge:'#aaa69e',shadow:'#4b5154'};
+ // v221-A131: CHASE BETA renders the same longer runway that buildTerrain() now reserves,
+ // keeping the over-the-shoulder read honest instead of showing a shorter visual corridor.
+ if(rideMode==='snow')return{runIn:140,readAhead:300,edgeSpan:.115,edge:'#e9f5fa',shadow:'#8fb2c2'};
+ if(rideMode==='bike')return{runIn:135,readAhead:280,edgeSpan:.105,edge:'#b78d65',shadow:'#6c4f39'};
+ return{runIn:130,readAhead:320,edgeSpan:.095,edge:'#aaa69e',shadow:'#4b5154'};
 }
 function chaseRampSightlineAt(wx,rideMode=mode){
  const p=chaseRampSightlineProfile(rideMode);
