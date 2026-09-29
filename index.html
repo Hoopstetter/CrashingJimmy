@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A147</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A148</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A147';
+const BUILD_VERSION='v221-A148';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -500,7 +500,7 @@ function drawSideCourseSeparationPass(){
 function drawChaseCourseSeparationPass(riderWx,look){
  // The same hierarchy in CHASE: a restrained shoulder wash hugs the outside of the rideable
  // ribbon. Props and hazards render afterward, so only the environment recedes.
- const p=courseSeparationProfile(),steps=30;
+ const p=courseSeparationProfile(),steps=chaseRenderBudgetProfile().separationSteps;
  ctx.save();ctx.lineJoin='round';
  for(const side of [-1,1]){
   for(let i=0;i<steps;i++){
@@ -1765,6 +1765,16 @@ function renderScaleProfile(cssW,cssH,deviceDpr=window.devicePixelRatio||1,touch
   dpr=Math.max(floor,Math.min(cappedDpr,budgetDpr));
  }
  return{dpr,phoneLike,shortLandscape,pixelBudget,cssPixels,backingPixels:Math.round(cssPixels*dpr*dpr),nativeDpr,cappedDpr,view:view?'chase':'side'};
+}
+// v221-A148 QA/mobile: CHASE keeps every gameplay/readability pass, but phone layouts
+// spend fewer draws on decorative tessellation and repeated scenery. Physics, hazards, controls,
+// scoring, lookahead, course geometry and obstacle visibility are untouched.
+function chaseRenderBudgetProfile(cssW=lastCanvasCssW||W,cssH=lastCanvasCssH||H,touchPoints=navigator.maxTouchPoints||0){
+ const phoneLike=Number(touchPoints)>0&&Math.min(cssW,cssH)<=500&&Math.max(cssW,cssH)<=1000;
+ const shortLandscape=phoneLike&&cssW>cssH*1.28&&cssH<=500;
+ if(shortLandscape)return{phoneLike:true,shortLandscape:true,bands:26,edgeSamples:22,separationSteps:20,propScale:1.32,speedStreaks:5,farSceneryAlpha:.42,tier:'phone-landscape'};
+ if(phoneLike)return{phoneLike:true,shortLandscape:false,bands:30,edgeSamples:24,separationSteps:24,propScale:1.18,speedStreaks:6,farSceneryAlpha:.48,tier:'phone-portrait'};
+ return{phoneLike:false,shortLandscape:false,bands:36,edgeSamples:28,separationSteps:30,propScale:1,speedStreaks:8,farSceneryAlpha:.55,tier:'full'};
 }
 let lastCanvasCssW=0,lastCanvasCssH=0,lastCanvasDpr=0;
 // v221-A103 QA/mobile: the simulation advances at a fixed 60 Hz, but ProMotion/high-refresh
@@ -7886,13 +7896,13 @@ function drawChaseObstacle(o){
 }
 function drawChaseScene(){
  const d=MODES[mode],g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,d.sky1);g.addColorStop(1,d.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- const look=chaseLookahead(),far=chaseProjection(look),horizon=far.y,riderWx=world+player.x+player.w*.5;
+ const look=chaseLookahead(),far=chaseProjection(look),horizon=far.y,riderWx=world+player.x+player.w*.5,renderBudget=chaseRenderBudgetProfile();
  // Distant place identity: lightweight silhouettes keep the prototype readable on phones.
- ctx.save();ctx.globalAlpha=.55;ctx.fillStyle=mode==='snow'?'#5f7d90':mode==='bike'?'#7e775f':'#777b7d';ctx.beginPath();ctx.moveTo(0,horizon+24);for(let x=0;x<=W;x+=W/8){const y=horizon-26-Math.sin(x*.021+world*.0007)*19;ctx.lineTo(x,y)}ctx.lineTo(W,horizon+42);ctx.lineTo(0,horizon+42);ctx.closePath();ctx.fill();ctx.restore();
+ ctx.save();ctx.globalAlpha=renderBudget.farSceneryAlpha;ctx.fillStyle=mode==='snow'?'#5f7d90':mode==='bike'?'#7e775f':'#777b7d';ctx.beginPath();ctx.moveTo(0,horizon+24);for(let x=0;x<=W;x+=W/8){const y=horizon-26-Math.sin(x*.021+world*.0007)*19;ctx.lineTo(x,y)}ctx.lineTo(W,horizon+42);ctx.lineTo(0,horizon+42);ctx.closePath();ctx.fill();ctx.restore();
  // Shoulder field beneath the path.
  ctx.fillStyle=chaseShoulderColor();ctx.fillRect(0,horizon,W,H-horizon);
  drawChasePlaceIdentityPass(riderWx,look,horizon);
- const bands=36;
+ const bands=renderBudget.bands;
  for(let i=0;i<bands;i++){
   const dFar=look-(i/bands)*look,dNear=look-((i+1)/bands)*look,pf=chaseProjection(dFar),pn=chaseProjection(dNear);
   ctx.fillStyle=chaseSurfaceColor(i);ctx.beginPath();ctx.moveTo(pf.x-pf.half,pf.y);ctx.lineTo(pf.x+pf.half,pf.y);ctx.lineTo(pn.x+pn.half,pn.y);ctx.lineTo(pn.x-pn.half,pn.y);ctx.closePath();ctx.fill();
@@ -7912,11 +7922,11 @@ function drawChaseScene(){
  drawChaseCrossingIntentPass(riderWx,look);
  // Edge definition and sport-specific surface cues.
  ctx.lineWidth=2;ctx.strokeStyle=mode==='snow'?'rgba(101,139,160,.72)':mode==='bike'?'rgba(74,52,36,.74)':'rgba(226,222,210,.38)';
- for(const side of [-1,1]){ctx.beginPath();for(let i=0;i<=28;i++){const p=chaseProjection(look-(i/28)*look),x=p.x+side*p.half;i?ctx.lineTo(x,p.y):ctx.moveTo(x,p.y)}ctx.stroke()}
+ for(const side of [-1,1]){ctx.beginPath();for(let i=0;i<=renderBudget.edgeSamples;i++){const p=chaseProjection(look-(i/renderBudget.edgeSamples)*look),x=p.x+side*p.half;i?ctx.lineTo(x,p.y):ctx.moveTo(x,p.y)}ctx.stroke()}
  const spacing=mode==='snow'?180:mode==='bike'?210:240;
  for(let wx=Math.ceil(riderWx/spacing)*spacing;wx<riderWx+look;wx+=spacing){const p=chaseProjection(wx-riderWx);ctx.strokeStyle=mode==='snow'?'rgba(112,150,169,.24)':mode==='bike'?'rgba(65,47,34,.28)':'rgba(224,213,199,.22)';ctx.lineWidth=Math.max(.7,1.5*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.72,p.y);ctx.lineTo(p.x+p.half*.72,p.y);ctx.stroke()}
  // Signature roadside scenery, projected with distance.
- const propSpacing=mode==='snow'?300:mode==='bike'?270:300;let seed=0;
+ const propSpacing=(mode==='snow'?300:mode==='bike'?270:300)*renderBudget.propScale;let seed=0;
  for(let wx=Math.ceil(riderWx/propSpacing)*propSpacing;wx<riderWx+look;wx+=propSpacing){const localSeed=seed++,p=chaseProjection(wx-riderWx);if(p.scale<.15)continue;if(chaseRampSightlineAt(wx,mode))continue;drawChaseEnvironmentProp(p,localSeed,-1);if(seed%2===0)drawChaseEnvironmentProp(p,seed,1)}
  // Authored terrain gets a restrained lip/section trace so ramps and catches remain legible.
  for(const f of terrainFeatures){const gap=f.x-riderWx;if(gap<-100)continue;if(gap>look)break;if(!['ramp','tabletop','drop','stepdown','crest','dip','gully','streetsteps'].includes(f.kind))continue;const p=chaseProjection(Math.max(0,gap));ctx.strokeStyle=f.kind==='ramp'?'rgba(242,184,75,.85)':'rgba(238,242,244,.28)';ctx.lineWidth=Math.max(1,2.4*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.76,p.y);ctx.lineTo(p.x+p.half*.76,p.y);ctx.stroke();if(f.label&&gap<780){ctx.fillStyle='rgba(12,15,18,.66)';ctx.fillRect(p.x-46,p.y-17,92,12);ctx.fillStyle='#eef1f3';ctx.font='800 6px system-ui';ctx.textAlign='center';ctx.fillText(f.label,p.x,p.y-8)}}
@@ -7925,7 +7935,7 @@ function drawChaseScene(){
  // into a JUMP read as the existing physics-safe lead reaches him. This is render-only.
  drawChaseJumpTimingCue(chaseJumpRead());
  // Near-field speed streaks are driven by actual velocity; no blur and no gameplay effect.
- const speedStrength=Math.max(0,Math.min(1,(speed-6.2)/3.8));if(speedStrength>.03){ctx.strokeStyle=`rgba(245,248,250,${.04+speedStrength*.10})`;ctx.lineWidth=1.2;for(let i=0;i<8;i++){const y=H*(.64+i*.038),len=18+speedStrength*45,side=i%2?-1:1;ctx.beginPath();ctx.moveTo(W*.5+side*W*(.20+i*.025),y);ctx.lineTo(W*.5+side*(W*(.20+i*.025)+len),y+4);ctx.stroke()}}
+ const speedStrength=Math.max(0,Math.min(1,(speed-6.2)/3.8));if(speedStrength>.03){ctx.strokeStyle=`rgba(245,248,250,${.04+speedStrength*.10})`;ctx.lineWidth=1.2;for(let i=0;i<renderBudget.speedStreaks;i++){const y=H*(.64+i*.038),len=18+speedStrength*45,side=i%2?-1:1;ctx.beginPath();ctx.moveTo(W*.5+side*W*(.20+i*.025),y);ctx.lineTo(W*.5+side*(W*(.20+i*.025)+len),y+4);ctx.stroke()}}
  ctx.fillStyle='rgba(8,11,15,.72)';ctx.fillRect(9,9,90,18);ctx.strokeStyle='rgba(242,184,75,.80)';ctx.strokeRect(9.5,9.5,89,17);ctx.fillStyle='#f2b84b';ctx.font='900 8px system-ui';ctx.textAlign='center';ctx.fillText('CHASE VIEW · BETA',54,21);
 }
 function chaseLandingRecoveryEnvelope(timer=landingRecoveryTimer,kind=landingRecoveryKind,impact=landingRecoveryImpact,onGround=player.onGround){
@@ -9355,6 +9365,10 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A147 validation hook: desktop keyboard mapping exposed to QA without touching input state.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.desktopControlMap=()=>desktopControlMap();
+}
+// v221-A148 validation hook: deterministic CHASE render complexity tiers.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseRenderBudgetProfile=(width=lastCanvasCssW||W,height=lastCanvasCssH||H,touchPoints=navigator.maxTouchPoints||0)=>({...chaseRenderBudgetProfile(width,height,touchPoints)});
 }
 
 // A121 validation hooks: deterministic authored-crest crown/catch geometry.
