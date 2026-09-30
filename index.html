@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A154</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A157</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A154';
+const BUILD_VERSION='v221-A157';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1559,6 +1559,12 @@ function rampCoachAudioProfile(stage,rideMode=mode){
  if(stage==='pop')return{base:base+132,second:base+248,dur:.05,gain:.017,wave:'triangle',slide:42};
  return null;
 }
+// v221-A155 UI/Sound/Polish: confirm a released BRAKE ramp set with a short pure-tone signature.
+function brakeReleaseRampAudioProfile(trim=.5,rideMode=mode){
+ const t=Math.max(.12,Math.min(1,Number(trim)||0));
+ const base=rideMode==='snow'?248:rideMode==='bike'?218:262;
+ return{trim:t,first:base+Math.round(t*24),second:base+Math.round(92+t*42),firstDur:.045,secondDur:.072,firstGain:.012+t*.004,secondGain:.014+t*.004,firstSlide:-18,secondSlide:34};
+}
 function precisionRankAudioProfile(tier,rideMode=mode){
  // v221-A118: a clean, compact confirmation motif for newly banked Precision Finish tiers.
  // Higher tiers add harmonic confidence rather than volume; no noise layer is used.
@@ -1645,6 +1651,11 @@ function sfx(kind,detail=''){
    tone(p.base,p.dur,p.wave,p.gain,p.slide);
    if(p.second)setTimeout(()=>tone(p.second,p.dur+.008,p.wave,p.gain*.76,p.slide*.6),45);
   }
+ }
+ else if(kind==='brakerelease'){
+  const p=brakeReleaseRampAudioProfile(detail);
+  tone(p.first,p.firstDur,'sine',p.firstGain,p.firstSlide);
+  setTimeout(()=>tone(p.second,p.secondDur,'triangle',p.secondGain,p.secondSlide),52);
  }
  else if(kind==='crash')crashImpactSfx(detail)
 }
@@ -2812,18 +2823,28 @@ function naturalReleaseMomentumTransfer(currentSpeed,releaseDemand,releaseThresh
  return{vy,verticalImpulse:Math.max(0,-vy),exitSpeed,transfer:currentSpeed-exitSpeed,releaseStrength,lift,baselineImpulse};
 }
 function rampFaceAngle(f){
- // v135 higher-refinement gameplay physics: authored ramps now launch from their designed face geometry,
- // not one shared generic pop multiplier. Use a fixed design-space height so portrait/landscape orientation
- // does not change takeoff energy; FAST/CONTROL line amplitude still affects the actual launch character.
+ // v221-A157 higher-refinement gameplay physics: A150 made the ramp face continuous terrain,
+ // so takeoff character now listens to the actual late face instead of only the whole-ramp rise/run.
+ // The local-face influence is deliberately bounded to about two degrees so catch geometry, scoring,
+ // BRAKE/JUMP/SEND IT balance and familiar speed remain stable while the three sports read more naturally.
  let A=f.amp;
  const choice=f.complex&&f.complexId!==undefined?lineChoices[f.complexId]:null;
  if(choice==='fast')A*=1.16;
  else if(choice==='control')A*=.84;
- const profile=rampTerrainProfile(mode);
- const designHeight=620;
- const rise=Math.max(1,A*profile.rise*designHeight);
- const run=Math.max(1,f.width*profile.takeoff);
- return Math.atan2(rise,run);
+ const profile=rampTerrainProfile(mode),designHeight=620;
+ const legacyRun=Math.max(1,f.width*profile.takeoff);
+ const legacyRise=Math.max(1,A*profile.rise*designHeight);
+ const legacyAngle=Math.atan2(legacyRise,legacyRun);
+ const localStart=profile.takeoff;
+ const localEnd=Math.max(localStart+.018,profile.lip-.012);
+ const y0=A*rampTerrainOffsetRatio(localStart,mode);
+ const y1=A*rampTerrainOffsetRatio(localEnd,mode);
+ const localRise=Math.max(.25,Math.abs(y1-y0)*designHeight);
+ const localRun=Math.max(1,f.width*(localEnd-localStart));
+ const localAngle=Math.atan2(localRise,localRun);
+ const blended=legacyAngle*.78+localAngle*.22;
+ const maxDelta=.035;
+ return Math.max(legacyAngle-maxDelta,Math.min(legacyAngle+maxDelta,blended));
 }
 // v221-A19 higher-refinement gameplay physics: authored ramp takeoffs redirect a small,
 // bounded part of forward momentum into lift instead of adding vertical energy for free.
@@ -5073,7 +5094,7 @@ function update(dt){
     const expertLaunch=mode==='snow'?'GLADE TRANSFER':mode==='bike'?'SIDEHILL POP':'CONCRETE TRANSFER';
     activeExpertTransfer=rampFeature.label===expertLaunch?expertLaunch:'';
     beginBrakeSetLaunch(rampFeature,brakeLaunch,speed);
-    if(brakeLaunch.released)clearRampBrakeRelease();
+    if(brakeLaunch.released){sfx('brakerelease',brakeLaunch.trim);clearRampBrakeRelease()}
     if(manualRampPop)beginRampSetLaunch(rampFeature,launchPhysics.popQuality,speed);
     else if(rampSetState.label===(rampFeature.label||'RAMP'))clearRampSetState();
     physicsCue=manualRampPop?(sendIt?'TIMED RAMP POP · SEND IT':launchPhysics.popQuality>=.82?'TIMED RAMP POP · SWEET SPOT':'TIMED RAMP POP'):sendIt?'RAMP POP · SEND IT':brakeLaunch.released?'RAMP POP · BRAKE RELEASE':brakeLaunch.active?'RAMP POP · BRAKE SET':prepared>.55?'RAMP POP · LINE SET':'RAMP POP';
@@ -6833,14 +6854,27 @@ function dynamicAtmospherePass(){
 // This is deliberately a rendering-only projection over the same authoritative physics state.
 // Collision, scoring, terrain, controls, braking, ramp launches, and progression are untouched.
 function chaseLookahead(){return Math.max(1650,Math.min(2500,1780+speed*66))}
+// v221-A156 QA/mobile: keep the CHASE rideable ribbon inside a phone-safe vertical envelope.
+// This is rendering-only: it reduces terrain-lift exaggeration on phones and reserves a small
+// bottom margin so short landscape never buries the near course under controls or the canvas edge.
+function chaseMobileFramingProfile(width=lastCanvasCssW||W,height=lastCanvasCssH||H,touchPoints=navigator.maxTouchPoints||0){
+ const phoneLike=Number(touchPoints)>0&&Math.min(width,height)<=500&&Math.max(width,height)<=1000;
+ const shortLandscape=phoneLike&&width>height*1.28&&height<=500;
+ const portrait=phoneLike&&height>width*1.08;
+ if(shortLandscape)return{phoneLike:true,shortLandscape:true,portrait:false,horizonFrac:.225,slopeBand:.017,bottomMargin:18,terrainLiftScale:.76,depthPower:1.62,tier:'phone-landscape'};
+ if(portrait)return{phoneLike:true,shortLandscape:false,portrait:true,horizonFrac:.245,slopeBand:.019,bottomMargin:16,terrainLiftScale:.84,depthPower:1.66,tier:'phone-portrait'};
+ return{phoneLike:false,shortLandscape:false,portrait:false,horizonFrac:.27,slopeBand:.022,bottomMargin:10,terrainLiftScale:1,depthPower:1.72,tier:'full'};
+}
 function chaseProjection(distance){
  const look=chaseLookahead(),d=Math.max(0,Math.min(look,distance)),q=d/look,near=1-q;
  const riderWx=world+player.x+player.w*.5;
  const slope=terrainSlopeAt(riderWx+Math.min(260,d*.18));
- const horizon=H*(.27+Math.max(-.022,Math.min(.022,slope*.028)));
+ const frame=chaseMobileFramingProfile();
+ const horizon=H*(frame.horizonFrac+Math.max(-frame.slopeBand,Math.min(frame.slopeBand,slope*.028)));
  const riderTerrain=terrainNorm(riderWx),sampleTerrain=terrainNorm(riderWx+d);
- const terrainLift=(sampleTerrain-riderTerrain)*H*(.13+.46*near);
- const y=horizon+Math.pow(near,1.72)*(H-horizon-10)+terrainLift;
+ const terrainLift=(sampleTerrain-riderTerrain)*H*(.13+.46*near)*frame.terrainLiftScale;
+ const rawY=horizon+Math.pow(near,frame.depthPower)*(H-horizon-frame.bottomMargin)+terrainLift;
+ const y=frame.phoneLike?Math.max(horizon+1,Math.min(H-frame.bottomMargin,rawY)):rawY;
  const curve=(Math.sin((riderWx+d)*.00061)+Math.sin((riderWx+d)*.00017)*.42)*W*.022*Math.pow(near,.72);
  const x=W*.5+curve;
  const half=W*(.046+.445*Math.pow(near,1.18));
@@ -9699,6 +9733,21 @@ if(window.CRASHN_JIMMY_QA){
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainProfile=(rideMode=mode)=>({...rampTerrainProfile(rideMode)});
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
+}
+
+// v221-A157 validation probe: authored-ramp takeoff uses bounded late-face geometry.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.rampFaceAngle=(f)=>({angle:rampFaceAngle(f),degrees:rampFaceAngle(f)*180/Math.PI});
+}
+
+// v221-A156 validation probe: deterministic phone CHASE framing tiers.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseMobileFramingProfile=(width=390,height=844,touchPoints=5)=>({...chaseMobileFramingProfile(width,height,touchPoints)});
+}
+
+// v221-A155 validation probe: pure-tone released-BRAKE ramp confirmation.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.brakeReleaseRampAudioProfile=(trim=.55,rideMode=mode)=>({...brakeReleaseRampAudioProfile(trim,rideMode)});
 }
 
 // v221-A149 validation probes: deterministic released-BRAKE ramp carry.
