@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A168</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A169</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A168';
+const BUILD_VERSION='v221-A169';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -3812,6 +3812,10 @@ function stagedWarningPlan(kind='encounter',pace=speed,rideMode=mode){
 // and one stationary actor. The earlier code calculated the opposite companion type but then hard-coded
 // the companion back to a moving pedestrian, which could turn the intended readable two-part event into
 // two moving actors. Keep the event rare; fix only its internal choreography and velocity.
+const STREET_SLALOM_COMPANION_GAP=520;
+// v221-A169 Props/Hazards/Events: the two-actor SoCal slalom now reserves recovery space
+// from the second actor, not merely from the first. The actor spacing itself stays unchanged;
+// this constant is shared by staging and post-event spawn recovery so the event footprint is authoritative.
 function streetSlalomCompanionSpec(primaryType){
  const type=primaryType==='streetfreeze'?'pedestrian':'streetfreeze';
  const vx=type==='streetfreeze'?0:-18;
@@ -3827,7 +3831,7 @@ function stageEncounter(primary,spawnWx,f,lineChoice){
   obstacles.push(eventProp('slalomsign',spawnWx-lead,kind,lineChoice));
   // SoCal human slalom: one moving pedestrian plus one frozen-in-place pedestrian, staggered enough to read and maneuver around.
   const companionSpec=streetSlalomCompanionSpec(primary.type);
-  const companion={wx:spawnWx+520,type:companionSpec.type,w:32,h:56,hit:false,passed:false,vx:companionSpec.vx,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:2,reacted:false,reactionTimer:0,baseVx:companionSpec.baseVx,companion:true};
+  const companion={wx:spawnWx+STREET_SLALOM_COMPANION_GAP,type:companionSpec.type,w:32,h:56,hit:false,passed:false,vx:companionSpec.vx,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:2,reacted:false,reactionTimer:0,baseVx:companionSpec.baseVx,companion:true};
   obstacles.push(companion);
  }
 }
@@ -4248,8 +4252,11 @@ function spawn(){
  const lineBuffer=f&&f.complex?(lineChoice==='fast'?55:lineChoice==='control'?135:95):75;
  const minGap=Math.max(staged?900:720,recoveryGap+lineBuffer+(staged?210:0));
  const maxGap=minGap+(staged?260:220);
- // Keep the same post-event recovery spacing after the speed-scaled staging shift.
- nextSpawn=world+(warningPlan?warningPlan.extra:0)+rand(minGap,maxGap)
+ // v221-A169: the SoCal event continues 520 world units beyond its primary actor.
+ // Reserve the normal recovery gap from that second actor so a fresh mandatory obstacle cannot
+ // crowd the end of the staged slalom. Other staged events retain their established spacing.
+ const stagedTailReserve=mode==='board'&&encounter?STREET_SLALOM_COMPANION_GAP:0;
+ nextSpawn=world+(warningPlan?warningPlan.extra:0)+stagedTailReserve+rand(minGap,maxGap)
 }
 // v221-A112 higher-refinement gameplay physics: extra airborne JUMP pumps are no longer
 // free vertical energy. The second and third pumps keep their established lift/trick feel, but each
@@ -9877,6 +9884,13 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A169 validation probe: SoCal recovery spacing starts after the second slalom actor.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.streetSlalomRecoveryPlan=(baseGap=900,rideMode='board',isEncounter=true)=>{
+  const tail=rideMode==='board'&&isEncounter?STREET_SLALOM_COMPANION_GAP:0;
+  return{actorGap:STREET_SLALOM_COMPANION_GAP,tailReserve:tail,nextMandatoryAfterSecond:baseGap};
+ };
+}
 // v221-A168 validation probe: roadside scenery opacity rises monotonically with projected proximity.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.chaseRoadsideDepthProfile=(scale=.2,width=844,height=390,touchPoints=5)=>{
