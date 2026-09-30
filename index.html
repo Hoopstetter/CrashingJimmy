@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A152</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A154</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A152';
+const BUILD_VERSION='v221-A154';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -3421,21 +3421,25 @@ function lineBalanceBonus(crashed=false){
  const label=paired>=3?'COMPLETE RIDER':paired>=2?'TWO-WAY LINE':'BALANCED LINE';
  return{points,paired,label};
 }
-function completeLineBonus(crashed=false,ramps=rampLines,cleanTerrain=composedHazards,fast=fastLineClears,control=controlLineClears){
- // v221-A101 Scoring/Progression: the higher-refinement loop now recognizes a genuinely complete
- // run, not just isolated skill events. Jimmy has to ride at least one authored ramp cleanly,
- // absorb two low-profile terrain hazards with BRAKE / SET technique, and prove both FAST and
- // CONTROL judgment in the same finished run. Crashes bank nothing and the bonus is flat, so the
- // best strategy is competent all-around riding rather than farming any single mechanic.
- const rampCount=Math.max(0,Math.floor(ramps||0));
+// v221-A154 Scoring/Progression: authored-ramp control is method-neutral. A clean timed
+// JUMP line and a clean BRAKE-set line are both legitimate proof that Jimmy controlled the ramp.
+function authoredRampControlCount(dialed=rampLines,brakeSets=brakeSetLandings){
+ const d=Math.max(0,Math.floor(dialed||0)),b=Math.max(0,Math.floor(brakeSets||0));
+ return{total:d+b,dialed:d,brakeSets:b};
+}
+function completeLineBonus(crashed=false,ramps=rampLines,cleanTerrain=composedHazards,fast=fastLineClears,control=controlLineClears,brakeSets=brakeSetLandings){
+ // A154 integrates the BRAKE route into the existing all-around finish instead of forcing every
+ // COMPLETE LINE through the timed-JUMP ramp path. Crashes still bank nothing and the +500 stays flat.
+ const rampControl=authoredRampControlCount(ramps,brakeSets);
+ const rampCount=rampControl.total;
  const cleanCount=Math.max(0,Math.floor(cleanTerrain||0));
  const paired=Math.max(0,Math.min(Math.floor(fast||0),Math.floor(control||0)));
  const complete=!crashed&&rampCount>=1&&cleanCount>=2&&paired>=1;
  return{
   points:complete?500:0,
-  complete,rampCount,cleanCount,paired,
+  complete,rampCount,cleanCount,paired,dialedRamps:rampControl.dialed,brakeSetRamps:rampControl.brakeSets,
   label:crashed?'NO FINISH':complete?'COMPLETE LINE':'COMPLETE LINE OPEN',
-  progress:`RAMP ${Math.min(1,rampCount)}/1 · TERRAIN ${Math.min(2,cleanCount)}/2 · BALANCE ${Math.min(1,paired)}/1`
+  progress:`RAMP CTRL ${Math.min(1,rampCount)}/1 · TERRAIN ${Math.min(2,cleanCount)}/2 · BALANCE ${Math.min(1,paired)}/1`
  };
 }
 function formatCourseTime(seconds){
@@ -3444,11 +3448,9 @@ function formatCourseTime(seconds){
  const minutes=Math.floor(t/60),secs=t-minutes*60;
  return minutes?`${minutes}:${secs.toFixed(2).padStart(5,'0')}`:`${secs.toFixed(2)}s`;
 }
-function completeLineTimeBenchmark(crashed=false,time=runTime,ramps=rampLines,cleanTerrain=composedHazards,fast=fastLineClears,control=controlLineClears){
- // v221-A126 Scoring/Progression: A125 made the real authored course end the finish gate.
- // Record pace only when Jimmy also proves a COMPLETE LINE in that same full-course finish,
- // so the time trial rewards speed plus braking discipline, terrain composure and ramp technique.
- const complete=completeLineBonus(crashed,ramps,cleanTerrain,fast,control).complete;
+function completeLineTimeBenchmark(crashed=false,time=runTime,ramps=rampLines,cleanTerrain=composedHazards,fast=fastLineClears,control=controlLineClears,brakeSets=brakeSetLandings){
+ // A154: COMPLETE LINE TIME follows the same method-neutral ramp-control gate as COMPLETE LINE.
+ const complete=completeLineBonus(crashed,ramps,cleanTerrain,fast,control,brakeSets).complete;
  const seconds=Math.max(0,Number(time)||0);
  const eligible=!crashed&&complete&&seconds>0;
  return{eligible,seconds:eligible?seconds:0,label:eligible?'COMPLETE LINE TIME':'OPEN',display:eligible?formatCourseTime(seconds):'OPEN'};
@@ -3513,16 +3515,16 @@ function adaptationProgress(r){
  for(let i=0;i<tiers.length;i++)if(best>=tiers[i].min){tier=i;entry=tiers[i]}
  return{tier,title:entry.title,best,next:entry.next,maxed:tier===tiers.length-1,progress:`BEST ${best} CONSECUTIVE LINE SWITCH${best===1?'':'ES'} IN ONE FINISH`};
 }
-function precisionFinishGrade(crashed=false,closes=closeCalls,clean=composedHazards,ramps=rampLines){
- // v221-A117 Scoring/Progression: bank proof that Jimmy can ride close to consequence while
- // still controlling low terrain and authored ramps. This is progression only, not bonus score:
- // a crash never banks a tier, and upper ranks require more than farming close calls alone.
- const c=Math.max(0,Math.floor(closes||0)),h=Math.max(0,Math.floor(clean||0)),r=Math.max(0,Math.floor(ramps||0));
+function precisionFinishGrade(crashed=false,closes=closeCalls,clean=composedHazards,ramps=rampLines,brakeSets=brakeSetLandings){
+ // A154: Precision Finish recognizes either clean authored-ramp technique. A brake-set line is
+ // no longer score-only while a timed JUMP is the sole path into the upper precision tiers.
+ const c=Math.max(0,Math.floor(closes||0)),h=Math.max(0,Math.floor(clean||0));
+ const rampControl=authoredRampControlCount(ramps,brakeSets),r=rampControl.total;
  let tier=0,title='OPEN',next='1 CLOSE CALL · 1 CLEAN ABSORB';
- if(!crashed&&c>=1&&h>=1){tier=1;title='CLEAN MARGIN';next='2 CLOSE CALLS · 2 CLEAN ABSORBS · 1 DIALED RAMP'}
- if(!crashed&&c>=2&&h>=2&&r>=1){tier=2;title='COMPOSED RISK';next='3 CLOSE CALLS · 3 CLEAN ABSORBS · 2 DIALED RAMPS'}
+ if(!crashed&&c>=1&&h>=1){tier=1;title='CLEAN MARGIN';next='2 CLOSE CALLS · 2 CLEAN ABSORBS · 1 CONTROLLED RAMP'}
+ if(!crashed&&c>=2&&h>=2&&r>=1){tier=2;title='COMPOSED RISK';next='3 CLOSE CALLS · 3 CLEAN ABSORBS · 2 CONTROLLED RAMPS'}
  if(!crashed&&c>=3&&h>=3&&r>=2){tier=3;title='SURGICAL';next='MAXED'}
- return{tier,title,next,maxed:tier===3,progress:`CLOSE ${Math.min(3,c)}/3 · TERRAIN ${Math.min(3,h)}/3 · RAMPS ${Math.min(2,r)}/2`,closes:c,clean:h,ramps:r};
+ return{tier,title,next,maxed:tier===3,progress:`CLOSE ${Math.min(3,c)}/3 · TERRAIN ${Math.min(3,h)}/3 · RAMP CTRL ${Math.min(2,r)}/2`,closes:c,clean:h,ramps:r,dialedRamps:rampControl.dialed,brakeSetRamps:rampControl.brakeSets};
 }
 function precisionProgress(r){
  const tier=Math.max(0,Math.min(3,Math.floor(r.precision||0)));
@@ -5460,7 +5462,7 @@ function results(crashed,injury,hit,snapshot=null){
  const finishBonus=snapshot?.finishBonus||composedFinishBonus(crashed);
  const varietyBonus=snapshot?.varietyBonus||technicalVarietyBonus(crashed);
  const terrainBonus=snapshot?.terrainBonus||terrainComposureBonus(crashed,snapshot?.composedHazards??composedHazards);
- const completeBonus=snapshot?.completeBonus||completeLineBonus(crashed,snapshot?.rampLines??rampLines,snapshot?.composedHazards??composedHazards,snapshot?.fastLineClears??fastLineClears,snapshot?.controlLineClears??controlLineClears);
+ const completeBonus=snapshot?.completeBonus||completeLineBonus(crashed,snapshot?.rampLines??rampLines,snapshot?.composedHazards??composedHazards,snapshot?.fastLineClears??fastLineClears,snapshot?.controlLineClears??controlLineClears,snapshot?.brakeSetLandings??brakeSetLandings);
  let q=snapshot?.q||quotes[Math.floor(Math.random()*quotes.length)],final=snapshot?.final??Math.floor(score+(crashed?0:900)+runLineBalance.points+finishBonus.points+varietyBonus.points+terrainBonus.points+completeBonus.points);score=final;let rating=snapshot?.rating||runRating(),signature=snapshot?.signature||signatureChallenge(),title=snapshot?.title||masteryTitle(mode,rating.tier,signature.complete);
  const sceneVariant=snapshot?.sceneVariant??(crashed?(crashSceneSerial++%3):0);
  const runSurfaceReads=snapshot?.surfaceReads??surfaceReads;
@@ -5482,7 +5484,7 @@ function results(crashed,injury,hit,snapshot=null){
  const runFastLineClears=snapshot?.fastLineClears??fastLineClears;
  const runControlLineClears=snapshot?.controlLineClears??controlLineClears;
  const runCloseCalls=snapshot?.closeCalls??closeCalls;
- const runPrecision=snapshot?.precisionRun||precisionFinishGrade(crashed,runCloseCalls,runComposedHazards,runRampLines);
+ const runPrecision=snapshot?.precisionRun||precisionFinishGrade(crashed,runCloseCalls,runComposedHazards,runRampLines,runBrakeSetLandings);
  const runLineTime=snapshot?.lineTime??((!crashed&&completeBonus.complete)?runTime:0);
  // v90 Scoring/Progression: compare this run with the sport-specific best BEFORE save() updates it.
  // The feedback is folded into existing result elements so portrait-phone results do not grow taller.
@@ -7928,10 +7930,8 @@ function drawChaseObstacle(o){
  }else{
   drawChaseHazardProp(o,w,h,sc);
  }
- if(gap<520&&!o.decor){
-  const label=kind==='vehicle'?(o.type==='snowcat'?'GROOMER':o.type==='trailcart'?'TRAIL CREW':o.type==='utilityvan'?'DRIVEWAY':'VEHICLE'):kind==='wildlife'?(o.yieldClear?'WILDLIFE CLEAR':o.type==='bear'?'BLACK BEAR':'MOUNTAIN LION'):kind==='person'?(o.type==='skier'?'SKIER':o.type==='hiker'?'HIKER':'PEDESTRIAN'):kind==='marker'?'SOFT MARKER':kind==='advisory'?'COURSE INFO':'';
-  if(label){ctx.font=`900 ${Math.max(6,Math.min(10,7+sc*4))}px system-ui`;ctx.textAlign='center';ctx.fillStyle='rgba(15,18,22,.78)';const tw=ctx.measureText(label).width+10;ctx.fillRect(-tw/2,-h-18*sc,tw,13*sc+5);ctx.fillStyle='#f3f5f6';ctx.fillText(label,0,-h-8*sc)}
- }
+ // v221-A153: CHASE stays textless in motion. Distinct silhouettes plus the A145
+ // collision-vs-scenery treatment now carry the read without floating object-name bubbles.
  ctx.restore();
 }
 // v221-A152 Environment Graphics: CHASE/OTS now inherits the named-section atmosphere
@@ -8428,25 +8428,22 @@ function drawObstacle(o){
  // v122 shared advisory treatment: staged warning signs sit on a clearly separate course-info layer.
  // The dashed tether, shoulder shelf, and COURSE INFO tab distinguish them from solid collision props.
  if(o.advisory){
+  // v221-A153 Props/Hazards/Events: keep live course information physical and textless.
+  // The shoulder shelf + dashed tether distinguish advisory props without another floating callout.
   ctx.save();
   const cx=x+o.w*.5,baseY=terrainY-3;
   ctx.strokeStyle='rgba(235,239,242,.42)';ctx.lineWidth=1.2;ctx.setLineDash([3,4]);
   ctx.beginPath();ctx.moveTo(cx,y+o.h+1);ctx.lineTo(cx,baseY);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle=mode==='snow'?'rgba(213,234,243,.44)':mode==='bike'?'rgba(128,91,58,.48)':'rgba(105,111,116,.46)';
   ctx.beginPath();ctx.ellipse(cx,baseY+3,Math.max(25,o.w*.48),5,0,0,Math.PI*2);ctx.fill();
-  const tabW=54,tabX=cx-tabW*.5,tabY=y-14;
-  ctx.fillStyle='rgba(14,18,23,.78)';ctx.strokeStyle='rgba(242,184,75,.70)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.roundRect(tabX,tabY,tabW,12,5);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#f2c768';ctx.font='900 6px system-ui';ctx.textAlign='center';ctx.fillText('COURSE INFO',cx,tabY+8.5);
   ctx.restore();
  }
  if(o.yieldClear){
+  // A153: yielded actors communicate "clear" through their shoulder position, faded treatment
+  // and a restrained tether only; no text bubble competes with the actual riding line.
   ctx.save();
-  const cx=x+o.w*.5,tagW=62,tagY=y-15;
-  ctx.fillStyle='rgba(14,18,23,.82)';ctx.strokeStyle='rgba(217,239,226,.76)';ctx.lineWidth=1.1;
-  ctx.beginPath();ctx.roundRect(cx-tagW*.5,tagY,tagW,12,5);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#d9efe2';ctx.font='900 6px system-ui';ctx.textAlign='center';ctx.fillText('LINE CLEAR',cx,tagY+8.5);
-  ctx.strokeStyle='rgba(217,239,226,.72)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);
+  const cx=x+o.w*.5;
+  ctx.strokeStyle='rgba(217,239,226,.60)';ctx.lineWidth=1.35;ctx.setLineDash([3,4]);
   ctx.beginPath();ctx.moveTo(cx,y+o.h+1);ctx.lineTo(cx,terrainY-2);ctx.stroke();ctx.setLineDash([]);
   ctx.restore();
  }
@@ -9602,7 +9599,7 @@ if(window.CRASHN_JIMMY_QA){
 // A93 validation probes: finish-gated terrain-composure scoring and clean-contact counting.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.terrainComposureBonus=(count=0,crashed=false)=>({...terrainComposureBonus(!!crashed,count)});
-window.CRASHN_JIMMY_QA.completeLineBonus=(ramps=0,cleanTerrain=0,fast=0,control=0,crashed=false)=>({...completeLineBonus(!!crashed,ramps,cleanTerrain,fast,control)});
+window.CRASHN_JIMMY_QA.completeLineBonus=(ramps=0,cleanTerrain=0,fast=0,control=0,crashed=false,brakeSets=0)=>({...completeLineBonus(!!crashed,ramps,cleanTerrain,fast,control,brakeSets)});
 window.CRASHN_JIMMY_QA.completeLineTourProgress=(state=null)=>{const r=state||records();return completeLineTourProgress({snow:Object.assign(blank(),r.snow||{}),bike:Object.assign(blank(),r.bike||{}),board:Object.assign(blank(),r.board||{})})};
  // A94 validation probes: deterministic profile inspection without requiring audible browser capture.
 window.CRASHN_JIMMY_QA.negotiatedHazardAudioProfile=(type='snowbank',prepared=true,rideMode=mode)=>{const p=negotiatedHazardAudioProfile(type,prepared,rideMode);return p?{...p}:null};
@@ -9672,6 +9669,20 @@ if(window.CRASHN_JIMMY_QA){
   mode=old.mode;chaseView=old.chaseView;world=old.world;player=old.player;speed=old.speed;particles=old.particles;return out;
  };
  window.CRASHN_JIMMY_QA.closeCallWakeMatrix=()=>[['snow','rock'],['bike','log'],['board','trashcan']].flatMap(([rideMode,type])=>['side','chase'].map(view=>window.CRASHN_JIMMY_QA.closeCallWakeProbe(rideMode,type,view,8)));
+}
+
+// v221-A154 validation probes: BRAKE-set ramps are first-class progression evidence.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.authoredRampControlCount=(dialed=0,brakeSets=0)=>({...authoredRampControlCount(dialed,brakeSets)});
+ window.CRASHN_JIMMY_QA.rampControlProgression=(dialed=0,brakeSets=1,cleanTerrain=2,fast=1,control=1,closes=2,crashed=false)=>({
+  complete:{...completeLineBonus(crashed,dialed,cleanTerrain,fast,control,brakeSets)},
+  precision:{...precisionFinishGrade(crashed,closes,cleanTerrain,dialed,brakeSets)}
+ });
+}
+
+// v221-A153 validation probe: live-world readability is deliberately textless.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.liveWorldCalloutPolicy=()=>({textLabels:false,sideAdvisoryTether:true,yieldShoulderCue:true,chaseSilhouettes:true});
 }
 
 // v221-A152 validation probe: deterministic OTS section-atmosphere classification.
