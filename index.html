@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A170</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A171</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A170';
+const BUILD_VERSION='v221-A171';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1261,6 +1261,55 @@ const crashNextLapCausePools={
   "Same descent. Cross the grip change with a neutral board, then steer once the surface is consistent.",
   "Keep the speed. Finish the directional input before the patch and let the deck pass over it square.",
   "Set the line early, coast the transition cleanly, and add pressure again on uniform pavement."
+ ],
+ // v221-A171 UI/Sound/Polish: finish the cause-specific second-beat dialogue pass for
+ // dynamic encounters. Jimmy now has a dedicated corrective plan for each person, vehicle,
+ // and rare wildlife crash instead of falling back to a shared family pool. This adds 27
+ // rotating lines while preserving shuffle/no-repeat behavior and the speed-positive tone.
+ bear:[
+  "Give the bear the whole line early. Stop first, create distance, then move when the mountain is clear.",
+  "Use the first sighting as the brake marker. Space first, pace later.",
+  "Build the buffer immediately, then restart the run after the bear clears the line."
+ ],
+ lion:[
+  "Mountain lion gets priority before speed gets a vote. Check up early and make the trail uninteresting.",
+  "Use the sightline to create distance immediately, not to negotiate a closer look.",
+  "Same trail another day. For this pass, brake early, stay wide, and let the cat finish the section."
+ ],
+ skier:[
+  "Read the crossing one beat sooner, set the brake before the merge, then rebuild speed below it.",
+  "Give the skier a boring gap. The fast line resumes after the fall line is clear.",
+  "Keep the mountain pace everywhere else. Here, convert the warning into space before paths overlap."
+ ],
+ hiker:[
+  "Set the speed before the hiker commits, pass wide, then get back on the pedals after the trail opens.",
+  "Use the full sight distance to make the interaction routine instead of waiting for a last-second corridor.",
+  "Earlier check-up, cleaner berth, no drama. The trail speed comes back once the person is behind me."
+ ],
+ pedestrian:[
+  "Create the street gap before the pedestrian has to wonder what I am doing, then put the speed back on.",
+  "Read the drift early, choose the lane early, and make the pass look uneventful.",
+  "Same downhill confidence. More space around people, less correction inside the crossing."
+ ],
+ streetfreeze:[
+  "When the person freezes, the line freezes with them. Brake early, open the corridor, then resume after clear.",
+  "Treat the stop as the decision point, not the obstacle. Build space before choosing the pass.",
+  "Same hill speed outside the event. Inside it, make the human slalom deliberate and leave an exit on both sides."
+ ],
+ snowcat:[
+  "Honor the groomer lane before it becomes a closing-speed problem, then rebuild pace past the work zone.",
+  "Heavy equipment gets the corridor. Brake at the warning, not at the machine.",
+  "Keep the mountain speed between crossings. At the snowcat, make room early and keep the interaction procedural."
+ ],
+ trailcart:[
+  "Check up at the work-zone read, give the cart a clean corridor, then accelerate after the crew is clear.",
+  "Trail crew gets predictable space. I set the gap sooner and put the speed back on after the crossing.",
+  "Use the warning to settle the bike before the cart moves, not while I am already closing on it."
+ ],
+ utilityvan:[
+  "Brake at the driveway cue, let the van own the crossing, then release back into the hill.",
+  "Use the sight distance to make the vehicle interaction boring. Pace comes back immediately afterward.",
+  "Same descent, earlier set. Clear the operating lane first and stop spending stopping distance after the van commits."
  ]
 };
 function crashNextLapPool(hit){
