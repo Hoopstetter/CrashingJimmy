@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A166</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A168</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A166';
+const BUILD_VERSION='v221-A168';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -7751,9 +7751,19 @@ function drawChaseRideableRampSurfacePass(riderWx,look){
  ctx.restore();
 }
 
-function drawChaseEnvironmentProp(p,seed,side){
- const x=p.x+side*(p.half+10*p.scale),y=p.y,sc=p.scale;
- ctx.save();ctx.translate(x,y);
+// v221-A168 Environment/Graphics: roadside scenery now participates in atmospheric depth.
+// Far trees/rocks/houses recede more strongly than near scenery, especially in short-landscape
+// phone CHASE, while true hazards and gameplay cues remain fully independent and render afterward.
+function chaseRoadsideDepthProfile(scale,budget=chaseRenderBudgetProfile()){
+ const t=Math.max(0,Math.min(1,(Number(scale)-.14)/.72));
+ const depth=t*t*(3-2*t);
+ const far=Math.max(.16,Math.min(.44,budget.farSceneryAlpha*.60));
+ const near=Math.max(far+.12,Math.min(.72,budget.farSceneryAlpha+.16));
+ return{alpha:far+(near-far)*depth,depth,far,near};
+}
+function drawChaseEnvironmentProp(p,seed,side,budget=chaseRenderBudgetProfile()){
+ const x=p.x+side*(p.half+10*p.scale),y=p.y,sc=p.scale,depth=chaseRoadsideDepthProfile(sc,budget);
+ ctx.save();ctx.globalAlpha=depth.alpha;ctx.translate(x,y);
  if(mode==='snow'){
   ctx.fillStyle='rgba(36,64,73,.78)';ctx.beginPath();ctx.moveTo(0,-42*sc);ctx.lineTo(-13*sc,-9*sc);ctx.lineTo(-4*sc,-9*sc);ctx.lineTo(-18*sc,12*sc);ctx.lineTo(18*sc,12*sc);ctx.lineTo(4*sc,-9*sc);ctx.lineTo(13*sc,-9*sc);ctx.closePath();ctx.fill();ctx.fillStyle='#594635';ctx.fillRect(-2*sc,9*sc,4*sc,13*sc);
  }else if(mode==='bike'){
@@ -8190,8 +8200,8 @@ function drawChaseScene(){
  const propSpacing=(mode==='snow'?300:mode==='bike'?270:300)*renderBudget.propScale;let seed=0;
  for(let wx=Math.ceil(riderWx/propSpacing)*propSpacing;wx<riderWx+look;wx+=propSpacing){
   const localSeed=seed++,p=chaseProjection(wx-riderWx);if(p.scale<.15)continue;if(chaseRampSightlineAt(wx,mode))continue;
-  if(renderBudget.singleSideRoadside)drawChaseEnvironmentProp(p,localSeed,localSeed%2?-1:1);
-  else{drawChaseEnvironmentProp(p,localSeed,-1);if(seed%2===0)drawChaseEnvironmentProp(p,seed,1)}
+  if(renderBudget.singleSideRoadside)drawChaseEnvironmentProp(p,localSeed,localSeed%2?-1:1,renderBudget);
+  else{drawChaseEnvironmentProp(p,localSeed,-1,renderBudget);if(seed%2===0)drawChaseEnvironmentProp(p,seed,1,renderBudget)}
  }
  // Authored terrain gets a restrained lip/section trace so ramps and catches remain legible.
  for(const f of terrainFeatures){const gap=f.x-riderWx;if(gap<-100)continue;if(gap>look)break;if(!['ramp','tabletop','drop','stepdown','crest','dip','gully','streetsteps'].includes(f.kind))continue;const p=chaseProjection(Math.max(0,gap));ctx.strokeStyle=f.kind==='ramp'?'rgba(242,184,75,.85)':'rgba(238,242,244,.28)';ctx.lineWidth=Math.max(1,2.4*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.76,p.y);ctx.lineTo(p.x+p.half*.76,p.y);ctx.stroke();if(f.label&&gap<780){ctx.fillStyle='rgba(12,15,18,.66)';ctx.fillRect(p.x-46,p.y-17,92,12);ctx.fillStyle='#eef1f3';ctx.font='800 6px system-ui';ctx.textAlign='center';ctx.fillText(f.label,p.x,p.y-8)}}
@@ -8416,16 +8426,19 @@ function drawChaseCrashGear(progress,hit){
  }
  ctx.restore();
 }
+// v221-A167 higher-refinement Jimmy/Animation: keep A159's protective settle through the
+// entire CHASE silhouette. Late torso tuck and arm drop now follow the same guard already used
+// by brace, knees and head, so Jimmy no longer partially reopens while the tumble continues.
 function drawChaseCrashPlayer(progress,hit){
  const p=Math.max(0,Math.min(1,progress)),reaction=crashReactionProfile(hit,p,mode);
  const guard=Math.max(reaction.reflex,reaction.protect*.90);
  const tumble=Math.max(0,Math.min(1,(p-.075)/.925)),spin=tumble*Math.PI*(hit==='wobble'?1.4:2.2)+reaction.twist*reaction.reflex;
  const x=W*.5+Math.sin(p*11)*W*.025+reaction.lean*18*reaction.reflex,y=H*.80+p*H*.06+reaction.tuck*3*guard;
  const brace=reaction.brace*guard,knee=reaction.knee*guard,side=reaction.sideBias;
- const armSpread=22-brace*7,armDrop=2+reaction.tuck*8*reaction.reflex;
+ const armSpread=22-brace*7,armDrop=2+reaction.tuck*8*guard;
  const hipY=8+knee*5,legSpread=16-knee*3;
  drawChaseCrashGear(p,hit);
- ctx.save();ctx.translate(x,y);ctx.rotate(spin);ctx.strokeStyle='#20262b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-25+reaction.tuck*3*reaction.reflex);ctx.lineTo(0,hipY);
+ ctx.save();ctx.translate(x,y);ctx.rotate(spin);ctx.strokeStyle='#20262b';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-25+reaction.tuck*3*guard);ctx.lineTo(0,hipY);
  ctx.moveTo(0,-12);ctx.lineTo(-armSpread-side*brace*3,armDrop-brace*3);ctx.moveTo(0,-12);ctx.lineTo(armSpread-side*brace*5,armDrop+brace*2);
  ctx.moveTo(0,hipY);ctx.lineTo(-legSpread,24-knee*2);ctx.moveTo(0,hipY);ctx.lineTo(legSpread,24-knee*2);ctx.stroke();
  ctx.fillStyle='#c69572';ctx.beginPath();ctx.arc(side*brace*1.8,-35+reaction.tuck*4*guard,9,0,Math.PI*2);ctx.fill();
@@ -9864,6 +9877,20 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A168 validation probe: roadside scenery opacity rises monotonically with projected proximity.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseRoadsideDepthProfile=(scale=.2,width=844,height=390,touchPoints=5)=>{
+  const budget=chaseRenderBudgetProfile(width,height,touchPoints);
+  return{...chaseRoadsideDepthProfile(scale,budget),tier:budget.tier};
+ };
+}
+// v221-A167 validation probe: late CHASE protective settle keeps torso and arms compact after reflex fade.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseCrashProtectiveSettle=(progress=.82,hit='tree',rideMode=mode)=>{
+  const r=crashReactionProfile(hit,Math.max(0,Math.min(1,progress)),rideMode),guard=Math.max(r.reflex,r.protect*.90);
+  return{reflex:r.reflex,protect:r.protect,guard,torsoTuck:r.tuck*3*guard,armDrop:2+r.tuck*8*guard,headTuck:r.tuck*4*guard};
+ };
+}
 // v221-A166 validation probe: a connector whose start clears a corridor but whose tail overlaps it is rejected.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.connectorTerrainFootprintClear=(start=4050,width=500,features=[{x:5000,width:340}])=>connectorTerrainFootprintClear(start,width,features);
