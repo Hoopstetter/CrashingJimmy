@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A169</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A170</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A169';
+const BUILD_VERSION='v221-A170';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -3428,6 +3428,19 @@ function runRating(){
  }
  return{tier,name:RATING_NAMES[tier],why};
 }
+// v221-A170 Scoring/Progression: STREET NERVE now values deliberate street reading as well as raw proximity.
+// Completing the two-actor human slalom contributes one of the two required NERVE reads, while at least
+// one real close call is still required. This keeps the signature aggressive without rewarding repeated
+// near-miss farming as the only path: 3 FAST + 2 CLOSE still works, or 3 FAST + 1 CLOSE + SLALOM.
+function streetNerveProgress(fast=fastLineClears,close=closeCalls,slalom=streetSlalomAwarded){
+ const fastCount=Math.max(0,Math.floor(fast||0)),closeCount=Math.max(0,Math.floor(close||0));
+ const slalomCredit=slalom?1:0,nerve=Math.min(2,closeCount+slalomCredit);
+ const complete=fastCount>=3&&closeCount>=1&&nerve>=2;
+ return{
+  fast:fastCount,close:closeCount,slalom:!!slalom,nerve,complete,reward:1100,
+  progress:`FAST ${Math.min(3,fastCount)}/3 · NERVE ${nerve}/2 · ${slalom?'SLALOM CLEAR':'SLALOM OPEN'}`
+ };
+}
 function signatureChallenge(){
  // v44: each sport now has a distinct high-value run objective built from mechanics already in play.
  if(mode==='snow'){
@@ -3438,8 +3451,8 @@ function signatureChallenge(){
   const complete=bestFlowChain>=5&&masteredSections>=4;
   return{name:'TRAIL FLOW',complete,reward:1000,progress:`FLOW x${(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}/2.00 · LINES ${Math.min(4,masteredSections)}/4`};
  }
- const complete=fastLineClears>=3&&closeCalls>=2;
- return{name:'STREET NERVE',complete,reward:1100,progress:`FAST ${Math.min(3,fastLineClears)}/3 · CLOSE CALLS ${Math.min(2,closeCalls)}/2`};
+ const street=streetNerveProgress();
+ return{name:'STREET NERVE',complete:street.complete,reward:street.reward,progress:street.progress};
 }
 function checkSignatureChallenge(){
  if(signatureAwarded)return;
@@ -9884,6 +9897,10 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A170 validation probe: STREET NERVE accepts either two close calls or one close call plus the completed slalom.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.streetNerveProgress=(fast=3,close=1,slalom=true)=>({...streetNerveProgress(fast,close,slalom)});
+}
 // v221-A169 validation probe: SoCal recovery spacing starts after the second slalom actor.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.streetSlalomRecoveryPlan=(baseGap=900,rideMode='board',isEncounter=true)=>{
