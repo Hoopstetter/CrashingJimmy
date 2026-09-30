@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A160</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A163</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A160';
+const BUILD_VERSION='v221-A163';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -538,7 +538,7 @@ const scoreEl=$('score'),speedEl=$('speed'),meterFill=$('meterFill'),alertEl=$('
 let W=900,H=500,mode='snow',running=false,paused=false,ended=false,score=0,meter=0,speed=6,runTime=0,world=0;
 let terrain=[],terrainFeatures=[],complexBounds=[],rampSetupLanes=[],rampFoundationLanes=[],rampRecoveryLanes=[],terrainFeaturePastReach=0,courseFinishX=41290,obstacles=[],particles=[],nextSpawn=520,wildlifeUsed=false,eventUsed=false,maintenanceUsed=false,surfaceEventUsed=false,lineChoices={},choiceCueTimer=0,braking=false,brakeHold=0,brakeEntrySpeed=0,brakeMinSpeed=0,airAbsorbSetTimer=0,airAbsorbSetAge=0,sendIt=false,closeCalls=0,totalAir=0,airTime=0,maxMeter=0,lastAutoLaunch=-9999,physicsCue='',physicsCueTimer=0,glanceAlert='',flowChain=0,bestFlowChain=0,flowTimer=0,lineSet=0,airLineSet=0,lineSetReady=false,signatureAwarded=false,stability=100,stabilityCueReady=true;
 let jumpTapCount=0,lastJumpTap=0,airTrick='',tricksLanded=0;
-let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,activeExpertTransfer='',chaseReads=0,chaseReadPoints=0,chaseReadStreak=0,bestChaseReadStreak=0,composedHazards=0;
+let masteryStreak=0,bestMasteryStreak=0,masteredSections=0,nextMasteryFeature=0,fastLineClears=0,controlLineClears=0,routeSwitchChain=0,bestRouteSwitchChain=0,lastMasteredLineChoice='',adaptationComplexId=-1,adaptationComplexChoice='',adaptationComplexClean=true,lastRatingTier=0,lastSignatureProgress='',surfaceReads=0,surfaceReadPoints=0,lineShots=0,lineShotPoints=0,expertTransfers=0,expertTransferPoints=0,trafficReads=0,trafficReadPoints=0,streetSlalomPassed=0,streetSlalomAwarded=false,activeExpertTransfer='',chaseReads=0,chaseReadPoints=0,chaseReadStreak=0,bestChaseReadStreak=0,composedHazards=0;
 let rampLines=0,rampLinePoints=0,cleanCatches=0,cleanCatchPoints=0,catchStreak=0,bestCatchStreak=0,brakeSetLandings=0,brakeSetPoints=0,rampSetState={label:'',armed:false,released:false,entrySpeed:0,minSpeed:0,releaseSpeed:0},activeRampSet=null,activeBrakeSetRamp=null,rampCoachKey='';
 let player={x:130,y:0,vy:0,w:36,h:52,onGround:true,rot:0};
 let animClock=0,landingSquash=0,landingRecoveryTimer=0,landingRecoveryKind='clean',landingRecoveryImpact=0,wheelSpin=0,lastAutoLaunchTime=-9999,rampPopQueued=false,rampPopQueuedAt=-9999,rampPopFeatureLabel='',rampPopQuality=0,rampRollCueFeature='',rampRollGroundLatchEnd=-Infinity,rampReleaseTrajectoryAngle=0,rampReleaseBrakeTrim=0,quickPopAnimTimer=0,quickPopAnimIntensity=0,quickPopAnimType='';
@@ -1565,6 +1565,20 @@ function brakeReleaseRampAudioProfile(trim=.5,rideMode=mode){
  const base=rideMode==='snow'?248:rideMode==='bike'?218:262;
  return{trim:t,first:base+Math.round(t*24),second:base+Math.round(92+t*42),firstDur:.045,secondDur:.072,firstGain:.012+t*.004,secondGain:.014+t*.004,firstSlide:-18,secondSlide:34};
 }
+// v221-A163 UI/Sound/Polish: the paired SoCal human slalom gets a restrained
+// two-stage pure-tone signature. Actor one confirms the read without sounding like a reward;
+// actor two gets an ascending completion motif after the existing skill-award sound.
+function streetSlalomAudioProfile(stage='read'){
+ if(stage==='complete')return{stage:'complete',notes:[
+  {delay:0,freq:304,dur:.050,wave:'sine',gain:.014,slide:18},
+  {delay:64,freq:438,dur:.060,wave:'triangle',gain:.016,slide:30},
+  {delay:132,freq:586,dur:.082,wave:'sine',gain:.017,slide:42}
+ ]};
+ return{stage:'read',notes:[
+  {delay:0,freq:278,dur:.045,wave:'sine',gain:.012,slide:-10},
+  {delay:66,freq:348,dur:.055,wave:'triangle',gain:.013,slide:16}
+ ]};
+}
 function precisionRankAudioProfile(tier,rideMode=mode){
  // v221-A118: a clean, compact confirmation motif for newly banked Precision Finish tiers.
  // Higher tiers add harmonic confidence rather than volume; no noise layer is used.
@@ -1656,6 +1670,10 @@ function sfx(kind,detail=''){
   const p=brakeReleaseRampAudioProfile(detail);
   tone(p.first,p.firstDur,'sine',p.firstGain,p.firstSlide);
   setTimeout(()=>tone(p.second,p.secondDur,'triangle',p.secondGain,p.secondSlide),52);
+ }
+ else if(kind==='slalom'){
+  const p=streetSlalomAudioProfile(detail||'read');
+  p.notes.forEach(n=>setTimeout(()=>tone(n.freq,n.dur,n.wave,n.gain,n.slide),n.delay));
  }
  else if(kind==='crash')crashImpactSfx(detail)
 }
@@ -3352,7 +3370,7 @@ function reset(showLocationIntro=false){
  // Explicit sport selection requests it; ONE MORE RUN and double-tap restart enter gameplay directly.
  releaseControls();resetFrameClock();resetPoseContinuity();disposeSpeedSoundscape(.035);clearPauseState();
  signatureTrack.style.display='none';
- score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;airAbsorbSetTimer=0;airAbsorbSetAge=0;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;activeExpertTransfer='';chaseReads=0;chaseReadPoints=0;chaseReadStreak=0;bestChaseReadStreak=0;composedHazards=0;rampLines=0;rampLinePoints=0;cleanCatches=0;cleanCatchPoints=0;catchStreak=0;bestCatchStreak=0;brakeSetLandings=0;brakeSetPoints=0;clearRampSetState();activeRampSet=null;activeBrakeSetRamp=null;clearRampCoachDisplay();lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';rampReleaseTrajectoryAngle=0;rampReleaseBrakeTrim=0;quickPopAnimTimer=0;quickPopAnimIntensity=0;quickPopAnimType='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageRampLipMarkers();stageRampCatchMarkers();stageSignatureFilmer();stageExpertTransferSpotter();
+ score=0;meter=0;speed=6;runTime=0;world=0;obstacles=[];particles=[];nextSpawn=1700;wildlifeUsed=false;eventUsed=false;maintenanceUsed=false;surfaceEventUsed=false;lineChoices={};choiceCueTimer=0;braking=false;brakeHold=0;brakeEntrySpeed=0;brakeMinSpeed=0;sendIt=false;closeCalls=0;totalAir=0;airTime=0;maxMeter=0;flowChain=0;bestFlowChain=0;flowTimer=0;lineSet=0;airLineSet=0;lineSetReady=false;airAbsorbSetTimer=0;airAbsorbSetAge=0;masteryStreak=0;bestMasteryStreak=0;masteredSections=0;nextMasteryFeature=0;fastLineClears=0;controlLineClears=0;routeSwitchChain=0;bestRouteSwitchChain=0;lastMasteredLineChoice='';adaptationComplexId=-1;adaptationComplexChoice='';adaptationComplexClean=true;lastRatingTier=0;lastSignatureProgress='';surfaceReads=0;surfaceReadPoints=0;lineShots=0;lineShotPoints=0;expertTransfers=0;expertTransferPoints=0;trafficReads=0;trafficReadPoints=0;streetSlalomPassed=0;streetSlalomAwarded=false;activeExpertTransfer='';chaseReads=0;chaseReadPoints=0;chaseReadStreak=0;bestChaseReadStreak=0;composedHazards=0;rampLines=0;rampLinePoints=0;cleanCatches=0;cleanCatchPoints=0;catchStreak=0;bestCatchStreak=0;brakeSetLandings=0;brakeSetPoints=0;clearRampSetState();activeRampSet=null;activeBrakeSetRamp=null;clearRampCoachDisplay();lastNamedSectionCue='';lastCrashContext=null;signatureAwarded=false;landingRecoveryTimer=0;landingRecoveryKind='clean';landingRecoveryImpact=0;rampPopQueued=false;rampPopQueuedAt=-9999;rampPopFeatureLabel='';rampPopQuality=0;rampRollCueFeature='';rampReleaseTrajectoryAngle=0;rampReleaseBrakeTrim=0;quickPopAnimTimer=0;quickPopAnimIntensity=0;quickPopAnimType='';lineShotCardTimer=0;if(lineShotCard){lineShotCard.className='';lineShotCard.innerHTML='';}stability=100;stabilityCueReady=true;jumpTapCount=0;lastJumpTap=0;airTrick='';tricksLanded=0;lorePropUsed=false;signatureFilmerUsed=false;expertSpotterUsed=false;buildTerrain();stageRampLipMarkers();stageRampCatchMarkers();stageSignatureFilmer();stageExpertTransferSpotter();
  player={x:sidePlayerScreenX(W,H),y:0,vy:0,w:36,h:52,onGround:true,rot:0};player.y=groundY(player.x)-player.h;lastAutoLaunch=-9999;lastAutoLaunchTime=-9999;rampRollGroundLatchEnd=-Infinity;physicsCue='';physicsCueTimer=0;ended=false;hud();if(showLocationIntro)startLocationIntro();else activateRunNow()
 }
 function postGameJumpRestart(){
@@ -3417,6 +3435,31 @@ function checkSignatureChallenge(){
   signatureAwarded=true;score+=c.reward;meter=Math.min(100,meter+12);
   physicsCue=c.name+'  +'+c.reward;physicsCueTimer=1.35;sfx('rating');
  }
+}
+// v221-A162 Scoring/Progression: the SoCal human slalom is one staged two-actor challenge,
+// not two independent 360-point events. The first clean pass records progress; the second clean pass
+// completes the event and banks one 600-point reward. A crash between actors therefore cannot harvest
+// the full event score, while normal close-call and base pass scoring remain untouched.
+function streetSlalomProgress(passed=streetSlalomPassed,awarded=streetSlalomAwarded){
+ const n=Math.max(0,Math.min(2,Math.floor(passed||0)));
+ const complete=n>=2;
+ return{passed:n,complete,awarded:!!awarded,reward:complete&&!awarded?600:0,progress:`SLALOM ${n}/2`};
+}
+function registerStreetSlalomPass(o){
+ if(mode!=='board'||!o||!o.event||(o.type!=='pedestrian'&&o.type!=='streetfreeze'))return{handled:false,...streetSlalomProgress()};
+ streetSlalomPassed=Math.min(2,streetSlalomPassed+1);
+ const state=streetSlalomProgress();
+ if(state.reward>0){
+  streetSlalomAwarded=true;
+  meter=Math.min(100,meter+12);
+  skillAward(state.reward,'HUMAN SLALOM');
+  setTimeout(()=>sfx('slalom','complete'),145);
+  physicsCueTimer=1.05;
+  return{handled:true,completed:true,...streetSlalomProgress()};
+ }
+ sfx('slalom','read');
+ physicsCue=state.progress+' · HOLD THE LINE';physicsCueTimer=.78;
+ return{handled:true,completed:false,...state};
 }
 function technicalVarietyBonus(crashed=false){
  // v221-A16 Scoring/Progression: reward a completed run that demonstrates different kinds of
@@ -3752,6 +3795,15 @@ function stagedWarningPlan(kind='encounter',pace=speed,rideMode=mode){
  const lead=Math.round(Math.max(base,Math.min(base+190,Math.max(1.35,pace)*60*seconds)));
  return{kind,base,lead,extra:lead-base,seconds:lead/(Math.max(1.35,pace)*60)};
 }
+// v221-A161 Props/Hazards/Events: SoCal's staged human slalom always presents one committed mover
+// and one stationary actor. The earlier code calculated the opposite companion type but then hard-coded
+// the companion back to a moving pedestrian, which could turn the intended readable two-part event into
+// two moving actors. Keep the event rare; fix only its internal choreography and velocity.
+function streetSlalomCompanionSpec(primaryType){
+ const type=primaryType==='streetfreeze'?'pedestrian':'streetfreeze';
+ const vx=type==='streetfreeze'?0:-18;
+ return{type,vx,baseVx:vx};
+}
 function stageEncounter(primary,spawnWx,f,lineChoice){
  // v35: mode-specific run ratings add a persistent replay/progression target without changing core physics.
  // v34: rare encounters are now staged micro-events with readable lead-in props instead of surprise hitboxes.
@@ -3761,8 +3813,8 @@ function stageEncounter(primary,spawnWx,f,lineChoice){
  else{
   obstacles.push(eventProp('slalomsign',spawnWx-lead,kind,lineChoice));
   // SoCal human slalom: one moving pedestrian plus one frozen-in-place pedestrian, staggered enough to read and maneuver around.
-  const companionType=primary.type==='streetfreeze'?'pedestrian':'streetfreeze';
-  const companion={wx:spawnWx+520,type:'pedestrian',w:32,h:56,hit:false,passed:false,vx:-18,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:2,reacted:false,reactionTimer:0,baseVx:-18,companion:true};
+  const companionSpec=streetSlalomCompanionSpec(primary.type);
+  const companion={wx:spawnWx+520,type:companionSpec.type,w:32,h:56,hit:false,passed:false,vx:companionSpec.vx,event:true,wildlife:false,sectionKind:kind,lineChoice,variant:2,reacted:false,reactionTimer:0,baseVx:companionSpec.baseVx,companion:true};
   obstacles.push(companion);
  }
 }
@@ -5290,7 +5342,10 @@ function update(dt){
    let clear=Math.abs((player.y+player.h)-oy);
    if(clear<26){spawnCloseCallWake(o,clear);closeCalls++;meter=Math.min(100,meter+8);skillAward(180,'CLOSE CALL')}else score+=80;
    if(o.wildlife){meter=Math.min(100,meter+18);skillAward(750,'WILDLIFE ENCOUNTER');physicsCueTimer=1.05}
-   else if(o.event){meter=Math.min(100,meter+10);skillAward(mode==='board'?360:300,mode==='board'?'HUMAN SLALOM':'THREAD THE NEEDLE');physicsCueTimer=.9}
+   else if(o.event){
+    const slalom=registerStreetSlalomPass(o);
+    if(!slalom.handled){meter=Math.min(100,meter+10);skillAward(300,'THREAD THE NEEDLE');physicsCueTimer=.9}
+   }
    else if(o.maintenance){meter=Math.min(100,meter+12);skillAward(420,mode==='snow'?'OPS CROSSING':mode==='bike'?'TRAIL CREW LINE':'DRIVEWAY GAP');physicsCueTimer=.95}
   }
  }
@@ -9770,6 +9825,23 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A163 validation probe: staged slalom read/completion motifs remain deterministic.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.streetSlalomAudioProfile=(stage='read')=>({...streetSlalomAudioProfile(stage),notes:streetSlalomAudioProfile(stage).notes.map(n=>({...n}))});
+}
+// v221-A162 validation probe: paired SoCal event scoring pays once, on completion.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.streetSlalomProgress=(passed=0,awarded=false)=>({...streetSlalomProgress(passed,awarded)});
+}
+// v221-A161 validation probe: SoCal staged slalom is always one mover + one stationary actor.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.streetSlalomPair=(primaryType='pedestrian')=>{
+  const primaryVx=primaryType==='streetfreeze'?0:-18,c=streetSlalomCompanionSpec(primaryType);
+  return{primaryType,primaryVx,companionType:c.type,companionVx:c.vx,
+   oneMover:[primaryVx,c.vx].filter(v=>v!==0).length===1,
+   oneStationary:[primaryVx,c.vx].filter(v=>v===0).length===1};
+ };
+}
 // v221-A160 validation probe: CHASE visual layers remain deterministic across phone orientations.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.chaseObstacleDepthProfile=(layer='background',width=844,height=390)=>{
