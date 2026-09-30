@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A163</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A164</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A163';
+const BUILD_VERSION='v221-A164';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1798,12 +1798,15 @@ function renderScaleProfile(cssW,cssH,deviceDpr=window.devicePixelRatio||1,touch
 // v221-A148 QA/mobile: CHASE keeps every gameplay/readability pass, but phone layouts
 // spend fewer draws on decorative tessellation and repeated scenery. Physics, hazards, controls,
 // scoring, lookahead, course geometry and obstacle visibility are untouched.
+// v221-A164 QA/mobile: short-landscape CHASE gets a dedicated clarity budget.
+// Preserve every gameplay/collision/cue layer, but spend fewer pixels on decorative roadside
+// repetition and peripheral speed texture where phone height is most constrained.
 function chaseRenderBudgetProfile(cssW=lastCanvasCssW||W,cssH=lastCanvasCssH||H,touchPoints=navigator.maxTouchPoints||0){
  const phoneLike=Number(touchPoints)>0&&Math.min(cssW,cssH)<=500&&Math.max(cssW,cssH)<=1000;
  const shortLandscape=phoneLike&&cssW>cssH*1.28&&cssH<=500;
- if(shortLandscape)return{phoneLike:true,shortLandscape:true,bands:26,edgeSamples:22,separationSteps:20,propScale:1.32,speedStreaks:5,farSceneryAlpha:.42,tier:'phone-landscape'};
- if(phoneLike)return{phoneLike:true,shortLandscape:false,bands:30,edgeSamples:24,separationSteps:24,propScale:1.18,speedStreaks:6,farSceneryAlpha:.48,tier:'phone-portrait'};
- return{phoneLike:false,shortLandscape:false,bands:36,edgeSamples:28,separationSteps:30,propScale:1,speedStreaks:8,farSceneryAlpha:.55,tier:'full'};
+ if(shortLandscape)return{phoneLike:true,shortLandscape:true,bands:24,edgeSamples:20,separationSteps:18,propScale:1.62,speedStreaks:3,farSceneryAlpha:.34,singleSideRoadside:true,tier:'phone-landscape'};
+ if(phoneLike)return{phoneLike:true,shortLandscape:false,bands:30,edgeSamples:24,separationSteps:24,propScale:1.18,speedStreaks:6,farSceneryAlpha:.48,singleSideRoadside:false,tier:'phone-portrait'};
+ return{phoneLike:false,shortLandscape:false,bands:36,edgeSamples:28,separationSteps:30,propScale:1,speedStreaks:8,farSceneryAlpha:.55,singleSideRoadside:false,tier:'full'};
 }
 let lastCanvasCssW=0,lastCanvasCssH=0,lastCanvasDpr=0;
 // v221-A103 QA/mobile: the simulation advances at a fixed 60 Hz, but ProMotion/high-refresh
@@ -8153,7 +8156,11 @@ function drawChaseScene(){
  for(let wx=Math.ceil(riderWx/spacing)*spacing;wx<riderWx+look;wx+=spacing){const p=chaseProjection(wx-riderWx);ctx.strokeStyle=mode==='snow'?'rgba(112,150,169,.24)':mode==='bike'?'rgba(65,47,34,.28)':'rgba(224,213,199,.22)';ctx.lineWidth=Math.max(.7,1.5*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.72,p.y);ctx.lineTo(p.x+p.half*.72,p.y);ctx.stroke()}
  // Signature roadside scenery, projected with distance.
  const propSpacing=(mode==='snow'?300:mode==='bike'?270:300)*renderBudget.propScale;let seed=0;
- for(let wx=Math.ceil(riderWx/propSpacing)*propSpacing;wx<riderWx+look;wx+=propSpacing){const localSeed=seed++,p=chaseProjection(wx-riderWx);if(p.scale<.15)continue;if(chaseRampSightlineAt(wx,mode))continue;drawChaseEnvironmentProp(p,localSeed,-1);if(seed%2===0)drawChaseEnvironmentProp(p,seed,1)}
+ for(let wx=Math.ceil(riderWx/propSpacing)*propSpacing;wx<riderWx+look;wx+=propSpacing){
+  const localSeed=seed++,p=chaseProjection(wx-riderWx);if(p.scale<.15)continue;if(chaseRampSightlineAt(wx,mode))continue;
+  if(renderBudget.singleSideRoadside)drawChaseEnvironmentProp(p,localSeed,localSeed%2?-1:1);
+  else{drawChaseEnvironmentProp(p,localSeed,-1);if(seed%2===0)drawChaseEnvironmentProp(p,seed,1)}
+ }
  // Authored terrain gets a restrained lip/section trace so ramps and catches remain legible.
  for(const f of terrainFeatures){const gap=f.x-riderWx;if(gap<-100)continue;if(gap>look)break;if(!['ramp','tabletop','drop','stepdown','crest','dip','gully','streetsteps'].includes(f.kind))continue;const p=chaseProjection(Math.max(0,gap));ctx.strokeStyle=f.kind==='ramp'?'rgba(242,184,75,.85)':'rgba(238,242,244,.28)';ctx.lineWidth=Math.max(1,2.4*p.scale);ctx.beginPath();ctx.moveTo(p.x-p.half*.76,p.y);ctx.lineTo(p.x+p.half*.76,p.y);ctx.stroke();if(f.label&&gap<780){ctx.fillStyle='rgba(12,15,18,.66)';ctx.fillRect(p.x-46,p.y-17,92,12);ctx.fillStyle='#eef1f3';ctx.font='800 6px system-ui';ctx.textAlign='center';ctx.fillText(f.label,p.x,p.y-8)}}
  obstacles.forEach(drawChaseObstacle);
@@ -9825,6 +9832,10 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A164 validation probe: phone-landscape CHASE reduces decorative density without dropping gameplay layers.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseMobileClarityBudget=(width=844,height=390,touchPoints=5)=>({...chaseRenderBudgetProfile(width,height,touchPoints)});
+}
 // v221-A163 validation probe: staged slalom read/completion motifs remain deterministic.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.streetSlalomAudioProfile=(stage='read')=>({...streetSlalomAudioProfile(stage),notes:streetSlalomAudioProfile(stage).notes.map(n=>({...n}))});
