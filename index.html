@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A164</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A166</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A164';
+const BUILD_VERSION='v221-A166';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -2099,16 +2099,26 @@ function buildTerrain(){
   complexIndex++;
  }
 
- // A few restrained connector features keep the recovery zones alive without destroying pacing.
+ // v221-A166 higher-refinement Terrain/Course: connector terrain must clear the protected
+// authored corridor with its full physical footprint, not merely with its start coordinate.
+// Previously a connector could begin just outside the exclusion band while its 460–500 unit body
+// still extended into a ramp setup, face, landing apron, or recovery lane.
+function connectorTerrainFootprintClear(start,width,features=terrainFeatures){
+ const end=start+Math.max(0,Number(width)||0);
+ return !features.some(f=>{
+  const protectedStart=f.x-520,protectedEnd=f.x+f.width+620;
+  return end>protectedStart&&start<protectedEnd;
+ });
+}
+// A few restrained connector features keep the recovery zones alive without destroying pacing.
  let connector=4400;
  while(connector<39000){
-  // v63: protect readable run-ins/run-outs around authored technical complexes.
-   // This gives Jimmy time to land, settle, brake, and choose the next line instead of chaining
-   // unavoidable features before the player can recover.
-   if(!terrainFeatures.some(f=>connector>f.x-520&&connector<f.x+f.width+620)){
+  const connectorWidth=mode==='snow'?500:460;
+  // Preserve the established protected corridor, but test the connector's complete body against it.
+  if(connectorTerrainFootprintClear(connector,connectorWidth)){
    const options=mode==='snow'?['rollers','bowl']:mode==='bike'?['rollers','berm']:['dip','sweep'];
    const kind=options[Math.floor(Math.random()*options.length)];
-   terrainFeatures.push({x:connector,width:mode==='snow'?500:460,amp:mode==='snow'?.022:.030,kind,label:null,complex:false});
+   terrainFeatures.push({x:connector,width:connectorWidth,amp:mode==='snow'?.022:.030,kind,label:null,complex:false});
   }
   connector+=rand(2350,3250); // v63: longer recovery rhythm between connector terrain
  }
@@ -4417,9 +4427,31 @@ function brakeReleaseGain(held,exitSlope,rideMode,entrySpeed,minSpeed){
  const returnCap=scrubbed*.72;
  return Math.max(0,Math.min(techniqueGain,returnCap));
 }
+// v221-A165 higher-refinement Gameplay/Physics: a released final-descent BRAKE set now
+// looks toward the ground Jimmy is actually traveling toward instead of sampling only the terrain
+// directly under his current screen position. On steep ramp catches and rolling terrain, the old
+// under-rider sample could arm the .18 s carry too early on a downhill or too late into an upslope.
+// Forecast only affects whether the already-existing released landing set arms; it does not add
+// forgiveness, change the timing/quality curve, alter air speed, or move the landing surface.
+function releasedLandingSetForecast(currentSpeed,verticalVelocity,currentGap,rideMode){
+ const gap=Math.max(0,Number.isFinite(currentGap)?currentGap:0);
+ const vy=Math.max(0,Number(verticalVelocity)||0)*60;
+ const accel=28*60;
+ if(gap<=0||vy<=0)return{time:0,lookAhead:0,gap};
+ const disc=vy*vy+2*accel*gap;
+ const impactTime=Math.max(0,(-vy+Math.sqrt(Math.max(0,disc)))/accel);
+ const time=Math.min(.18,impactTime);
+ const maxLook=rideMode==='snow'?124:rideMode==='bike'?112:118;
+ const lookAhead=Math.min(maxLook,Math.max(0,(Number(currentSpeed)||0)*60*time));
+ return{time,lookAhead,gap,maxLook};
+}
 function armReleasedLandingSet(held){
  if(!running||player.onGround)return false;
- const landingGap=(groundY(player.x)-player.h)-player.y;
+ const currentGap=(groundY(player.x)-player.h)-player.y;
+ const first=releasedLandingSetForecast(speed,player.vy,currentGap,mode);
+ const firstGap=(groundY(player.x+first.lookAhead)-player.h)-player.y;
+ const refined=releasedLandingSetForecast(speed,player.vy,firstGap,mode);
+ const landingGap=(groundY(player.x+refined.lookAhead)-player.h)-player.y;
  const set=releasedLandingSetWindow(held,player.vy,landingGap,mode);
  if(!set.armed)return false;
  airAbsorbSetTimer=set.duration;airAbsorbSetAge=held;
@@ -9832,6 +9864,14 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampTerrainOffsetRatio=(u=.5,rideMode=mode)=>rampTerrainOffsetRatio(u,rideMode);
 }
 
+// v221-A166 validation probe: a connector whose start clears a corridor but whose tail overlaps it is rejected.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.connectorTerrainFootprintClear=(start=4050,width=500,features=[{x:5000,width:340}])=>connectorTerrainFootprintClear(start,width,features);
+}
+// v221-A165 validation probe: released landing-set lookahead follows the existing .18 s carry budget.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.releasedLandingSetForecast=(speed=6.4,vy=5.8,gap=32,rideMode=mode)=>({...releasedLandingSetForecast(speed,vy,gap,rideMode)});
+}
 // v221-A164 validation probe: phone-landscape CHASE reduces decorative density without dropping gameplay layers.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.chaseMobileClarityBudget=(width=844,height=390,touchPoints=5)=>({...chaseRenderBudgetProfile(width,height,touchPoints)});
