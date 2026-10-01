@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A175</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A177</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A175';
+const BUILD_VERSION='v221-A177';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -4006,9 +4006,30 @@ function updateWildlifeBehavior(o,sx,dt){
   physicsCueTimer=.95;
  }
 }
+// v221-A177 higher-refinement Props/Hazards/Events: a deliberate brake-set at the advisory
+// can now latch as a crossing read before the actor reaches the old fixed reaction gate. Jimmy may
+// release BRAKE after the speed check; the person/operations vehicle honors that read once it reaches
+// its normal yield range. SEND IT explicitly cancels the latch. Frequency, collision geometry,
+// scoring, wildlife, and the existing safe-pass award boundary are unchanged.
+function crossingBrakePrimeWindow(gap,warningLead=0,reactionMax=350){
+ const min=reactionMax-18;
+ const max=Math.max(reactionMax+120,Math.max(0,warningLead||0)+90);
+ return{gap,min,max,inWindow:gap>min&&gap<=max};
+}
+function updateCrossingBrakePrime(o,gap,hold=.14,reactionMax=350){
+ if(!o)return false;
+ if(sendIt){o.crossingReadPrimed=false;o.crossingReadPace=0;return false}
+ const window=crossingBrakePrimeWindow(gap,o.warningLead||0,reactionMax);
+ if(!o.crossingReadPrimed&&player.onGround&&braking&&!sendIt&&brakeHold>=hold&&window.inWindow){
+  o.crossingReadPrimed=true;
+  o.crossingReadPace=Math.max(speed,brakeEntrySpeed||0);
+ }
+ return !!o.crossingReadPrimed;
+}
 function updateMaintenanceBehavior(o,sx,dt){
  if(!o.maintenance||o.decor)return;
  const gap=sx-(player.x+player.w);
+ const primedRead=updateCrossingBrakePrime(o,gap,.14,365);
  // v131 Props/Hazards/Events: a deliberate early brake-set is now read by course operations.
  // The vehicle/crew visibly holds outside Jimmy's line instead of still committing across it.
  // Wildlife and normal hazard density stay unchanged; A49 banks the read only after the safe pass.
@@ -4024,7 +4045,8 @@ function updateMaintenanceBehavior(o,sx,dt){
   }
   return;
  }
- const brakeRead=player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<365&&gap>150;
+ const brakeRead=(player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<365&&gap>150)||
+  (primedRead&&!sendIt&&gap<365&&gap>150);
  if(brakeRead&&!o.reacted){
   o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.15;o.baseVx=o.vx;o.resumeVx=o.vx;o.yieldLift=14;
   o.yieldSide=((Math.floor(o.wx/190)%2)*2-1);
@@ -4048,6 +4070,7 @@ function updateEncounterBehavior(o,sx,dt){
  // The reaction only begins after the warning prop has had time to be read, so it adds life without becoming a cheap surprise.
  if(!o.event||o.decor||o.type==='streetfreeze')return;
  const gap=sx-(player.x+player.w);
+ const primedRead=updateCrossingBrakePrime(o,gap,.14,350);
  // v131 Props/Hazards/Events: if Jimmy reads the advisory and sets the brake early,
  // people yield out of the active line. SEND IT or a late/nonexistent read keeps the original crossing behavior.
  if(o.yieldClear){
@@ -4061,7 +4084,8 @@ function updateEncounterBehavior(o,sx,dt){
   }
   return;
  }
- const brakeRead=player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<350&&gap>145;
+ const brakeRead=(player.onGround&&braking&&!sendIt&&brakeHold>=.14&&gap<350&&gap>145)||
+  (primedRead&&!sendIt&&gap<350&&gap>145);
  if(brakeRead&&!o.reacted){
   o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.05;o.baseVx=o.vx;o.resumeVx=o.vx;
   o.yieldLift=o.type==='skier'?16:o.type==='hiker'?12:10;
@@ -7899,9 +7923,25 @@ function chaseRoadsideDepthProfile(scale,budget=chaseRenderBudgetProfile()){
  const near=Math.max(far+.12,Math.min(.72,budget.farSceneryAlpha+.16));
  return{alpha:far+(near-far)*depth,depth,far,near};
 }
+// v221-A176 higher-refinement Environment/Graphics: CHASE roadside scenery now loses color and
+// contrast with distance as well as opacity. This gives the course a genuine atmospheric-depth
+// hierarchy: far trees/rocks/houses read as environment, while hazards and authored rideable
+// terrain rendered later remain crisp. Short-landscape phones get the strongest separation.
+function chaseRoadsideAtmosphereProfile(scale,budget=chaseRenderBudgetProfile(),rideMode=mode){
+ const d=chaseRoadsideDepthProfile(scale,budget);
+ const farSat=budget.shortLandscape?.34:budget.phoneLike?.44:.54;
+ const nearSat=budget.shortLandscape?.76:budget.phoneLike?.84:.94;
+ const saturation=farSat+(nearSat-farSat)*d.depth;
+ const contrast=.82+.16*d.depth;
+ const farBright=rideMode==='snow'?1.07:1.035;
+ const brightness=farBright-(farBright-1)*d.depth;
+ return{...d,saturation,contrast,brightness};
+}
 function drawChaseEnvironmentProp(p,seed,side,budget=chaseRenderBudgetProfile()){
- const x=p.x+side*(p.half+10*p.scale),y=p.y,sc=p.scale,depth=chaseRoadsideDepthProfile(sc,budget);
- ctx.save();ctx.globalAlpha=depth.alpha;ctx.translate(x,y);
+ const x=p.x+side*(p.half+10*p.scale),y=p.y,sc=p.scale,depth=chaseRoadsideAtmosphereProfile(sc,budget,mode);
+ ctx.save();ctx.globalAlpha=depth.alpha;
+ ctx.filter=`saturate(${depth.saturation.toFixed(3)}) contrast(${depth.contrast.toFixed(3)}) brightness(${depth.brightness.toFixed(3)})`;
+ ctx.translate(x,y);
  if(mode==='snow'){
   ctx.fillStyle='rgba(36,64,73,.78)';ctx.beginPath();ctx.moveTo(0,-42*sc);ctx.lineTo(-13*sc,-9*sc);ctx.lineTo(-4*sc,-9*sc);ctx.lineTo(-18*sc,12*sc);ctx.lineTo(18*sc,12*sc);ctx.lineTo(4*sc,-9*sc);ctx.lineTo(13*sc,-9*sc);ctx.closePath();ctx.fill();ctx.fillStyle='#594635';ctx.fillRect(-2*sc,9*sc,4*sc,13*sc);
  }else if(mode==='bike'){
@@ -9776,6 +9816,18 @@ if(window.CRASHN_JIMMY_QA){
   ...crashSceneJimmyPose(hit,variant,rideMode),
   group:crashReactionProfile(hit,.72,rideMode).group
  });
+}
+
+// v221-A176 validation hook: CHASE roadside atmosphere should become more vivid/contrasty
+// monotonically as scenery approaches Jimmy, without touching hazard rendering.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.chaseRoadsideAtmosphere=(scale=.2,budget=chaseRenderBudgetProfile(),rideMode=mode)=>
+  ({...chaseRoadsideAtmosphereProfile(scale,budget,rideMode)});
+}
+// v221-A177 validation hook: early advisory brake reads latch until the normal crossing-yield gate.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.crossingBrakePrimeWindow=(gap=430,warningLead=340,reactionMax=350)=>
+  ({...crossingBrakePrimeWindow(gap,warningLead,reactionMax)});
 }
 
 // v221-A120 validation hooks: natural terrain releases expose the bounded momentum-transfer budget.
