@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A190</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A192</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -372,7 +372,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A190';
+const BUILD_VERSION='v221-A192';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -478,6 +478,21 @@ function drawSideBackgroundPass(name,fn){
  }
  safeVisualPass(name,fn);
  ctx.restore();
+}
+// v221-A192 higher-refinement Environment/Graphics: decorative SIDE passes that are rendered
+// after the terrain fill are clipped to the sky side of the authoritative ground line. This lets
+// trees, scrub, roadside silhouettes and atmosphere keep their parallax without ever painting over
+// the rideable surface and masquerading as course hazards.
+function sideEnvironmentOcclusionClearance(width=(lastCanvasCssW||W),height=(lastCanvasCssH||H)){
+ const p=sideReadabilityProfile(width,height);
+ return p.phone?(p.landscape?4:3):2;
+}
+function drawSideOccludedEnvironmentPass(name,fn){
+ const gap=sideEnvironmentOcclusionClearance();
+ ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W,0);
+ for(let x=W;x>=0;x-=10)ctx.lineTo(x,groundY(x)-gap);
+ ctx.lineTo(0,groundY(0)-gap);ctx.closePath();ctx.clip();
+ drawSideBackgroundPass(name,fn);ctx.restore();
 }
 function drawSideMountainLayer(color,base,amp,parallax,detail,near=false){
  const p=sideReadabilityProfile();
@@ -3265,6 +3280,34 @@ function rampRollAnimationPose(riderWx){
   if(envelope.active)return{...envelope,label:key,u,releaseU};
  }
  return{active:0,load:0,settle:0,label:'',u:-9,releaseU};
+}
+// v221-A191 Jimmy/Animation: ride-through posture for A190's smoothed tabletops. Jimmy loads
+// progressively into the rise, quiets his body across the deck, then extends into the run-out.
+// Visual only: no speed, contact, launch, collision, scoring or terrain values are changed.
+function tabletopRideAnimationProfile(riderWx){
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+ for(const f of terrainFeatures){
+  if(f.kind!=='tabletop')continue;
+  const u=(riderWx-f.x)/Math.max(1,f.width);
+  if(u<-.08||u>1.04)continue;
+  let load=0,deck=0,release=0;
+  if(u<0){
+   load=.34*smooth((u+.08)/.08);
+  }else if(u<.22){
+   load=.34+.66*smooth(u/.22);
+  }else if(u<.68){
+   const t=(u-.22)/.46;
+   load=1-.70*smooth(Math.min(1,t/.55));
+   deck=smooth(t);
+  }else{
+   const t=Math.max(0,Math.min(1,(u-.68)/.32));
+   load=.30*(1-smooth(t));
+   deck=1-smooth(t);
+   release=Math.sin(t*Math.PI);
+  }
+  return{active:1,load,deck,release,u,label:f.label||'TABLETOP'};
+ }
+ return{active:0,load:0,deck:0,release:0,u:-9,label:''};
 }
 // v221-A27 higher-refinement gameplay physics: touchdown load is measured relative to the
 // landing surface, not just screen-down velocity. A downhill catch is moving away beneath Jimmy's
@@ -8822,7 +8865,7 @@ function drawScene(){
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('speedDepthCue',speedDepthCuePass);drawSideBackgroundPass('environmentSignature',environmentSignaturePass);drawSideBackgroundPass('foregroundDepth',foregroundDepth);drawSideBackgroundPass('dynamicAtmosphere',dynamicAtmospherePass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);safeVisualPass('crossingIntent',drawSideCrossingIntentPass);obstacles.forEach(drawObstacle)
+ ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('speedDepthCue',speedDepthCuePass);drawSideOccludedEnvironmentPass('environmentSignature',environmentSignaturePass);drawSideOccludedEnvironmentPass('foregroundDepth',foregroundDepth);drawSideOccludedEnvironmentPass('dynamicAtmosphere',dynamicAtmospherePass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);safeVisualPass('crossingIntent',drawSideCrossingIntentPass);obstacles.forEach(drawObstacle)
  }finally{endSideCourseCamera(sideCameraState)}
 }
 function drawLocationIntro(now){
@@ -9510,6 +9553,8 @@ function drawPlayer(){
  }
  const rampRollPose=rampRollAnimationPose(riderWx+18);
  const rampRollLoad=rampRollPose.load||0,rampRollSettle=rampRollPose.settle||0;
+ const tabletopPose=player.onGround?tabletopRideAnimationProfile(riderWx+18):{active:0,load:0,deck:0,release:0};
+ const tabletopLoad=tabletopPose.load||0,tabletopDeck=tabletopPose.deck||0,tabletopRelease=tabletopPose.release||0;
  // A grounded controlled roll should absorb the lip, not visually fire the launch-extension pose.
  if(rampRollPose.active)launchExtension*=Math.max(0,1-rampRollPose.active);
  const preload=Math.pow(Math.max(0,Math.min(1,launchApproach)),1.35);
@@ -9570,7 +9615,7 @@ function drawPlayer(){
  }
  const pumpLean=player.onGround?(pumpRelease*.055-pumpLoad*.025):0;
  const speedLean=player.onGround?(1-brakePose)*speedStance*(mode==='snow'?.025:mode==='bike'?.035:.050):0;
- const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean-(rampRollLoad*.018)+(rampRollSettle*.008)+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+rampReleaseProfile.bodyLean;
+ const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean-(rampRollLoad*.018)+(rampRollSettle*.008)-(tabletopLoad*.014)+(tabletopRelease*.016)+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+rampReleaseProfile.bodyLean;
  // The head stays calmer than the chassis/body and progressively re-levels as the landing
  // comes into range, creating a visible "eyes on the exit" cue without impossible neck motion.
  // v129 Jimmy & animation: Jimmy now looks through turns and his expression follows what he is
@@ -9584,7 +9629,7 @@ function drawPlayer(){
  const faceBrace=Math.max(landingReady?(.42+.58*landingBrace+.12*absorbSet):0,airBack,brakePose);
  const faceCommit=Math.max(airForward,sendPose,speedStance*.72);
  const faceFloat=(airFloat&&!landingReady&&airBack<.18)?Math.min(1,airTime/.65):0;
- const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+rampRollLoad*.72+rampRollSettle*.18+naturalLoad*.58+naturalExtension*.20+crestCatchSet*.30+linePose*.32+speedStance*.24+rampRead*.76));
+ const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+rampRollLoad*.72+rampRollSettle*.18+tabletopLoad*.42+tabletopDeck*.18+tabletopRelease*.20+naturalLoad*.58+naturalExtension*.20+crestCatchSet*.30+linePose*.32+speedStance*.24+rampRead*.76));
  const carveLean=player.onGround?carve*(mode==='snow'?.075:mode==='bike'?.045:.025)*pace:0;
  ctx.save();
  ctx.translate(player.x+18,player.y+26+bob+squash*.22);
@@ -9668,7 +9713,7 @@ function drawPlayer(){
  if(mode==='snow'){
   // Snowboard: sideways stance, low edge-set under braking, compact grab/tweak in longer air.
   // v73 Retro '93 uses the same competent physics/animation with a distinct period kit and old-school deck silhouette.
-  const crouch=(sendPose*3.2)+(speedStance*2.8)+(brakePose*5.2)+(linePose*2.0)+(rampRead*1.25)+(preload*5.0)-(launchExtension*4.1)+(rampRollLoad*4.4)-(rampRollSettle*1.4)+(naturalLoad*3.8)-(naturalExtension*3.4)+(crestCatchSet*2.5)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airPose*airStyle*1.5)+(landingSpot*1.2)+(landingBrace*4.0)+(absorbSet*3.0)+(airLanding?.45:0)-(rampReleaseProfile.vertical*3.8)+(rampReleaseProfile.compact*1.4)+(quickPopTuck*4.7)-(quickPopExtension*3.4)-(quickPopReopen*.8);
+  const crouch=(sendPose*3.2)+(speedStance*2.8)+(brakePose*5.2)+(linePose*2.0)+(rampRead*1.25)+(preload*5.0)-(launchExtension*4.1)+(rampRollLoad*4.4)-(rampRollSettle*1.4)+(naturalLoad*3.8)-(naturalExtension*3.4)+(crestCatchSet*2.5)+(pumpLoad*5.4)-(pumpRelease*2.2)+squash+(recoveryLoad*2.8)-(recoveryFlow*2.4)-(recoveryAbsorb*.7)+(airPose*airStyle*1.5)+(landingSpot*1.2)+(landingBrace*4.0)+(absorbSet*3.0)+(airLanding?.45:0)-(rampReleaseProfile.vertical*3.8)+(rampReleaseProfile.compact*1.4)+(quickPopTuck*4.7)-(quickPopExtension*3.4)-(quickPopReopen*.8)+(tabletopLoad*3.0)-(tabletopRelease*2.0);
   const hipY=9+crouch*.58, shoulderY=-7+crouch*.28, headY=-19+crouch*.30;
   const tweak=airborne?Math.sin(Math.min(1,airStyle)*Math.PI)*5:0;
   head(2,headY,8);
@@ -9742,7 +9787,7 @@ function drawPlayer(){
 
  }else if(mode==='bike'){
   // MTB: elbows and knees stay active, body moves independently from the bike, suspension compresses on impact.
-  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(rampRead*1.05)+(preload*4.2)-(launchExtension*3.7)+(rampRollLoad*4.8)-(rampRollSettle*1.3)+(naturalLoad*3.6)-(naturalExtension*3.1)+(crestCatchSet*2.9)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(absorbSet*3.35)+(airLanding?.40:0)-(rampReleaseProfile.vertical*3.5)+(rampReleaseProfile.compact*1.2)+(quickPopTuck*5.2)-(quickPopExtension*3.6)-(quickPopReopen*.9);
+  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(rampRead*1.05)+(preload*4.2)-(launchExtension*3.7)+(rampRollLoad*4.8)-(rampRollSettle*1.3)+(naturalLoad*3.6)-(naturalExtension*3.1)+(crestCatchSet*2.9)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(absorbSet*3.35)+(airLanding?.40:0)-(rampReleaseProfile.vertical*3.5)+(rampReleaseProfile.compact*1.2)+(quickPopTuck*5.2)-(quickPopExtension*3.6)-(quickPopReopen*.9)+(tabletopLoad*3.2)-(tabletopRelease*2.2);
   const rear={x:-16,y:25},front={x:20,y:25};
   const bikePitch=airborne?Math.max(-.10,Math.min(.08,-player.vy*.004-rampReleaseProfile.equipmentPitch)):0;
   ctx.save();ctx.rotate(bikePitch);
@@ -9778,7 +9823,7 @@ function drawPlayer(){
   // Longboard: SEND IT becomes a compact speed tuck; braking reads as a deliberate speed-check carve.
   const tuck=Math.max(sendPose,speedStance*.92);
   const check=brakePose;
-  const crouch=2+squash+(tuck*6)+(check*3)+(linePose*1.5)+(rampRead*1.15)+(preload*4.6)-(launchExtension*3.3)+(rampRollLoad*4.2)-(rampRollSettle*1.2)+(naturalLoad*3.2)-(naturalExtension*2.8)+(crestCatchSet*2.2)+(pumpLoad*4.9)-(pumpRelease*2.5)+(recoveryLoad*3.0)-(recoveryFlow*2.0)-(recoveryAbsorb*.6)+(landingSpot*1.35)+(landingBrace*4.15)+(absorbSet*3.1)+(airLanding?.45:0)-(rampReleaseProfile.vertical*3.2)+(rampReleaseProfile.compact*1.5)+(quickPopTuck*4.5)-(quickPopExtension*3.0)-(quickPopReopen*.7);
+  const crouch=2+squash+(tuck*6)+(check*3)+(linePose*1.5)+(rampRead*1.15)+(preload*4.6)-(launchExtension*3.3)+(rampRollLoad*4.2)-(rampRollSettle*1.2)+(naturalLoad*3.2)-(naturalExtension*2.8)+(crestCatchSet*2.2)+(pumpLoad*4.9)-(pumpRelease*2.5)+(recoveryLoad*3.0)-(recoveryFlow*2.0)-(recoveryAbsorb*.6)+(landingSpot*1.35)+(landingBrace*4.15)+(absorbSet*3.1)+(airLanding?.45:0)-(rampReleaseProfile.vertical*3.2)+(rampReleaseProfile.compact*1.5)+(quickPopTuck*4.5)-(quickPopExtension*3.0)-(quickPopReopen*.7)+(tabletopLoad*2.8)-(tabletopRelease*1.8);
   const bank=player.onGround?carve*.10*pace*(1+.75*check):0;
   ctx.rotate(bank);
   const hipY=9+crouch*.55, shoulderY=-6+crouch*.35, headY=-18+crouch*.38;
@@ -10417,6 +10462,28 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A158 validation probe: ramp foundation remains stabilized through the catch/recovery handoff.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampFoundationHandoffOverlap=(rideMode=mode)=>rampFoundationHandoffOverlap(rideMode);
+}
+// v221-A192 validation probe: post-terrain decorative passes keep a phone-sized air gap
+// above the authoritative ground line; hazards and course cues are not routed through this clip.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideEnvironmentOcclusion=(width=844,height=390)=>({
+  clearance:sideEnvironmentOcclusionClearance(width,height),
+  passes:['environmentSignature','foregroundDepth','dynamicAtmosphere']
+ });
+}
+// v221-A191 validation probe: ride-through posture follows rise -> deck -> run-out without
+// changing any tabletop terrain or physics values.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.tabletopRideAnimation=(u=.22)=>{
+  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+  let load=0,deck=0,release=0;
+  if(u<-.08||u>1.04)return{active:0,load,deck,release,u};
+  if(u<0)load=.34*smooth((u+.08)/.08);
+  else if(u<.22)load=.34+.66*smooth(u/.22);
+  else if(u<.68){const t=(u-.22)/.46;load=1-.70*smooth(Math.min(1,t/.55));deck=smooth(t);}
+  else{const t=Math.max(0,Math.min(1,(u-.68)/.32));load=.30*(1-smooth(t));deck=1-smooth(t);release=Math.sin(t*Math.PI);}
+  return{active:1,load,deck,release,u};
+ };
 }
 // v221-A190 validation probe: tabletop seams retain their authored heights while their
 // local slope approaches zero on both sides of every shoulder/deck handoff.
