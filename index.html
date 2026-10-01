@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A188</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A190</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -372,7 +372,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A188';
+const BUILD_VERSION='v221-A190';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -2595,6 +2595,20 @@ function stepTerrainReconnectMultiplier(u,kind){
  const e=q*q*(3-2*q);
  return 1-e;
 }
+// v221-A190 higher-refinement Terrain/Course: tabletops now use zero-slope smoothstep
+// shoulders at the run-in, deck and run-out seams. The established 22% rise, 46% deck and 32%
+// exit proportions and peak height are unchanged; only the abrupt grade kinks are removed.
+function tabletopTerrainShape(u,A){
+ if(u<=0||u>=1)return 0;
+ const riseEnd=.22,fallStart=.68;
+ if(u<riseEnd){
+  const t=u/riseEnd,e=t*t*(3-2*t);
+  return -A*e;
+ }
+ if(u<=fallStart)return -A;
+ const t=(u-fallStart)/(1-fallStart),e=t*t*(3-2*t);
+ return -A*(1-e);
+}
 function featureShape(f,wx){
  let u=(wx-f.x)/f.width;
  if(u<0||u>1)return 0;
@@ -2619,11 +2633,7 @@ function featureShape(f,wx){
   return A*rampTerrainOffsetRatio(u,mode);
  }
  if(f.kind==='steep') return u<.2 ? -A*(u/.2) : -A + A*((u-.2)/.8);
- if(f.kind==='tabletop') {
-  if(u<.22)return -A*(u/.22);
-  if(u<.68)return -A;
-  return -A*(1-(u-.68)/.32);
- }
+ if(f.kind==='tabletop') return tabletopTerrainShape(u,A);
  if(f.kind==='bowl'||f.kind==='gully'||f.kind==='dip') return Math.sin(u*Math.PI)*A;
  if(f.kind==='drop') return u<.42 ? -A*(u/.42) : u<.58 ? -A : -A*(1-(u-.58)/.42);
  if(f.kind==='stepdown'){
@@ -3213,6 +3223,15 @@ function armRampRollGroundLatch(f,riderWx=world+player.x+18){
 }
 function rampRollGroundLatchActive(riderWx=world+player.x+18){
  return Number.isFinite(rampRollGroundLatchEnd)&&riderWx<=rampRollGroundLatchEnd;
+}
+// v221-A189 higher-refinement Gameplay/Physics: once Jimmy has physically committed to
+// rolling an authored ramp at the lip, releasing BRAKE on the next frame must not silently
+// convert that same line into an automatic launch. The commitment persists only for that ramp;
+// JUMP preload and SEND IT still override it immediately.
+function rampRollCommitmentProfile(activeNow,committedKey,rollKey,sending=false,manualPop=false){
+ const override=!!(sending||manualPop);
+ const committed=!!(!override&&committedKey&&committedKey===rollKey);
+ return{controlled:!!activeNow||committed,committed,override};
 }
 // v221-A45 Jimmy & animation: a controlled A43/A44 ramp roll now has its own grounded
 // absorption/recenter envelope instead of borrowing the launch extension pose. This is visual-only:
@@ -5365,11 +5384,12 @@ function update(dt){
    const releaseU=rampTerrainProfile(mode).lip-.01;
    const minLaunchSpeed=manualRampPop?3.35:3.8;
    const rampRoll=rampRollThroughProfile(speed,braking,brakeHold,sendIt,manualRampPop,mode);
-   const controlledRoll=rampRoll.active;
+   const rollKey=rampFeature.label||('ramp-'+Math.round(rampFeature.x));
+   const rollCommit=rampRollCommitmentProfile(rampRoll.active,rampRollCueFeature,rollKey,sendIt,manualRampPop);
+   const controlledRoll=rollCommit.controlled;
    if(controlledRoll&&ru>=releaseU&&ru<=.79){
     armRampRollGroundLatch(rampFeature,world+player.x+18);
-    const rollKey=rampFeature.label||('ramp-'+Math.round(rampFeature.x));
-    if(rampRollCueFeature!==rollKey){
+    if(!rollCommit.committed&&rampRollCueFeature!==rollKey){
      rampRollCueFeature=rollKey;
      physicsCue=rampRoll.brake?'RAMP ROLLED · CONTROL':'RAMP ROLLED · LOW SPEED';physicsCueTimer=.72;
     }
@@ -10397,6 +10417,19 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A158 validation probe: ramp foundation remains stabilized through the catch/recovery handoff.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampFoundationHandoffOverlap=(rideMode=mode)=>rampFoundationHandoffOverlap(rideMode);
+}
+// v221-A190 validation probe: tabletop seams retain their authored heights while their
+// local slope approaches zero on both sides of every shoulder/deck handoff.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.tabletopTerrainShape=(u=.22,A=.06)=>tabletopTerrainShape(u,A);
+}
+// v221-A189 validation probe: a committed ramp roll survives BRAKE release, but explicit
+// JUMP/SEND IT input still overrides the commitment.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.rampRollCommitment=(activeNow=false,committed=true,sending=false,manualPop=false)=>{
+  const key='TEST RAMP';
+  return{...rampRollCommitmentProfile(activeNow,committed?key:'',key,sending,manualPop)};
+ };
 }
 // v221-A157 validation probe: natural low-speed ramp contact vs deliberate BRAKE roll.
 if(window.CRASHN_JIMMY_QA){
