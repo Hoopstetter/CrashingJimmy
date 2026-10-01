@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A178</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A179</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -362,7 +362,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A178';
+const BUILD_VERSION='v221-A179';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1647,6 +1647,17 @@ function lineTimePbAudioProfile(rideMode=mode){
   {delay:132,freq:root*1.50,dur:.095,wave:'sine',gain:.021,slide:34}
  ]};
 }
+// v221-A179 UI/Sound/Polish: TACTICAL PACE gets a compact three-note finish confirmation.
+// The first note reads like a settled speed check, then the motif opens upward into pace.
+// Pure tones only: no continuous/noise layer, and results snapshots never replay it.
+function tacticalPaceAudioProfile(rideMode=mode){
+ const root=rideMode==='snow'?294:rideMode==='bike'?276:312;
+ return{label:'TACTICAL PACE',notes:[
+  {delay:0,freq:root,dur:.055,wave:'sine',gain:.016,slide:-18},
+  {delay:76,freq:root*1.34,dur:.066,wave:'triangle',gain:.019,slide:42},
+  {delay:150,freq:root*1.72,dur:.092,wave:'sine',gain:.018,slide:55}
+ ]};
+}
 function sfx(kind,detail=''){
  if(!audioOn)return;
  if(kind==='jump')tone(240,.09,'triangle',.04,170);
@@ -1699,6 +1710,10 @@ function sfx(kind,detail=''){
  }
  else if(kind==='precision'){
   const p=precisionRankAudioProfile(detail);
+  p.notes.forEach(n=>setTimeout(()=>tone(n.freq,n.dur,n.wave,n.gain,n.slide),n.delay));
+ }
+ else if(kind==='tacticalpace'){
+  const p=tacticalPaceAudioProfile();
   p.notes.forEach(n=>setTimeout(()=>tone(n.freq,n.dur,n.wave,n.gain,n.slide),n.delay));
  }
  else if(kind==='chasejump'){
@@ -5833,11 +5848,18 @@ function results(crashed,injury,hit,snapshot=null){
  // Re-opening RESULTS from details/share reuses the snapshot and does not replay the fanfare.
  if(!snapshot){
   const progressionAdvanced=linecraftAdvanced||riderRangeAdvanced||completeTourAdvanced||routeRangeAdvanced||adaptationAdvanced;
+  const rankCue=precisionAdvanced||progressionAdvanced;
   if(precisionAdvanced)setTimeout(()=>sfx('precision',precisionAfter.tier),170);
   else if(progressionAdvanced)setTimeout(()=>sfx('linecraft'),170);
   // Give the stopwatch its own audible lock. If another persistent rank also advanced,
   // defer this cue so the two confirmations stay readable instead of stacking on top of each other.
-  if(lineTimeNew)setTimeout(()=>sfx('linetimepb'),precisionAdvanced||progressionAdvanced?620:170);
+  if(lineTimeNew)setTimeout(()=>sfx('linetimepb'),rankCue?620:170);
+  // v221-A179 UI/Sound/Polish: the new finish-gated TACTICAL PACE award gets one restrained,
+  // readable confirmation. Schedule it after any rarer persistent rank/PB cues instead of stacking.
+  if(tacticalBonus.complete){
+   const tacticalDelay=rankCue&&lineTimeNew?980:(rankCue||lineTimeNew?620:170);
+   setTimeout(()=>sfx('tacticalpace'),tacticalDelay);
+  }
  }
  appEl.classList.add('postrun');overlay.style.display='flex';
  const crashContext=snapshot?.crashContext||lastCrashContext;
@@ -9846,6 +9868,12 @@ if(window.CRASHN_JIMMY_QA){
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.tacticalPaceFinishBonus=(reads=1,fast=1,crashed=false)=>
   ({...tacticalPaceFinishBonus(!!crashed,reads,fast)});
+}
+
+// v221-A179 validation hook: deterministic tonal recipe for the TACTICAL PACE finish cue.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.tacticalPaceAudioProfile=(rideMode=mode)=>
+  ({...tacticalPaceAudioProfile(rideMode),notes:tacticalPaceAudioProfile(rideMode).notes.map(n=>({...n}))});
 }
 
 // v221-A120 validation hooks: natural terrain releases expose the bounded momentum-transfer budget.
