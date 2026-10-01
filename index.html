@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A182</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A185</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -364,7 +364,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A182';
+const BUILD_VERSION='v221-A185';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -446,12 +446,27 @@ function sideReadabilityProfile(width=(lastCanvasCssW||W),height=(lastCanvasCssH
   compactCue:phone
  };
 }
+// v221-A184 higher-refinement Environment/Graphics: SIDE now gets the same kind of
+// atmospheric hierarchy as CHASE. Deep identity/landmark layers recede the most, section framing
+// sits in the middle, and only the nearest non-gameplay atmosphere keeps the prior phone strength.
+// No obstacle, terrain, collision or course-cue rendering is included in this pass.
+function sideBackgroundDepthProfile(name,width=(lastCanvasCssW||W),height=(lastCanvasCssH||H)){
+ const rp=sideReadabilityProfile(width,height);
+ const far=['background','environmentIdentity','sectionAtmosphere','landmarks'].includes(name);
+ const mid=['expertScenery','cinematic','premium'].includes(name);
+ const tier=far?'far':mid?'mid':'near';
+ if(!rp.phone)return{tier,phone:false,landscape:rp.landscape,alpha:1,saturation:1,contrast:1,brightness:1};
+ const q=rp.landscape
+  ?(tier==='far'?[.40,.48,.86,1.06]:tier==='mid'?[.48,.56,.90,1.035]:[.54,.64,.92,1.015])
+  :(tier==='far'?[.56,.60,.89,1.045]:tier==='mid'?[.62,.66,.91,1.025]:[.67,.72,.92,1.01]);
+ return{tier,phone:true,landscape:rp.landscape,alpha:q[0],saturation:q[1],contrast:q[2],brightness:q[3]};
+}
 function drawSideBackgroundPass(name,fn){
- const p=sideReadabilityProfile();
+ const p=sideBackgroundDepthProfile(name);
  ctx.save();
  if(p.phone){
-  ctx.globalAlpha*=p.backgroundAlpha;
-  ctx.filter=`saturate(${p.backgroundSaturation}) contrast(.92)`;
+  ctx.globalAlpha*=p.alpha;
+  ctx.filter=`saturate(${p.saturation}) contrast(${p.contrast}) brightness(${p.brightness})`;
  }
  safeVisualPass(name,fn);
  ctx.restore();
@@ -8618,12 +8633,22 @@ function crashReactionProfile(hit,progress,rideMode=mode){
  else if(rideMode==='board'){twist*=group==='stability'?1.35:1.08;lean+=group==='stability'?-.04:0}
  return{group,reflex,protect,tuck,brace,twist,lean,knee,sideBias};
 }
+// v221-A183 higher-refinement Jimmy/Animation: use one decelerating tumble envelope for the
+// live rider and the attached impact scan. CHASE previously rotated at a constant rate almost
+// to the result transition; the eased envelope preserves the same final rotation while letting
+// Jimmy visibly compact and settle into the late protective slide/roll.
+function crashTumbleEnvelope(progress){
+ const t=Math.max(0,Math.min(1,progress));
+ const tumble=Math.max(0,Math.min(1,(t-.075)/.925));
+ const ease=1-Math.pow(1-tumble,2);
+ return{tumble,ease};
+}
 // v221-A143 Jimmy & animation: keep the live impact scan attached to the same cause-aware
 // reflex and tumble transform as Jimmy. Visual only: crash physics/timing/scoring are unchanged.
 function crashImpactScanPose(progress,hit,rideMode=mode,view='side'){
  const t=Math.max(0,Math.min(1,progress)),r=crashReactionProfile(hit,t,rideMode),reflex=r.reflex;
- const tumble=Math.max(0,Math.min(1,(t-.075)/.925)),ease=1-Math.pow(1-tumble,2);
- if(view==='chase')return{x:r.lean*18*reflex,y:r.tuck*3*reflex,rot:tumble*Math.PI*(hit==='wobble'?1.4:2.2)+r.twist*reflex,reaction:r};
+ const tumble=crashTumbleEnvelope(t),ease=tumble.ease;
+ if(view==='chase')return{x:r.lean*18*reflex,y:r.tuck*3*reflex,rot:ease*Math.PI*(hit==='wobble'?1.4:2.2)+r.twist*reflex,reaction:r};
  let sportRot=rideMode==='snow'?-.18+ease*1.55:rideMode==='bike'?ease*1.25:Math.sin(t*26)*(1-t)*.18+ease*.85;
  return{x:r.lean*12*reflex,y:r.tuck*2.5*reflex,rot:sportRot+r.twist*reflex,reaction:r};
 }
@@ -8664,7 +8689,7 @@ function drawChaseCrashGear(progress,hit){
 function drawChaseCrashPlayer(progress,hit){
  const p=Math.max(0,Math.min(1,progress)),reaction=crashReactionProfile(hit,p,mode);
  const guard=Math.max(reaction.reflex,reaction.protect*.90);
- const tumble=Math.max(0,Math.min(1,(p-.075)/.925)),spin=tumble*Math.PI*(hit==='wobble'?1.4:2.2)+reaction.twist*reaction.reflex;
+ const tumble=crashTumbleEnvelope(p),spin=tumble.ease*Math.PI*(hit==='wobble'?1.4:2.2)+reaction.twist*reaction.reflex;
  const x=W*.5+Math.sin(p*11)*W*.025+reaction.lean*18*reaction.reflex,y=H*.80+p*H*.06+reaction.tuck*3*guard;
  const brace=reaction.brace*guard,knee=reaction.knee*guard,side=reaction.sideBias;
  const armSpread=22-brace*7,armDrop=2+reaction.tuck*8*guard;
@@ -8740,7 +8765,7 @@ function drawScene(){
  if(mode==='snow'){gg.addColorStop(0,'#fbfdff');gg.addColorStop(.32,'#e7f0f5');gg.addColorStop(1,'#a8bcc9')}
  else if(mode==='bike'){gg.addColorStop(0,'#b58a5e');gg.addColorStop(.4,'#8d6849');gg.addColorStop(1,'#554333')}
  else{gg.addColorStop(0,'#767c80');gg.addColorStop(.45,'#585e62');gg.addColorStop(1,'#3b4044')}
- ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('speedDepthCue',speedDepthCuePass);drawSideBackgroundPass('environmentSignature',environmentSignaturePass);drawSideBackgroundPass('foregroundDepth',foregroundDepth);drawSideBackgroundPass('dynamicAtmosphere',dynamicAtmospherePass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);obstacles.forEach(drawObstacle)
+ ctx.fillStyle=gg;ctx.fill();safeVisualPass('terrainContour',terrainContourDepthPass);safeVisualPass('texture',texture);safeVisualPass('surfaceGrain',worldAnchoredSurfaceGrainPass);safeVisualPass('crestCatchReveal',crestCatchRevealPass);safeVisualPass('terrainShadows',terrainLightShadowPass);safeVisualPass('pumpLighting',pumpTransferLightingPass);safeVisualPass('terrainMaterial',terrainFeatureMaterialPass);safeVisualPass('launchSurface',launchSurfaceContinuityPass);safeVisualPass('launchCatchDepth',launchCatchDepthPass);safeVisualPass('speedDepthCue',speedDepthCuePass);drawSideBackgroundPass('environmentSignature',environmentSignaturePass);drawSideBackgroundPass('foregroundDepth',foregroundDepth);drawSideBackgroundPass('dynamicAtmosphere',dynamicAtmospherePass);safeVisualPass('wayfinding',namedSectionWayfindingPass);safeVisualPass('contactShadows',terrainContactShadows);safeVisualPass('crossingIntent',drawSideCrossingIntentPass);obstacles.forEach(drawObstacle)
  }finally{endSideCourseCamera(sideCameraState)}
 }
 function drawLocationIntro(now){
@@ -8810,6 +8835,67 @@ function drawSideAdjacentPropCue(o,x,terrainY){
  const p=adjacentPropCueProfile(),cx=x+(o.w||30)*.5,ww=Math.max(15,Math.min(46,(o.w||30)*.48));
  ctx.save();ctx.globalAlpha=p.alpha;ctx.strokeStyle=`rgba(${p.rgb},.82)`;ctx.lineWidth=1;ctx.setLineDash([3,4]);
  ctx.beginPath();ctx.ellipse(cx,terrainY+3,ww,3.4,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+
+// v221-A185 higher-refinement Props/Hazards/Events: SIDE now shows the same staged crossing
+// intent CHASE already communicates, but as restrained sport-native marks embedded in the riding
+// surface. The trace is visual only: it changes no collision, actor timing, velocity, scoring,
+// event frequency, wildlife, brake thresholds or spawn spacing. A successful yield collapses the
+// trace to the shoulder so Jimmy can read that the active line has opened without a callout bubble.
+const SIDE_CROSSING_INTENT_TYPES=new Set(['skier','hiker','pedestrian','snowcat','trailcart','utilityvan']);
+function sideCrossingIntentProfile(type,rideMode=mode){
+ const maintenance=type==='snowcat'||type==='trailcart'||type==='utilityvan';
+ if(rideMode==='snow')return{kind:maintenance?'groomer':'ski',span:maintenance?92:68,alpha:maintenance?.30:.24};
+ if(rideMode==='bike')return{kind:maintenance?'cart':'foot',span:maintenance?86:64,alpha:maintenance?.29:.23};
+ return{kind:maintenance?'driveway':'walk',span:maintenance?98:70,alpha:maintenance?.28:.23};
+}
+function sideCrossingIntentPlans(leftWx=world-90,rightWx=world+W+120,rideMode=mode){
+ const out=[];
+ for(const o of obstacles){
+  if(!o||o.decor||o.wildlife||o.surfaceHazard||!SIDE_CROSSING_INTENT_TYPES.has(o.type))continue;
+  if(!(o.event||o.maintenance))continue;
+  const centerWx=o.wx+(o.w||30)*.5;
+  if(centerWx<leftWx||centerWx>rightWx)continue;
+  const p=sideCrossingIntentProfile(o.type,rideMode);
+  const seedSide=((Math.floor(o.wx/170)%2)*2-1)||1;
+  const sourceSide=o.yieldClear?(o.yieldSide||seedSide):seedSide;
+  const state=o.yieldClear?'yield':o.reacted?'commit':'approach';
+  out.push({o,type:o.type,centerWx,state,sourceSide,p,alpha:p.alpha*(o.companion?.68:1)});
+ }
+ return out.sort((a,b)=>a.centerWx-b.centerWx);
+}
+function drawSideCrossingIntentPass(){
+ const plans=sideCrossingIntentPlans();if(!plans.length)return;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ for(const q of plans){
+  const x=q.centerWx-world;if(x<-110||x>W+110)continue;
+  const y=groundY(x)+2,side=q.sourceSide||1,yieldState=q.state==='yield',commitState=q.state==='commit';
+  const span=q.p.span,from=x+side*span*.70,to=x+(yieldState?side*span*.20:-side*span*.58);
+  const alpha=q.alpha*(commitState?1.16:yieldState?.72:1);
+  ctx.globalAlpha=alpha;
+  if(mode==='snow'){
+   ctx.strokeStyle=q.p.kind==='groomer'?'rgba(84,117,136,.92)':'rgba(89,133,155,.88)';
+   ctx.lineWidth=q.p.kind==='groomer'?2.0:1.35;
+   const sep=q.p.kind==='groomer'?6:4;
+   for(const dy of [-sep*.5,sep*.5]){ctx.beginPath();ctx.moveTo(from,y+dy);ctx.quadraticCurveTo((from+to)*.5,y+dy-3,to,y+dy);ctx.stroke()}
+  }else if(mode==='bike'){
+   ctx.strokeStyle=q.p.kind==='cart'?'rgba(92,65,45,.90)':'rgba(110,75,50,.86)';
+   ctx.lineWidth=q.p.kind==='cart'?2.1:1.35;
+   const pieces=q.p.kind==='cart'?6:5;
+   for(let i=0;i<pieces;i++){
+    const t=(i+.15)/(pieces+.1),px=from+(to-from)*t,py=y-Math.sin(t*Math.PI)*2.2;
+    const len=q.p.kind==='cart'?8:5.5;ctx.beginPath();ctx.moveTo(px-side*len*.5,py);ctx.lineTo(px+side*len*.5,py+side*.35);ctx.stroke();
+   }
+  }else{
+   const vehicle=q.p.kind==='driveway';ctx.strokeStyle=vehicle?'rgba(207,193,171,.72)':'rgba(232,226,214,.66)';ctx.lineWidth=vehicle?1.9:1.3;
+   const bars=vehicle?4:3;
+   for(let i=0;i<bars;i++){
+    const t=(i+.3)/(bars+.2),px=from+(to-from)*t,py=y-Math.sin(t*Math.PI)*1.6,len=vehicle?10:7;
+    ctx.beginPath();ctx.moveTo(px-side*len*.55,py);ctx.lineTo(px+side*len*.55,py);ctx.stroke();
+   }
+  }
+ }
+ ctx.restore();
 }
 
 function drawObstacle(o){
@@ -9711,8 +9797,8 @@ function drawCrashPlayer(progress,hit){
  const t=Math.max(0,Math.min(1,progress));
  const reaction=crashReactionProfile(hit,t,mode),reflex=reaction.reflex;
  const guard=Math.max(reflex,reaction.protect*.90);
- const tumble=Math.max(0,Math.min(1,(t-.075)/.925));
- const ease=1-Math.pow(1-tumble,2);
+ const tumble=crashTumbleEnvelope(t);
+ const ease=tumble.ease;
  ctx.save();
  ctx.translate(player.x+18+reaction.lean*12*reflex,player.y+26+reaction.tuck*2.5*guard);
  ctx.rotate(reaction.twist*reflex);
@@ -9900,6 +9986,32 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.stepTerrainReconnect=(u=.92,kind='ledge')=>({
   multiplier:stepTerrainReconnectMultiplier(u,kind)
  });
+}
+// v221-A183 validation hook: late crash rotation decelerates while preserving its final angle.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.crashTumbleEnvelope=(progress=.82)=>({...crashTumbleEnvelope(progress)});
+}
+// v221-A184 validation hooks: SIDE background atmosphere must preserve a strict far/mid/near
+// hierarchy on phones while leaving desktop rendering at full strength.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideBackgroundDepth=(name='background',width=844,height=390)=>({...sideBackgroundDepthProfile(name,width,height)});
+ window.CRASHN_JIMMY_QA.sideBackgroundDepthMatrix=(width=844,height=390)=>['background','expertScenery','foregroundDepth'].map(name=>({name,...sideBackgroundDepthProfile(name,width,height)}));
+}
+
+// v221-A185 validation hooks: SIDE crossing intent remains visual-only and preserves
+// approach / commit / yield state across all three sports.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideCrossingIntentProfile=(type='hiker',rideMode='bike')=>({...sideCrossingIntentProfile(type,rideMode)});
+ window.CRASHN_JIMMY_QA.sideCrossingIntentProbe=(type='hiker',rideMode='bike',state='approach')=>{
+  const oldObstacles=obstacles,maintenance=['snowcat','trailcart','utilityvan'].includes(type);
+  const centerWx=world+player.x+340;
+  obstacles=[{wx:centerWx-20,type,w:maintenance?82:34,h:maintenance?46:54,event:!maintenance,maintenance,wildlife:false,decor:false,surfaceHazard:false,companion:false,reacted:state!=='approach',yieldClear:state==='yield',yieldSide:1}];
+  const plans=sideCrossingIntentPlans(world-90,world+W+120,rideMode).map(q=>({type:q.type,state:q.state,sourceSide:q.sourceSide,kind:q.p.kind,span:q.p.span,alpha:q.alpha,centerWx:q.centerWx}));
+  obstacles=oldObstacles;return{type,rideMode,state,plans,finite:plans.every(q=>[q.sourceSide,q.span,q.alpha,q.centerWx].every(Number.isFinite))};
+ };
+ window.CRASHN_JIMMY_QA.sideCrossingIntentMatrix=()=>[
+  ['snow','skier'],['snow','snowcat'],['bike','hiker'],['bike','trailcart'],['board','pedestrian'],['board','utilityvan']
+ ].flatMap(([rideMode,type])=>['approach','commit','yield'].map(state=>window.CRASHN_JIMMY_QA.sideCrossingIntentProbe(type,rideMode,state)));
 }
 
 // v221-A120 validation hooks: natural terrain releases expose the bounded momentum-transfer budget.
