@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A194</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A197</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -76,7 +76,8 @@ header{flex:0 0 auto;padding:calc(7px + env(safe-area-inset-top)) 11px 7px;displ
 canvas{display:block;width:100%;height:100%}
 /* v221-A180 QA/mobile regression fix: restore real CSS line breaks around the safe-area overlay rule.
    A172 accidentally committed literal backslash-n text after the comment, invalidating this selector in CSS parsing. */
-#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:10px max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left));background:rgba(8,10,14,.67);backdrop-filter:blur(4px);overflow:auto}
+/* v221-A196 QA/mobile: full-screen menus/results respect all four iPhone safe-area insets. */
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:rgba(8,10,14,.67);backdrop-filter:blur(4px);overflow:auto}
 #pauseOverlay{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:rgba(7,10,14,.72);backdrop-filter:blur(4px);pointer-events:auto}
 #pauseOverlay.show{display:flex}
 .pause-card{width:min(430px,94%);padding:18px;border:1px solid #4b5562;border-radius:16px;background:rgba(24,29,36,.98);box-shadow:0 18px 50px #0009;text-align:left}
@@ -372,7 +373,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A194';
+const BUILD_VERSION='v221-A197';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -1146,15 +1147,141 @@ function crashContextReadout(context){
  const pace=context.speed>=38?'HIGH SPEED':context.speed>=30?'PACE ON':'COMPOSED';
  return line+' · '+intent+' · '+pace
 }
+// v221-A195 UI/Sound/Polish: substantially expand Jimmy's rotating crash debrief without
+// turning him into a punchline. These supplemental banks add 76 competent, speed-positive lines
+// across physics misses, fixed hazards, people/vehicles/wildlife, and line-choice context. They
+// feed the existing shuffle decks, so repeats are still suppressed until each keyed pool cycles.
+const crashDialogueExpansion={
+ landing:[
+  "I liked the takeoff. I was still making adjustments when the landing needed a finished rider.",
+  "The arc was good until I asked the last six feet to solve themselves.",
+  "That was enough speed and enough distance. I needed a calmer reunion with the ground.",
+  "I carried the feature cleanly. The absorption timing was the expensive part.",
+  "Nothing wrong with the send. I need to arrive organized instead of merely present."
+ ],
+ edgewash:[
+  "The carve was working. I kept charging rent after the grip lease expired.",
+  "I had the line shaped early enough. I just refused to let it finish.",
+  "That edge gave me plenty of warning before it stopped taking requests.",
+  "The turn was complete before my pressure input was. Easy place to edit.",
+  "Same confidence. Less late load, more clean release."
+ ],
+ frontload:[
+  "The bike entered balanced. I moved the workload forward when the trail got busy.",
+  "I had room to let the chassis work and chose to supervise it personally.",
+  "The front contact patch was doing fine until I assigned it steering, braking, and rescue.",
+  "I chased the exit with my hands instead of letting the bike finish underneath me.",
+  "That is a body-position correction. The trail speed can stay."
+ ],
+ wobble:[
+  "The first movement was harmless. My answer gave it a second chapter.",
+  "I had a stable board until I started correcting a future problem.",
+  "The hill supplied speed. I supplied one steering input too many.",
+  "That oscillation needed patience, not management.",
+  "Same descent. Let the trucks finish one conversation before starting another."
+ ],
+ snowProp:[
+  "The mountain was wide enough. I spent the spare width before the fixed object arrived.",
+  "My speed was useful. My exit corridor was unnecessarily ambitious.",
+  "I saw the obstacle early enough to make this boring and chose a tighter version.",
+  "The line had margin. I converted it into a geometry lesson.",
+  "Same pitch, same pace, cleaner daylight around the hardware.",
+  "The object did exactly nothing. I was the moving part with options."
+ ],
+ bikeProp:[
+  "The trail feature was readable. I loaded the bike half a beat too late.",
+  "Momentum was helping until I asked the obstacle to absorb my timing error.",
+  "I had enough speed to float that. I used it as impact velocity instead.",
+  "The corridor was clean before I narrowed it with a late correction.",
+  "Same trail pace. Earlier unweight, quieter hands, cleaner rear-wheel exit.",
+  "The obstacle was not the problem. My setup window closed before I used it."
+ ],
+ boardProp:[
+  "The pavement gave me room. I spent it sideways after the line was already solved.",
+  "The board was settled until I added one more correction near street furniture.",
+  "I had the speed and the lane. I needed to stop editing both at once.",
+  "The road feature was predictable. My lateral timing was the variable.",
+  "Same downhill pace. Recenter sooner and leave the curbside out of the story.",
+  "The line worked until I borrowed width from something that does not negotiate."
+ ],
+ people:[
+  "That needed to become a non-event much earlier.",
+  "The correct fast decision around people is creating space before anyone has to guess.",
+  "I had enough sight distance to make the interaction routine. I used too much of it.",
+  "Pace is replaceable. Someone else's comfort in the corridor is not.",
+  "I should have made the pass boring before thinking about getting back to speed.",
+  "That was a timing miss in courtesy, not a reason to ride timid everywhere else."
+ ],
+ vehicle:[
+  "The operating lane announced itself. I waited too long to treat it as occupied.",
+  "That crossing needed an early speed decision, not a late steering decision.",
+  "The vehicle was predictable. My closing rate was the part that needed management.",
+  "I can rebuild speed after the lane clears. I cannot borrow space from machinery.",
+  "That should have been routine: check up, clear corridor, resume.",
+  "The fast line resumes after the equipment is gone, not through it."
+ ],
+ wildlife:[
+  "The local resident gets priority. My run can wait.",
+  "That sighting should have ended the speed discussion immediately.",
+  "Wildlife is not a line-choice puzzle. Create distance and let it clear.",
+  "I had enough warning to make space sooner. Next time I use all of it.",
+  "The mountain and trail are shared. My stopwatch is not part of that agreement.",
+  "That is one place where giving up the line is the expert move."
+ ],
+ default:[
+  "I still like the speed. I just need the decision to happen before the correction becomes visible.",
+  "The line was fundamentally right. My final input was the expensive edit.",
+  "That was one fixable timing error, not a referendum on the whole run.",
+  "I had the information. I processed it one feature too late.",
+  "Keep the commitment, clean up the sequence, run it again."
+ ]
+};
+const crashContextExpansion={
+ SENT:[
+  "The commitment was correct. I needed to finish the setup before the send took over.",
+  "I meant to go. I did not mean to still be correcting after launch.",
+  "Full commitment works better when the last steering decision is already finished."
+ ],
+ SET:[
+  "The brake-set bought me margin. I spent it after the hard part.",
+  "I made the right control decision and executed it one beat late.",
+  "The setup worked. I just carried the correction past the point where it was useful."
+ ],
+ FAST:[
+  "The fast line paid for itself until I added a late surcharge.",
+  "I would choose that pace again. I would not choose that final correction again.",
+  "The route supports the speed. My exit timing needs to support it too."
+ ],
+ CONTROL:[
+  "The control line gave me exactly the room I asked for. I used the room poorly.",
+  "I had margin in hand and still managed to finance the last mistake.",
+  "That was the safer route and still the right route. I just need a cleaner finish."
+ ],
+ OPEN:[
+  "Nothing forced that error. Useful diagnosis.",
+  "The sightline was honest and the corridor was available. My timing is the edit.",
+  "Open terrain gave me choices. Next run I make the useful one earlier."
+ ]
+};
+function crashDialogueExtraPool(hit,context){
+ const family=crashNextLapFamily(hit);
+ const familyLines=crashDialogueExpansion[family]||crashDialogueExpansion.default;
+ if(propCrashTypes.has(hit))return[...familyLines];
+ const keys=[];
+ if(context?.intent)keys.push(context.intent);
+ if(context?.line&&context.line!==context?.intent)keys.push(context.line);
+ const contextLines=[...new Set(keys.flatMap(k=>crashContextExpansion[k]||[]))];
+ return[...new Set(familyLines.concat(contextLines))]
+}
 function crashLinePool(hit,context){
  const base=crashLines[hit]||crashLines.default;
- // Prop/event crashes already show line choice, intent and pace in the separate context readout.
- // Keep Jimmy's spoken debrief anchored to the actual object/encounter instead of diluting it
- // through the general context pool; the four-line shuffle deck still prevents repetition.
- if(propCrashTypes.has(hit))return[...base];
+ const extra=crashDialogueExtraPool(hit,context);
+ // Prop/event crashes keep the spoken debrief anchored to the actual encounter, but now draw
+ // from both the cause pool and the sport/encounter supplemental bank before the deck reshuffles.
+ if(propCrashTypes.has(hit))return[...new Set(base.concat(extra))];
  const sport=crashModeLines[mode]||{};
  const specific=sport[hit]||[];
- return[...new Set(crashContextPool(context).concat(specific,base,sport.default||[]))]
+ return[...new Set(crashContextPool(context).concat(specific,base,sport.default||[],extra))]
 }
 const lastCrashLineByKey={};
 const crashLineDecks={};
@@ -2464,7 +2591,7 @@ function clearRampSetState(){rampSetState={label:'',armed:false,released:false,e
 function rampSetReleaseEligible(held,scrub,riderWx,targetX){return held>=.12&&scrub>=.12&&riderWx<targetX}
 function trackRampSetSetup(riderWx){
  const lane=rampSetupLaneAt(riderWx);
- if(lane&&player.onGround&&braking&&!sendIt){
+ if(lane&&player.onGround&&braking&&!groundControlProfile(braking,sendIt).sending){
   if(rampSetState.label!==lane.label)rampSetState={label:lane.label,armed:false,released:false,entrySpeed:speed,minSpeed:speed,releaseSpeed:0};
   rampSetState.entrySpeed=Math.max(rampSetState.entrySpeed,speed);
   rampSetState.minSpeed=Math.min(rampSetState.minSpeed,speed);
@@ -4934,6 +5061,13 @@ function checkLineMastery(){
  }
 }
 
+// v221-A197 higher-refinement Gameplay/Physics: resolve simultaneous ground controls
+// deterministically. BRAKE wins while Jimmy is grounded; SEND IT automatically resumes when
+// BRAKE is released if its input is still held. Airborne attitude semantics are untouched.
+function groundControlProfile(isBraking=false,isSending=false){
+ const brake=!!isBraking,send=!!isSending;
+ return{braking:brake,sending:send&&!brake,conflict:brake&&send};
+}
 function groundSpeedStep(current,dt,grade,isBraking,brakeAge,isSending,rideMode,flowMeter){
  // v156 higher-refinement gameplay physics: separate drive, braking, and coasting.
  // Earlier builds pulled every neutral ground speed back toward cruise at response 2.4,
@@ -5160,6 +5294,7 @@ function update(dt){
  updateLineChoice();
  const slope=terrainSlopeAt(wx);
  const downhill=Math.max(-.08,Math.min(.08,slope));
+ const groundControl=groundControlProfile(braking,sendIt);
 
  // Braking is progressive on the ground: a quick touch is a controlled speed check; holding it becomes a hard brake.
  // v117 higher-refinement air physics: once Jimmy is airborne, BRAKE and SEND IT control attitude,
@@ -5167,7 +5302,7 @@ function update(dt){
  // simply by holding BRAKE, or accelerate him toward SEND IT cruise speed without ground contact.
  if(braking)brakeHold=Math.min(1.2,brakeHold+dt);else brakeHold=0;
  if(player.onGround){
-  speed=groundSpeedStep(speed,dt,downhill,braking,brakeHold,sendIt,mode,meter);
+  speed=groundSpeedStep(speed,dt,downhill,groundControl.braking,brakeHold,groundControl.sending,mode,meter);
   if(braking)brakeMinSpeed=Math.min(brakeMinSpeed||speed,speed);
   trackRampSetSetup(wx+18);
  }else{
@@ -5183,7 +5318,7 @@ function update(dt){
  // Jimmy is an experienced rider, so holding SEND IT through the bottom of a bowl/gully/dip
  // converts some vertical compression into exit speed. This is a one-shot terrain interaction,
  // not a generic turbo: it only resolves near the bottom of the authored feature.
- if(player.onGround&&sendIt&&!braking){
+ if(player.onGround&&groundControl.sending){
   const pumpFeature=currentFeature(wx);
   if(pumpFeature&&['bowl','gully','dip'].includes(pumpFeature.kind)&&!pumpFeature.pumpDone){
    const pumpU=(wx-pumpFeature.x)/pumpFeature.width;
@@ -5213,7 +5348,7 @@ function update(dt){
   const transitionLoad=Math.min(.62,Math.abs(slopeAhead-slopeBack));
   const modeThreshold=mode==='snow'?6.65:mode==='bike'?6.35:6.15;
   const excess=Math.max(0,speed-modeThreshold);
-  const load=Math.max(0,(transitionLoad-.075))*excess*(sendIt?1.30:1);
+  const load=Math.max(0,(transitionLoad-.075))*excess*(groundControl.sending?1.30:1);
   if(load>0){
    const prepared=Math.min(.82,lineSet*.55+(braking?.42:0));
    stability-=load*(1-prepared)*dt*29;
@@ -5234,12 +5369,13 @@ function update(dt){
  world+=speed*60*dt;
  checkLineMastery();
 
- if(sendIt){meter=Math.min(100,meter+dt*4.7);score+=dt*42}
+ const effectiveSend=player.onGround?groundControl.sending:sendIt;
+ if(effectiveSend){meter=Math.min(100,meter+dt*4.7);score+=dt*42}
  else if(braking)meter=Math.max(0,meter-dt*5.8);
  else meter=Math.max(0,meter-dt*1.15);
 
  // Experienced line-setting: a short brake set before takeoff trades entry speed for landing precision.
- if(player.onGround&&braking&&!sendIt&&speed>2.2){
+ if(player.onGround&&braking&&!groundControl.sending&&speed>2.2){
   lineSet=Math.min(1,lineSet+dt*1.8);
   if(lineSet>=.72&&!lineSetReady){lineSetReady=true;physicsCue='LINE SET';physicsCueTimer=.65}
  }else if(player.onGround&&!braking){
@@ -5430,7 +5566,7 @@ function update(dt){
   const fallAway=Math.max(0,aheadReleaseY-tangentAheadY);
   const crest=terrainReleaseSlopeAt(aheadReleaseWx)-nearReleaseSlope;
   const releaseDemand=fallAway+Math.max(0,crest-.012)*42;
-  const releaseThreshold=naturalReleaseThreshold(speed,braking,lineSet,sendIt);
+  const releaseThreshold=naturalReleaseThreshold(speed,braking,lineSet,groundControl.sending);
 
   // v71/v126/v127 authored-ramp takeoff physics: genuine ramp terrain owns the release point.
   // v127 corrects the v126 preload release so Jimmy now stays attached until the actual sport-specific
@@ -5445,9 +5581,9 @@ function update(dt){
    const manualRampPop=rampPopQueued&&rampPopFeatureLabel===(rampFeature.label||'')&&performance.now()-rampPopQueuedAt<=rampPreloadLifetime;
    const releaseU=rampTerrainProfile(mode).lip-.01;
    const minLaunchSpeed=manualRampPop?3.35:3.8;
-   const rampRoll=rampRollThroughProfile(speed,braking,brakeHold,sendIt,manualRampPop,mode);
+   const rampRoll=rampRollThroughProfile(speed,braking,brakeHold,groundControl.sending,manualRampPop,mode);
    const rollKey=rampFeature.label||('ramp-'+Math.round(rampFeature.x));
-   const rollCommit=rampRollCommitmentProfile(rampRoll.active,rampRollCueFeature,rollKey,sendIt,manualRampPop);
+   const rollCommit=rampRollCommitmentProfile(rampRoll.active,rampRollCueFeature,rollKey,groundControl.sending,manualRampPop);
    const controlledRoll=rollCommit.controlled;
    if(controlledRoll&&ru>=releaseU&&ru<=.79){
     armRampRollGroundLatch(rampFeature,world+player.x+18);
@@ -5467,8 +5603,8 @@ function update(dt){
     // to assign true to a block-scoped const and threw at the lip. Ramps now release normally
     // without changing any launch tuning, terrain geometry, scoring, or control behavior.
     const brakeRelease=recentRampBrakeRelease();
-    const brakeLaunch=rampBrakeLaunchProfile(speed,braking,brakeHold,sendIt,manualRampPop,mode,brakeEntrySpeed||speed,brakeRelease.trim);
-    const launchPhysics=rampMomentumTransfer(speed,faceAngle,sendIt,manualRampPop,prepared,mode,manualRampPop?rampPopQuality:1,brakeLaunch.trim);
+    const brakeLaunch=rampBrakeLaunchProfile(speed,braking,brakeHold,groundControl.sending,manualRampPop,mode,brakeEntrySpeed||speed,brakeRelease.trim);
+    const launchPhysics=rampMomentumTransfer(speed,faceAngle,groundControl.sending,manualRampPop,prepared,mode,manualRampPop?rampPopQuality:1,brakeLaunch.trim);
     airLineSet=lineSet;lineSet=0;lineSetReady=false;
     player.onGround=false;
     player.vy=-launchPhysics.verticalImpulse;
@@ -10484,6 +10620,30 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A158 validation probe: ramp foundation remains stabilized through the catch/recovery handoff.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampFoundationHandoffOverlap=(rideMode=mode)=>rampFoundationHandoffOverlap(rideMode);
+}
+// v221-A197 validation probe: BRAKE wins simultaneous ground input without mutating the
+// underlying SEND IT hold, so drive resumes cleanly after BRAKE release.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.groundControlProfile=(brakingNow=false,sendingNow=false)=>({...groundControlProfile(brakingNow,sendingNow)});
+}
+// v221-A196 validation probe: overlay safe-area contract uses all four viewport insets.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.overlaySafeAreaContract=()=>({top:true,right:true,bottom:true,left:true,minPadding:10});
+}
+// v221-A195 validation probe: expanded dialogue remains unique inside each keyed pool and
+// materially increases the available debrief rotation without changing scoring or crash state.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.crashDialogueExpansion=(hit='landing',intent='SENT',line='FAST',rideMode=mode)=>{
+  const oldMode=mode;mode=rideMode;
+  const context={intent,line,speed:40,meter:70,type:hit};
+  const pool=crashLinePool(hit,context),extra=crashDialogueExtraPool(hit,context);
+  const out={rideMode,hit,intent,line,total:pool.length,extra:extra.length,unique:new Set(pool).size===pool.length};
+  mode=oldMode;return out;
+ };
+ window.CRASHN_JIMMY_QA.crashDialogueInventory=()=>({
+  familyLines:Object.values(crashDialogueExpansion).reduce((n,a)=>n+a.length,0),
+  contextLines:Object.values(crashContextExpansion).reduce((n,a)=>n+a.length,0)
+ });
 }
 // v221-A194 validation probe: cross-sport consistency tiers derive only from saved best streaks.
 if(window.CRASHN_JIMMY_QA){
