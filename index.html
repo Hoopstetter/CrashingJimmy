@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A181</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A182</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -364,7 +364,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A181';
+const BUILD_VERSION='v221-A182';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -2562,6 +2562,16 @@ function rampTerrainOffsetRatio(u,rideMode=mode){
  const ease=Math.min(1,baseEase+p.fallaway*earlyFallaway);
  return -p.rise*(1-ease);
 }
+// v221-A182 higher-refinement Terrain/Course: technical stair terrain now reconnects
+// continuously to the underlying grade instead of ending on a vertical height seam.
+// Only the final shelf/run-out is blended; the ledge/stair rhythm before it is unchanged.
+function stepTerrainReconnectMultiplier(u,kind){
+ const start=kind==='ledge'?.84:.86;
+ if(u<=start)return 1;
+ const q=Math.max(0,Math.min(1,(u-start)/(1-start)));
+ const e=q*q*(3-2*q);
+ return 1-e;
+}
 function featureShape(f,wx){
  let u=(wx-f.x)/f.width;
  if(u<0||u>1)return 0;
@@ -2619,13 +2629,15 @@ function featureShape(f,wx){
  if(f.kind==='ledge') {
   const steps=4,phase=Math.min(steps-1,Math.floor(u*steps)),local=u*steps-phase;
   const shelf=-(phase/(steps-1))*A*.72;
-  return shelf - (local<.18 ? A*.18*(local/.18) : A*.18*(1-(local-.18)/.82));
+  const raw=shelf - (local<.18 ? A*.18*(local/.18) : A*.18*(1-(local-.18)/.82));
+  return raw*stepTerrainReconnectMultiplier(u,'ledge');
  }
  if(f.kind==='streetsteps') {
   const steps=3,phase=Math.min(steps-1,Math.floor(u*steps)),local=u*steps-phase;
   const descent=(phase/(steps-1))*A*.48;
   const lip=local<.72 ? -A*.10*Math.sin((local/.72)*Math.PI) : A*.10*((local-.72)/.28);
-  return descent+lip-A*.24*u;
+  const raw=descent+lip-A*.24*u;
+  return raw*stepTerrainReconnectMultiplier(u,'streetsteps');
  }
  return 0;
 }
@@ -9881,6 +9893,13 @@ if(window.CRASHN_JIMMY_QA){
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.tacticalPaceAudioProfile=(rideMode=mode)=>
   ({...tacticalPaceAudioProfile(rideMode),notes:tacticalPaceAudioProfile(rideMode).notes.map(n=>({...n}))});
+}
+
+// v221-A182 validation hook: technical ledges/stairs must blend back to zero height at exit.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.stepTerrainReconnect=(u=.92,kind='ledge')=>({
+  multiplier:stepTerrainReconnectMultiplier(u,kind)
+ });
 }
 
 // v221-A120 validation hooks: natural terrain releases expose the bounded momentum-transfer budget.
