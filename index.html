@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A202</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A203</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -128,6 +128,8 @@ button:active{transform:translateY(1px)}
 /* v221-A187 UI/Sound/Polish: replay the existing cause-aware impact scene in place. */
 /* v221-A188 QA/mobile: A187's replay control stays visually compact, but its hit box now
    reaches a reliable phone target without increasing the results card or crash-scene height. */
+/* v221-A203 UI/Sound/Polish: the same compact control now advances among the three crash-analysis
+   views. Keep its established phone hit target; the label changes without growing the card. */
 .crash-scene .impact-replay-btn{position:absolute;right:8px;top:7px;z-index:4;min-width:92px;min-height:34px;padding:4px 7px;border:1px solid #cfe5ef55;border-radius:7px;background:rgba(8,11,15,.74);color:#eaf7fb;font-size:6.5px;font-weight:950;letter-spacing:.08em;line-height:1;box-shadow:none;text-shadow:none;touch-action:manipulation}
 .crash-scene .impact-replay-btn:before{content:'';position:absolute;inset:-5px -6px}
 .crash-scene .impact-replay-btn:active{transform:translateY(1px)}
@@ -373,7 +375,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A202';
+const BUILD_VERSION='v221-A203';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -6095,18 +6097,29 @@ function crashSceneMarkup(hit,variant=0){
   ${gear}
  </svg></div>`;
 }
+// v221-A203 UI/Sound/Polish: the result-card impact control now cycles the three existing
+// cause-aware crash analyses in place instead of merely restarting the same frame. This makes
+// FORCE PATH, X-RAY SCAN and MOTION TRACE directly inspectable after one crash without changing
+// scoring, crash state or result-card height. A short camera tick confirms the view change.
+const CRASH_ANALYSIS_VIEWS=['FORCE PATH','X-RAY SCAN','MOTION TRACE'];
+function crashAnalysisVariant(variant=0,step=1){return ((((variant|0)+step)%3)+3)%3}
 function crashSceneReplayMarkup(hit,variant=0){
- const markup=crashSceneMarkup(hit,variant),cut=markup.lastIndexOf('</div>');
- return cut<0?markup:markup.slice(0,cut)+`<button type="button" class="impact-replay-btn" id="replayImpact" aria-label="Replay crash impact analysis">REPLAY IMPACT</button>`+markup.slice(cut);
+ const v=((variant%3)+3)%3,next=crashAnalysisVariant(v,1);
+ const markup=crashSceneMarkup(hit,v),cut=markup.lastIndexOf('</div>');
+ const label=CRASH_ANALYSIS_VIEWS[next];
+ return cut<0?markup:markup.slice(0,cut)+`<button type="button" class="impact-replay-btn" id="replayImpact" aria-label="Show next crash analysis: ${label}">NEXT: ${label}</button>`+markup.slice(cut);
 }
 function bindCrashSceneReplay(hit,variant=0){
  const btn=$('replayImpact');if(!btn)return false;
  btn.onclick=e=>{
   e.preventDefault();e.stopPropagation();
   const current=card.querySelector('.crash-scene');if(!current)return;
-  const shell=document.createElement('div');shell.innerHTML=crashSceneReplayMarkup(hit,variant).trim();
+  const next=crashAnalysisVariant(variant,1);
+  const shell=document.createElement('div');shell.innerHTML=crashSceneReplayMarkup(hit,next).trim();
   const fresh=shell.firstElementChild;if(!fresh)return;
-  current.replaceWith(fresh);bindCrashSceneReplay(hit,variant);
+  current.replaceWith(fresh);
+  if(audioOn)sfx('camera');
+  bindCrashSceneReplay(hit,next);
  };
  return true;
 }
