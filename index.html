@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A203</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A205</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -263,8 +263,11 @@ button:active{transform:translateY(1px)}
  #signatureTrack.cleared{opacity:.78}
 }
 
+/* v221-A204 QA/mobile: A196 made the base overlay safe-area aware, but the compact portrait
+   override below still replaced its top/side insets with fixed pixels. Keep the same compact
+   portrait minimums while preserving any real iPhone safe-area inset on all four sides. */
 @media(max-width:600px) and (orientation:portrait){
- #overlay{align-items:flex-start;overflow:hidden;padding:4px 8px calc(76px + env(safe-area-inset-bottom))}
+ #overlay{align-items:flex-start;overflow:hidden;padding:max(4px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) calc(76px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
  #card{max-height:calc(100dvh - 148px);overflow:auto;padding:7px 8px;border-radius:11px;scrollbar-width:none}
  /* v221-A87 QA/mobile: A86's two-beat crash debrief stays genuinely readable on phones.
     The generic compact-result rule intentionally makes ordinary result copy tiny, but it also
@@ -375,7 +378,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A203';
+const BUILD_VERSION='v221-A205';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -3116,12 +3119,18 @@ function terrainSlopeAt(wx){
  return ((terrainNorm(wx+span)-terrainNorm(wx-span))*H)/(span*2)+SCREEN_DESCENT;
 }
 function terrainAngleAt(wx){return Math.atan(terrainSlopeAt(wx))}
-// v143 higher-refinement gameplay physics: natural terrain release uses a fixed design-space
-// grade instead of raw screen pixels, so portrait and landscape do not change when Jimmy
-// unweights over a crest. Speed and commitment lower the contact limit; braking raises it.
-function terrainReleaseSlopeAt(wx){
+// v221-A205 higher-refinement Gameplay/Physics: all grade-sensitive gameplay now samples a
+// fixed design-space slope instead of the current canvas height. Portrait and landscape may draw
+// the same hill at different screen steepness, but Jimmy's speed gain, stability load, manual-pop
+// character, brake-release return and surface-relative landing load remain physically identical.
+function terrainPhysicsSlopeAt(wx){
  const span=18,designHeight=620;
  return ((terrainNorm(wx+span)-terrainNorm(wx-span))*designHeight)/(span*2)+SCREEN_DESCENT;
+}
+// v143 higher-refinement gameplay physics: natural terrain release uses the same fixed design-space
+// grade so portrait and landscape do not change when Jimmy unweights over a crest.
+function terrainReleaseSlopeAt(wx){
+ return terrainPhysicsSlopeAt(wx);
 }
 function naturalReleaseThreshold(speed,brakingNow,lineReady,sending){
  const pace=Math.max(0,Math.min(1,(speed-4.7)/5.4));
@@ -4750,7 +4759,7 @@ function jump(){
   ensureAudio();sfx('jump');jumpBtn.classList.add('active');setTimeout(()=>jumpBtn.classList.remove('active'),120);
   airLineSet=Math.max(airLineSet,lineSet);lineSet=0;lineSetReady=false;
   const jumpWx=world+player.x;
-  const takeoffSlope=Math.max(-.18,Math.min(.18,terrainSlopeAt(jumpWx+24)));
+  const takeoffSlope=Math.max(-.18,Math.min(.18,terrainPhysicsSlopeAt(jumpWx+24)));
   const speedPop=Math.max(0,Math.min(1,(speed-4.2)/5.5));
   const transitionPop=Math.max(-1,Math.min(1,-takeoffSlope/.12));
   const lineDamp=1-airLineSet*.16;
@@ -4799,7 +4808,7 @@ function jump(){
  // faster trajectory when he pops after the crest. This rewards reading the terrain instead
  // of making every manual jump feel identical. A set line trims excess pop for precision.
  const jumpWx=world+player.x;
- const takeoffSlope=Math.max(-.18,Math.min(.18,terrainSlopeAt(jumpWx+24)));
+ const takeoffSlope=Math.max(-.18,Math.min(.18,terrainPhysicsSlopeAt(jumpWx+24)));
  const speedPop=Math.max(0,Math.min(1,(speed-4.2)/5.5));
  const transitionPop=Math.max(-1,Math.min(1,-takeoffSlope/.12));
  const lineDamp=1-airLineSet*.16;
@@ -4943,7 +4952,7 @@ function releaseBrakeTechnique(){
  // Sustained braking remains the slower/safest choice; feathering without a real speed check earns nothing.
  if(running&&player.onGround&&!sendIt&&speed>=3.3){
   const wx=world+player.x;
-  const exitSlope=terrainSlopeAt(wx+38);
+  const exitSlope=terrainPhysicsSlopeAt(wx+38);
   const gain=brakeReleaseGain(held,exitSlope,mode,brakeEntrySpeed,brakeMinSpeed);
   if(gain>.001){
    speed=Math.min(11.1,speed+gain);
@@ -5345,7 +5354,7 @@ function update(dt){
 
  const wx=world+player.x;
  updateLineChoice();
- const slope=terrainSlopeAt(wx);
+ const slope=terrainPhysicsSlopeAt(wx);
  const downhill=Math.max(-.08,Math.min(.08,slope));
  const groundControl=groundControlProfile(braking,sendIt);
 
@@ -5397,7 +5406,7 @@ function update(dt){
  // Jimmy can carry serious speed, but entering a technical compression or direction change
  // unprepared now has a consequence. Braking and a prepared line actively restore stability.
  if(player.onGround){
-  const slopeBack=terrainSlopeAt(wx-36), slopeAhead=terrainSlopeAt(wx+64);
+  const slopeBack=terrainPhysicsSlopeAt(wx-36), slopeAhead=terrainPhysicsSlopeAt(wx+64);
   const transitionLoad=Math.min(.62,Math.abs(slopeAhead-slopeBack));
   const modeThreshold=mode==='snow'?6.65:mode==='bike'?6.35:6.15;
   const excess=Math.max(0,speed-modeThreshold);
@@ -5479,7 +5488,7 @@ function update(dt){
   if(player.y>=gy){
    const landingError=angleDelta(player.rot,surfaceAngle);
    const impactVy=player.vy;
-   const landingSlope=terrainSlopeAt(world+player.x);
+   const landingSlope=terrainPhysicsSlopeAt(world+player.x);
    const rawNormalImpact=slopeMatchedLandingLoad(impactVy,speed,landingSlope);
    const absorbProfile=landingAbsorbInputProfile(braking,brakeHold,airAbsorbSetTimer,airAbsorbSetAge,impactVy,rawNormalImpact,mode);
    const releasedAbsorb=absorbProfile.released;
@@ -10369,6 +10378,18 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.finishPassport=(snow=0,bike=0,board=0)=>finishPassportProgress({
   snow:Object.assign(blank(),{finishes:snow}),bike:Object.assign(blank(),{finishes:bike}),board:Object.assign(blank(),{finishes:board})
  });
+}
+// v221-A205 validation probe: gameplay grade stays invariant when viewport height changes while
+// the display slope remains free to scale with the screen.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.physicsSlopeViewportInvariant=(wx=world+player.x)=>{
+  const oldH=H;
+  const heights=[390,620,844],samples=[];
+  for(const height of heights){H=height;samples.push({height,visual:terrainSlopeAt(wx),physics:terrainPhysicsSlopeAt(wx)})}
+  H=oldH;
+  const values=samples.map(q=>q.physics),delta=Math.max(...values)-Math.min(...values);
+  return{wx,samples,physicsDelta:delta,invariant:delta<1e-12};
+ };
 }
 // v221-A201 validation probe: SIDE visual grammar keeps collidable fixed hazards solid-grounded,
 // adjacent scenery dashed, and crossing actors on their existing intent-trace path.
