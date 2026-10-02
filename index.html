@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A206</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A208</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -378,7 +378,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A206';
+const BUILD_VERSION='v221-A208';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -523,6 +523,18 @@ function courseSeparationProfile(rideMode=mode,width=(lastCanvasCssW||W),height=
   chaseAlpha:rp.phone?(rp.landscape?.13:.11):.072
  };
 }
+function sideDecisionCorridorProfile(width=W,height=H,riderX=player.x+player.w*.5){
+ // v221-A208 Environment/Graphics: reinforce only the look-ahead portion of A144's SIDE
+ // terrain-adjacent air gap. The already-ridden area stays visually rich, while scenery close
+ // to the upcoming course recedes a little more on phones. This is a drawing-only hierarchy cue.
+ const rp=sideReadabilityProfile();
+ const start=Math.max(0,Math.min(width*.55,riderX-12));
+ const peak=Math.max(start+1,Math.min(width*.84,riderX+Math.max(138,width*.38)));
+ const end=Math.max(peak+1,width);
+ const boost=rp.phone?(rp.landscape?.090:.074):.036;
+ const bandScale=rp.phone?(rp.landscape?1.34:1.26):1.16;
+ return{start,peak,end,boost,bandScale,phone:rp.phone,landscape:rp.landscape};
+}
 function drawSideCourseSeparationPass(){
  // v221-A144 Environment Graphics: a soft environment-native "air gap" sits immediately above
  // the authoritative terrain. Background scenery is visually pushed back, while the course,
@@ -541,6 +553,24 @@ function drawSideCourseSeparationPass(){
   ctx.fillStyle=`rgba(${p.rgb},${(p.sideAlpha*weight).toFixed(3)})`;
   ctx.fill();
  }
+ // v221-A208: a second, very restrained pass is weighted forward from Jimmy. It makes the
+ // next decision corridor easier to parse without outlining obstacles, muting hazards, or
+ // flattening the scenery behind the rider.
+ const d=sideDecisionCorridorProfile(),h=p.sideBand*d.bandScale;
+ ctx.beginPath();
+ for(let x=d.start;x<=W+12;x+=12){
+  const sx=Math.min(W,x),y=groundY(sx)-h;
+  x===d.start?ctx.moveTo(x,y):ctx.lineTo(x,y);
+ }
+ ctx.lineTo(W,groundY(W)+1);
+ for(let x=W-12;x>=d.start;x-=12)ctx.lineTo(x,groundY(x)+1);
+ ctx.closePath();
+ const wash=ctx.createLinearGradient(d.start,0,d.end,0);
+ const peakStop=Math.max(.08,Math.min(.88,(d.peak-d.start)/Math.max(1,d.end-d.start)));
+ wash.addColorStop(0,`rgba(${p.rgb},0)`);
+ wash.addColorStop(peakStop,`rgba(${p.rgb},${d.boost.toFixed(3)})`);
+ wash.addColorStop(1,`rgba(${p.rgb},${(d.boost*.38).toFixed(3)})`);
+ ctx.fillStyle=wash;ctx.fill();
  ctx.restore();
 }
 function drawChaseCourseSeparationPass(riderWx,look){
@@ -3462,13 +3492,20 @@ function tabletopRideAnimationProfile(riderWx){
 // a dedicated grounded MTB posture matched to A198's smoothed terrain. Jimmy preloads into the
 // low lip, stays centered across the short shelf, lets the bike extend into the fallaway, then
 // re-loads into the reconnect. Visual only: speed, contact, launch, collision and scoring are untouched.
+// v221-A207 higher-refinement Jimmy/Animation: carry that competent MTB body language through A206's
+// full landing apron instead of returning to the generic ground pose as soon as the step-down body ends.
+// Jimmy absorbs the downhill catch, stays quiet across the short bench, then progressively releases into
+// the run-out. This remains drawing-only; terrain, collision, speed and scoring are unchanged.
 function stepdownRideAnimationProfile(riderWx,rideMode=mode){
- if(rideMode!=='bike')return{active:0,load:0,release:0,catchSet:0,u:-9,label:''};
+ if(rideMode!=='bike')return{active:0,load:0,release:0,catchSet:0,u:-9,apronT:-1,label:'',phase:'none'};
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
  for(const f of terrainFeatures){
   if(f.kind!=='stepdown')continue;
-  const u=(riderWx-f.x)/Math.max(1,f.width);
-  if(u<-.10||u>1.04)continue;
+  const width=Math.max(1,f.width);
+  const u=(riderWx-f.x)/width;
+  const apronLength=f.apronLength||360;
+  const apronT=(riderWx-(f.x+width))/Math.max(1,apronLength);
+  if(u<-.10||apronT>1.04)continue;
   let load=0,release=0,catchSet=0,phase='approach';
   if(u<0){
    load=.25*smooth((u+.10)/.10);
@@ -3491,10 +3528,26 @@ function stepdownRideAnimationProfile(riderWx,rideMode=mode){
   }else if(u<=1){
    catchSet=1-smooth((u-.86)/.14);
    phase='reconnect';
+  }else if(apronT<=.46){
+   const t=smooth(apronT/.46);
+   load=.28*t;
+   catchSet=.56*t;
+   phase='apron-catch';
+  }else if(apronT<=.68){
+   const t=smooth((apronT-.46)/.22);
+   load=.28-.08*t;
+   catchSet=.56-.12*t;
+   phase='apron-bench';
+  }else{
+   const t=smooth((apronT-.68)/.32);
+   load=.20*(1-t);
+   catchSet=.44*(1-t);
+   release=.12*Math.sin(t*Math.PI);
+   phase='apron-runout';
   }
-  return{active:1,load,release,catchSet,u,label:f.label||'RIDGE STEP-DOWN',phase};
+  return{active:1,load,release,catchSet,u,apronT,label:f.label||'RIDGE STEP-DOWN',phase};
  }
- return{active:0,load:0,release:0,catchSet:0,u:-9,label:'',phase:'none'};
+ return{active:0,load:0,release:0,catchSet:0,u:-9,apronT:-1,label:'',phase:'none'};
 }
 // v221-A27 higher-refinement gameplay physics: touchdown load is measured relative to the
 // landing surface, not just screen-down velocity. A downhill catch is moving away beneath Jimmy's
@@ -10408,6 +10461,15 @@ if(window.CRASHN_JIMMY_QA){
   return{type,rideMode,fixed:isSideFixedHazard(o),adjacent:isCourseAdjacentProp(o),...sideHazardContactCueProfile(o,rideMode,width,height)};
  };
 }
+// v221-A208 validation probe: expose the forward-weighted SIDE readability corridor without
+// touching gameplay state, collision geometry, obstacles or course timing.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideDecisionCorridor=(width=844,height=390,riderX=150)=>{
+  const priorW=W,priorH=H;W=width;H=height;
+  const out=sideDecisionCorridorProfile(width,height,riderX);
+  W=priorW;H=priorH;return out;
+ };
+}
 // v221-A200 validation probe: scenery no longer contains readable sign copy while the real
 // named-section wayfinding pass still owns readable text.
 if(window.CRASHN_JIMMY_QA){
@@ -10791,9 +10853,16 @@ if(window.CRASHN_JIMMY_QA){
 // authored phase so mobile/desktop QA can confirm load -> lip -> release -> catch -> reconnect.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.stepdownRidePose=(u=.44)=>{
-  const fake={kind:'stepdown',x:0,width:100,label:'RIDGE STEP-DOWN'};
+  const fake={kind:'stepdown',x:0,width:100,apron:true,apronLength:100,label:'RIDGE STEP-DOWN'};
   const prior=terrainFeatures;terrainFeatures=[fake];
   const out=stepdownRideAnimationProfile(u*100,'bike');
+  terrainFeatures=prior;return out;
+ };
+ // v221-A207 validation probe: sample the apron directly in normalized catch-space.
+ window.CRASHN_JIMMY_QA.stepdownApronRidePose=(t=.5)=>{
+  const fake={kind:'stepdown',x:0,width:100,apron:true,apronLength:100,label:'RIDGE STEP-DOWN'};
+  const prior=terrainFeatures;terrainFeatures=[fake];
+  const out=stepdownRideAnimationProfile(100+Math.max(0,Math.min(1,t))*100,'bike');
   terrainFeatures=prior;return out;
  };
 }
