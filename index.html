@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A208</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A210</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -378,7 +378,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A208';
+const BUILD_VERSION='v221-A210';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -4054,6 +4054,20 @@ function finishPassportProgress(r=records()){
  const title=count===3?'ALL-TERRAIN FINISHER':count===2?'TWO-TERRAIN FINISHER':count===1?'FIRST STAMP':'OPEN';
  return{count,stamps,title,complete:count===3,next:missing.join(' · '),progress:`BIG BEAR ${stamps.snow}/1 · ORANGE COUNTY ${stamps.bike}/1 · SOCAL ${stamps.board}/1`};
 }
+// v221-A210 Scoring/Progression: turn RIDE THE MAP from a passive passport into a next-run structure.
+// After a completed run, Results can jump directly to the next unstamped environment in course order.
+// It derives entirely from A202's existing finish stamps: no new persistence, score, bonus, or unlock state.
+function nextRideTheMapTarget(r=records(),current=mode){
+ const passport=finishPassportProgress(r);
+ if(passport.complete)return null;
+ const order=['snow','bike','board'];
+ const start=Math.max(0,order.indexOf(current));
+ for(let step=1;step<=order.length;step++){
+  const candidate=order[(start+step)%order.length];
+  if(!passport.stamps[candidate])return candidate;
+ }
+ return null;
+}
 function consistencyProgress(r){
  // v161 Scoring/Progression: reward reliability without inflating a run score.
  // The current streak is fragile; the best streak remains persistent evidence
@@ -4473,8 +4487,14 @@ function updateMaintenanceBehavior(o,sx,dt){
 function updateEncounterBehavior(o,sx,dt){
  // v43: rare staged encounters react to Jimmy instead of sliding through the scene like static props.
  // The reaction only begins after the warning prop has had time to be read, so it adds life without becoming a cheap surprise.
- if(!o.event||o.decor||o.type==='streetfreeze')return;
+ // v221-A209 higher-refinement Props/Hazards/Events: STREETFREEZE now participates in the event lifecycle
+ // without losing its role as the stationary half of SoCal's human slalom. A deliberate early BRAKE can
+ // make the stationary actor yield/hold clear, and a STREETFREEZE companion can finally execute v82's
+ // automatic clear instead of being short-circuited by the old early return. With no read, a primary
+ // STREETFREEZE remains fixed in place. Event frequency, spacing, hitboxes and slalom scoring are unchanged.
+ if(!o.event||o.decor)return;
  const gap=sx-(player.x+player.w);
+ const streetFreeze=o.type==='streetfreeze';
  const primedRead=updateCrossingBrakePrime(o,gap,.14,350);
  // v131 Props/Hazards/Events: if Jimmy reads the advisory and sets the brake early,
  // people yield out of the active line. SEND IT or a late/nonexistent read keeps the original crossing behavior.
@@ -4495,16 +4515,20 @@ function updateEncounterBehavior(o,sx,dt){
   o.reacted=true;o.yieldClear=true;o.yielded=true;o.reactionTimer=1.05;o.baseVx=o.vx;o.resumeVx=o.vx;
   o.yieldLift=o.type==='skier'?16:o.type==='hiker'?12:10;
   o.yieldSide=((Math.floor(o.wx/170)%2)*2-1);
-  o.vx=o.type==='skier'?20:o.type==='hiker'?12:16;
+  // A stationary slalom actor yields laterally through yieldClear/yieldSide but does not become
+  // a moving pedestrian; after Jimmy passes it resumes its authoritative zero velocity.
+  o.vx=streetFreeze?0:o.type==='skier'?20:o.type==='hiker'?12:16;
   armClearLineRead(o);
   return;
  }
  // v82 SoCal fairness: the second pedestrian is visual/event pressure, not an unavoidable second wall.
- // Once Jimmy is committed past the first pedestrian, the companion clears the corridor.
+ // A209 lets this branch run for either companion type; the stationary companion now clears as intended.
  if(o.companion&&gap<260&&!o.reacted){
   o.reacted=true;o.reactionTimer=1.0;o.baseVx=o.vx;o.vx=-105;
   return;
  }
+ // The primary STREETFREEZE stays deliberately stationary unless Jimmy earns the early BRAKE yield above.
+ if(streetFreeze)return;
  if(gap<320&&gap>70&&!o.reacted){
   o.reacted=true;o.reactionTimer=.72;o.baseVx=o.vx;
   if(o.type==='skier')o.vx=-54;          // commits across the fall line once Jimmy is visible
@@ -6256,6 +6280,9 @@ function results(crashed,injury,hit,snapshot=null){
  const riderRangeAdvanced=snapshot?.riderRangeAdvanced??(riderRangeAfter.tier>riderRangeBefore.tier);
  const finishPassportAfter=snapshot?.finishPassportAfter||finishPassportProgress(afterRecords);
  const finishPassportAdvanced=snapshot?.finishPassportAdvanced??(finishPassportAfter.count>finishPassportBefore.count);
+ // v221-A210 Scoring/Progression: a clean finish can hand the player directly to the next
+ // missing RIDE THE MAP environment. Crashes and completed passports retain CHANGE SPORT.
+ const rideMapNext=(!crashed&&!finishPassportAfter.complete)?nextRideTheMapTarget(afterRecords,mode):null;
  const completeTourAfter=snapshot?.completeTourAfter||completeLineTourProgress(afterRecords);
  const completeTourAdvanced=snapshot?.completeTourAdvanced??(completeTourAfter.count>completeTourBefore.count);
  const tacticalTourAfter=snapshot?.tacticalTourAfter||tacticalPaceTourProgress(afterRecords);
@@ -6297,8 +6324,8 @@ function results(crashed,injury,hit,snapshot=null){
  card.innerHTML=`<div class="location">${MODES[mode].name} — ${MODES[mode].tag}</div><h2>${crashed?'RUN TERMINATED':'JIMMY LIVES'}</h2>
  <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneReplayMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><p class="jimmy-note"><span class="jimmy-read">${crashRead}</span><b>Jimmy debrief:</b> “${jimmyCrash}”<span class="jimmy-next"><b>Next lap:</b> “${jimmyNext}”</span></p>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
  <div class="result-summary"><div class="run-rating${precisionAdvanced?' precision-rankup':''}">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'}${runLineBalance.points?' · '+runLineBalance.label+' +'+runLineBalance.points:''}${finishBonus.points?' · '+finishBonus.label+' +'+finishBonus.points:''}${varietyBonus.points?' · '+varietyBonus.label+' +'+varietyBonus.points:''}${terrainBonus.points?' · '+terrainBonus.label+' +'+terrainBonus.points:''}${tacticalBonus.points?' · '+tacticalBonus.label+' +'+tacticalBonus.points:''}${completeBonus.points?' · '+completeBonus.label+' +'+completeBonus.points:''}${runLineTime?' · COMPLETE LINE TIME '+formatCourseTime(runLineTime)+(lineTimeNew?' PB':''):''}${runPrecision.tier?' · PRECISION '+runPrecision.title:''}${runChaseReads?' · OTS READS '+runChaseReads+' +'+runChaseReadPoints:''}${runRampLines?' · DIALED RAMPS '+runRampLines+' +'+runRampLinePoints:''} · ${streakStatus} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}${riderRangeAdvanced?' · RIDER RANGE UP: '+riderRangeAfter.title:''}${finishPassportAdvanced?' · RIDE THE MAP STAMP '+finishPassportAfter.count+'/3':''}${completeTourAdvanced?' · COMPLETE LINE STAMP '+completeTourAfter.count+'/3':''}${tacticalTourAdvanced?' · TACTICAL PACE STAMP '+tacticalTourAfter.count+'/3':''}${consistencyTourAdvanced?' · CONSISTENCY TOUR UP: '+consistencyTourAfter.title:''}${routeRangeAdvanced?' · ROUTE RANGE UP: '+routeRangeAfter.title:''}${adaptationAdvanced?' · ADAPTATION UP: '+adaptationAfter.title:''}${precisionAdvanced?' · PRECISION UP: '+precisionAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat${lineTimeNew?' line-time-hit':''}">${lineTimeNew?'NEW LINE PB':'Best Flow'}<b>${lineTimeNew?formatCourseTime(runLineTime):'x'+(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
- <div class="result-actions"><button id="again">ONE MORE RUN</button><button id="menu">CHANGE SPORT</button><button id="details">FULL RUN STATS</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
- $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset(false)};$('menu').onclick=start;
+ <div class="result-actions"><button id="again">ONE MORE RUN</button><button id="menu">${rideMapNext?'NEXT: '+MODES[rideMapNext].name:'CHANGE SPORT'}</button><button id="details">FULL RUN STATS</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
+ $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset(false)};$('menu').onclick=()=>rideMapNext?begin(rideMapNext):start();
  $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,terrainBonus,tacticalBonus,completeBonus,composedHazards:runComposedHazards,fastLineClears:runFastLineClears,controlLineClears:runControlLineClears,jimmyCrash,jimmyNext,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,finishPassportBefore,finishPassportAfter,finishPassportAdvanced,completeTourBefore,completeTourAfter,completeTourAdvanced,tacticalTourBefore,tacticalTourAfter,tacticalTourAdvanced,consistencyTourBefore,consistencyTourAfter,consistencyTourAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,precisionRun:runPrecision,precisionBefore,precisionAfter,precisionAdvanced,closeCalls:runCloseCalls,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak,rampLines:runRampLines,rampLinePoints:runRampLinePoints,brakeSetLandings:runBrakeSetLandings,brakeSetPoints:runBrakeSetPoints,lineTime:runLineTime,priorLineTime,bestLineTime,lineTimeNew});
  $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,terrainBonus,tacticalBonus,completeBonus,composedHazards:runComposedHazards,fastLineClears:runFastLineClears,controlLineClears:runControlLineClears,jimmyCrash,jimmyNext,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,finishPassportBefore,finishPassportAfter,finishPassportAdvanced,completeTourBefore,completeTourAfter,completeTourAdvanced,tacticalTourBefore,tacticalTourAfter,tacticalTourAdvanced,consistencyTourBefore,consistencyTourAfter,consistencyTourAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,precisionRun:runPrecision,precisionBefore,precisionAfter,precisionAdvanced,closeCalls:runCloseCalls,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak,rampLines:runRampLines,rampLinePoints:runRampLinePoints,brakeSetLandings:runBrakeSetLandings,brakeSetPoints:runBrakeSetPoints,lineTime:runLineTime,priorLineTime,bestLineTime,lineTimeNew});
  if(crashed)bindCrashSceneReplay(hit,sceneVariant);
