@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A212</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A216</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -394,7 +394,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A212';
+const BUILD_VERSION='v221-A216';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -479,18 +479,22 @@ function sideReadabilityProfile(width=(lastCanvasCssW||W),height=(lastCanvasCssH
 // v221-A184 higher-refinement Environment/Graphics: SIDE now gets the same kind of
 // atmospheric hierarchy as CHASE. Deep identity/landmark layers recede the most, section framing
 // sits in the middle, and only the nearest non-gameplay atmosphere keeps the prior phone strength.
-// No obstacle, terrain, collision or course-cue rendering is included in this pass.
+// v221-A216 Environment/Graphics: split course-adjacent decorative passes into their own phone tier.
+// Trees, scrub, roadside silhouettes and other non-colliding foreground identity now sit visibly
+// behind real hazards without flattening dynamic atmosphere or changing desktop rendering.
 function sideBackgroundDepthProfile(name,width=(lastCanvasCssW||W),height=(lastCanvasCssH||H)){
  const rp=sideReadabilityProfile(width,height);
  const far=['background','environmentIdentity','sectionAtmosphere','landmarks'].includes(name);
+ const adjacent=['environmentSignature','foregroundDepth'].includes(name);
  const mid=['expertScenery','cinematic','premium'].includes(name);
- const tier=far?'far':mid?'mid':'near';
+ const tier=far?'far':adjacent?'adjacent':mid?'mid':'near';
  if(!rp.phone)return{tier,phone:false,landscape:rp.landscape,alpha:1,saturation:1,contrast:1,brightness:1};
  const q=rp.landscape
-  ?(tier==='far'?[.40,.48,.86,1.06]:tier==='mid'?[.48,.56,.90,1.035]:[.54,.64,.92,1.015])
-  :(tier==='far'?[.56,.60,.89,1.045]:tier==='mid'?[.62,.66,.91,1.025]:[.67,.72,.92,1.01]);
+  ?(tier==='far'?[.40,.48,.86,1.06]:tier==='adjacent'?[.44,.50,.88,1.05]:tier==='mid'?[.48,.56,.90,1.035]:[.54,.64,.92,1.015])
+  :(tier==='far'?[.56,.60,.89,1.045]:tier==='adjacent'?[.59,.62,.90,1.035]:tier==='mid'?[.62,.66,.91,1.025]:[.67,.72,.92,1.01]);
  return{tier,phone:true,landscape:rp.landscape,alpha:q[0],saturation:q[1],contrast:q[2],brightness:q[3]};
 }
+
 function drawSideBackgroundPass(name,fn){
  const p=sideBackgroundDepthProfile(name);
  ctx.save();
@@ -2765,12 +2769,24 @@ function rampTerrainProfile(rideMode=mode){
  if(rideMode==='bike')return{takeoff:.50,lip:.58,rise:1.10,fallaway:.10};
  return{takeoff:.66,lip:.72,rise:.78,fallaway:.14};
 }
+// v221-A214 higher-refinement Terrain/Course: the ramp face itself now carries sport-specific
+// progression while keeping the same start height, lip height, lip position and zero-slope seams.
+// MTB holds more rise for the late face so a trail lip feels punchier under the wheels; Big Bear
+// stays nearly neutral and progressive; SoCal's low concrete wedge builds earlier and settles into
+// the release. This is genuine terrain geometry, not a prop/collision trick. Route amplitude, launch
+// thresholds, catch geometry, BRAKE roll-through, scoring and protected corridors remain unchanged.
+function rampFaceEase(t,rideMode=mode){
+ t=Math.max(0,Math.min(1,t));
+ const bias=rideMode==='bike'?-.14:rideMode==='snow'?-.04:.10;
+ const warped=Math.max(0,Math.min(1,t+bias*t*(1-t)));
+ return warped*warped*(3-2*warped);
+}
 function rampTerrainOffsetRatio(u,rideMode=mode){
  const p=rampTerrainProfile(rideMode);
  if(u<0||u>1)return 0;
  if(u<p.lip){
   const t=Math.max(0,Math.min(1,u/p.lip));
-  return -p.rise*(t*t*(3-2*t));
+  return -p.rise*rampFaceEase(t,rideMode);
  }
  const t=Math.max(0,Math.min(1,(u-p.lip)/(1-p.lip)));
  const baseEase=t*t*(3-2*t);
@@ -2778,6 +2794,7 @@ function rampTerrainOffsetRatio(u,rideMode=mode){
  const ease=Math.min(1,baseEase+p.fallaway*earlyFallaway);
  return -p.rise*(1-ease);
 }
+
 // v221-A182 higher-refinement Terrain/Course: technical stair terrain now reconnects
 // continuously to the underlying grade instead of ending on a vertical height seam.
 // Only the final shelf/run-out is blended; the ledge/stair rhythm before it is unchanged.
@@ -3365,8 +3382,12 @@ function rampReleaseAnimationProfile(trajectoryAngle=rampReleaseTrajectoryAngle,
 // Match Jimmy's body load to that terrain timing instead of using one generic distance-to-ramp crouch.
 // The run-in pulse mirrors A113's p/q profile, then a modest face-entry carry keeps the posture
 // continuous into the existing ramp-face unload. Visual-only: no speed, launch, terrain or scoring changes.
+// v221-A215 higher-refinement Jimmy/Animation: A214 gave each sport a different physical ramp-face
+// progression. Jimmy's grounded preload/unload now follows that same authored rise instead of a generic
+// smoothstep: MTB stays loaded later into its punchier lip, Big Bear remains progressive, and SoCal
+// begins opening earlier on its low wedge. Drawing only; velocity, contact, launch and scoring are untouched.
 function rampApproachAnimationProfile(f,riderWx,rideMode=mode){
- if(!f||f.kind!=='ramp')return{active:false,load:0,runInLoad:0,faceCarry:0,extension:0,phase:'none',t:-1,peakT:0};
+ if(!f||f.kind!=='ramp')return{active:false,load:0,runInLoad:0,faceCarry:0,extension:0,faceProgress:0,phase:'none',t:-1,peakT:0};
  const profile=rideMode==='snow'
   ?{length:140,p:3.2,q:2.2,lip:.70,entry:.58}
   :rideMode==='bike'
@@ -3383,18 +3404,19 @@ function rampApproachAnimationProfile(f,riderWx,rideMode=mode){
   const carryEase=carryT*carryT*(3-2*carryT);
   const faceCarry=profile.entry*carryEase;
   const load=Math.max(runInLoad,faceCarry);
-  return{active:load>.01,load,runInLoad,faceCarry,extension:0,phase:'runin',t,peakT};
+  return{active:load>.01,load,runInLoad,faceCarry,extension:0,faceProgress:0,phase:'runin',t,peakT};
  }
  if(riderWx>=f.x&&riderWx<lip){
   const t=Math.max(0,Math.min(1,(riderWx-f.x)/Math.max(1,lip-f.x)));
-  const unload=t*t*(3-2*t);
-  const faceCarry=profile.entry*(1-unload);
-  const e=Math.max(0,Math.min(1,(t-.34)/.66));
+  const faceProgress=rampFaceEase(t,rideMode);
+  const faceCarry=profile.entry*(1-faceProgress);
+  const e=Math.max(0,Math.min(1,(faceProgress-.16)/.84));
   const extension=e*e*(3-2*e);
-  return{active:true,load:faceCarry,runInLoad:0,faceCarry,extension,phase:'face',t,peakT:profile.p/(profile.p+profile.q)};
+  return{active:true,load:faceCarry,runInLoad:0,faceCarry,extension,faceProgress,phase:'face',t,peakT:profile.p/(profile.p+profile.q)};
  }
- return{active:false,load:0,runInLoad:0,faceCarry:0,extension:0,phase:'none',t:-1,peakT:profile.p/(profile.p+profile.q)};
+ return{active:false,load:0,runInLoad:0,faceCarry:0,extension:0,faceProgress:0,phase:'none',t:-1,peakT:profile.p/(profile.p+profile.q)};
 }
+
 // v221-A43 higher-refinement gameplay physics: a deliberate BRAKE speed check can now
 // roll an authored ramp instead of forcing an automatic airborne state at the lip. The ramp remains
 // genuine terrain: Jimmy stays in ground contact and rides its physical run-out. SEND IT, a timed
@@ -4849,6 +4871,27 @@ function airPumpMomentumTransfer(currentSpeed,lift,tapIndex,rideMode,sending=fal
  const transfer=Math.max(.035,Math.min(.105,raw));
  return{transfer,exitSpeed:Math.max(1.35,pace-transfer),liftRatio,tapIndex:Math.max(2,Math.min(3,tapIndex||2)),rideMode};
 }
+// v221-A213 higher-refinement Gameplay/Physics: the 170 ms coyote JUMP after a terrain
+// release now pays only for the extra lift it adds. Earlier builds correctly charged the original
+// ramp/crest release, but the grace pop could then replace that trajectory with a much larger
+// vertical impulse for free. Preserve the forgiving timing window and familiar pop while redirecting
+// a small, bounded slice of forward momentum into the added rise. Prepared lines waste less pace;
+// SEND IT spends slightly more. No launch threshold, ramp terrain, landing, scoring or controls change.
+function lateTerrainPopMomentumTransfer(currentSpeed,beforeVy,afterVy,prepared,sending,rideMode){
+ const pace=Math.max(1.35,Math.min(11.1,Number(currentSpeed)||0));
+ const beforeLift=Math.max(0,-(Number(beforeVy)||0));
+ const afterLift=Math.max(0,-(Number(afterVy)||0));
+ const addedLift=Math.max(0,afterLift-beforeLift);
+ if(addedLift<=.04)return{transfer:0,exitSpeed:pace,addedLift,addedRatio:0};
+ const addedRatio=Math.max(0,Math.min(1,addedLift/6.5));
+ const modeBase=rideMode==='bike'?.036:rideMode==='snow'?.031:.028;
+ const sendCost=sending?.014:0;
+ const prepEfficiency=Math.max(0,Math.min(1,Number(prepared)||0))*.018;
+ const raw=modeBase+addedRatio*.095+sendCost-prepEfficiency;
+ const transfer=Math.max(.022,Math.min(.145,raw));
+ return{transfer,exitSpeed:Math.max(1.35,pace-transfer),addedLift,addedRatio};
+}
+
 function jump(){
  activateRunFromIntro();
  const now=performance.now();
@@ -4867,7 +4910,10 @@ function jump(){
   const lineDamp=1-airLineSet*.16;
   let impulse=(sendIt?-13.8:-12.1)-transitionPop*(1.15+.55*speedPop);
   impulse*=lineDamp;
+  const beforeLatePopVy=player.vy;
   player.vy=Math.min(player.vy,Math.max(-15.4,Math.min(-10.35,impulse)));
+  const latePopMomentum=lateTerrainPopMomentumTransfer(speed,beforeLatePopVy,player.vy,airLineSet,sendIt,mode);
+  speed=latePopMomentum.exitSpeed;
   jumpTapCount=1;lastJumpTap=now;airTrick='';
   meter=Math.min(100,meter+3);
   physicsCue='LATE POP · STILL ON LINE';physicsCueTimer=.72;
@@ -10533,7 +10579,12 @@ if(window.CRASHN_JIMMY_QA){
 // hierarchy on phones while leaving desktop rendering at full strength.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.sideBackgroundDepth=(name='background',width=844,height=390)=>({...sideBackgroundDepthProfile(name,width,height)});
- window.CRASHN_JIMMY_QA.sideBackgroundDepthMatrix=(width=844,height=390)=>['background','expertScenery','foregroundDepth'].map(name=>({name,...sideBackgroundDepthProfile(name,width,height)}));
+ window.CRASHN_JIMMY_QA.sideBackgroundDepthMatrix=(width=844,height=390)=>['background','expertScenery','environmentSignature','foregroundDepth','dynamicAtmosphere'].map(name=>({name,...sideBackgroundDepthProfile(name,width,height)}));
+ window.CRASHN_JIMMY_QA.sideAdjacentDepth=(width=844,height=390)=>({
+  environmentSignature:{...sideBackgroundDepthProfile('environmentSignature',width,height)},
+  foregroundDepth:{...sideBackgroundDepthProfile('foregroundDepth',width,height)},
+  dynamicAtmosphere:{...sideBackgroundDepthProfile('dynamicAtmosphere',width,height)}
+ });
 }
 
 // v221-A185 validation hooks: SIDE crossing intent remains visual-only and preserves
@@ -11022,6 +11073,21 @@ if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampBrakeReleaseSeed=(hold=.32,entrySpeed=6.2,minSpeed=5.5,rideMode=mode)=>({...rampBrakeReleaseSeed(hold,entrySpeed,minSpeed,rideMode)});
  window.CRASHN_JIMMY_QA.rampBrakeReleaseCarry=(trim=.55,age=.12,rideMode=mode)=>({...rampBrakeReleaseCarry(trim,age,rideMode)});
  window.CRASHN_JIMMY_QA.rampBrakeReleaseLaunch=(currentSpeed=5.5,trim=.55,rideMode=mode)=>({...rampBrakeLaunchProfile(currentSpeed,false,0,false,false,rideMode,currentSpeed,trim)});
+}
+
+// v221-A213 validation probe: coyote-pop momentum cost is based on added lift only.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.lateTerrainPopMomentumTransfer=(v=6,beforeVy=-5,afterVy=-11.5,prepared=0,sending=false,rideMode=mode)=>({...lateTerrainPopMomentumTransfer(v,beforeVy,afterVy,prepared,sending,rideMode)});
+}
+
+// v221-A215 validation probe: grounded ramp body timing mirrors A214's sport-specific face rise.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.rampFaceRidePose=(t=.5,rideMode=mode)=>{
+  const p=rampTerrainProfile(rideMode),fake={kind:'ramp',x:100,width:200,label:'QA RAMP'};
+  const clamped=Math.max(0,Math.min(.999,t));
+  const riderWx=fake.x+fake.width*p.lip*clamped;
+  return{rideMode,...rampApproachAnimationProfile(fake,riderWx,rideMode)};
+ };
 }
 
 // v221-A5: composed controls + exact mobile canvas sizing + fixed-step physics clock.
