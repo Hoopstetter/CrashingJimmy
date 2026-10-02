@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A197</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A201</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -373,7 +373,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A197';
+const BUILD_VERSION='v221-A201';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -2751,6 +2751,23 @@ function tabletopTerrainShape(u,A){
  const t=(u-fallStart)/(1-fallStart),e=t*t*(3-2*t);
  return -A*(1-e);
 }
+// v221-A198 higher-refinement Terrain/Course: the RIDGE STEP-DOWN keeps the same
+// authored lip, fallaway depth and midpoint, but its fallaway now leaves and rejoins the lip/base
+// at zero slope. This removes the two hidden grade kinks created by the previous sine lobe while
+// preserving the feature's width, height, route scaling and separate landing apron.
+function stepdownTerrainShape(u,A){
+ const lipU=.34,releaseU=.44;
+ const lip=A*.30;
+ if(u<lipU){
+  const t=Math.max(0,Math.min(1,u/lipU));
+  return -lip*(t*t*(3-2*t));
+ }
+ if(u<releaseU)return -lip;
+ const t=Math.max(0,Math.min(1,(u-releaseU)/(1-releaseU)));
+ const ease=t*t*(3-2*t);
+ const fallaway=16*t*t*(1-t)*(1-t);
+ return -lip*(1-ease)+A*.15*fallaway;
+}
 function featureShape(f,wx){
  let u=(wx-f.x)/f.width;
  if(u<0||u>1)return 0;
@@ -2778,22 +2795,7 @@ function featureShape(f,wx){
  if(f.kind==='tabletop') return tabletopTerrainShape(u,A);
  if(f.kind==='bowl'||f.kind==='gully'||f.kind==='dip') return Math.sin(u*Math.PI)*A;
  if(f.kind==='drop') return u<.42 ? -A*(u/.42) : u<.58 ? -A : -A*(1-(u-.58)/.42);
- if(f.kind==='stepdown'){
-  // v221-A4 recovery / recorded v167 behavior: Orange County's RIDGE STEP-DOWN is
-  // authoritative terrain, not a collidable "drop" prop. The first third builds a low
-  // compression/lip, then the trail falls away underneath the bike before reconnecting
-  // smoothly with the base grade. A separate landing apron below owns the catch/run-out.
-  const lipU=.34,releaseU=.44;
-  const lip=A*.30;
-  if(u<lipU){
-   const t=u/lipU;
-   return -lip*(t*t*(3-2*t));
-  }
-  if(u<releaseU)return -lip;
-  const t=(u-releaseU)/(1-releaseU);
-  const ease=t*t*(3-2*t);
-  return -lip*(1-ease)+A*.15*Math.sin(t*Math.PI);
- }
+ if(f.kind==='stepdown') return stepdownTerrainShape(u,A);
  if(f.kind==='rockgarden') return Math.sin(u*Math.PI*8)*A*.32 + Math.sin(u*Math.PI*3)*A*.22;
  if(f.kind==='berm'||f.kind==='sweep') return Math.sin(u*Math.PI)*A*.55;
  if(f.kind==='hill') return -Math.sin(u*Math.PI)*A;
@@ -3435,6 +3437,44 @@ function tabletopRideAnimationProfile(riderWx){
   return{active:1,load,deck,release,u,label:f.label||'TABLETOP'};
  }
  return{active:0,load:0,deck:0,release:0,u:-9,label:''};
+}
+// v221-A199 higher-refinement Jimmy/Animation: Orange County's RIDGE STEP-DOWN now has
+// a dedicated grounded MTB posture matched to A198's smoothed terrain. Jimmy preloads into the
+// low lip, stays centered across the short shelf, lets the bike extend into the fallaway, then
+// re-loads into the reconnect. Visual only: speed, contact, launch, collision and scoring are untouched.
+function stepdownRideAnimationProfile(riderWx,rideMode=mode){
+ if(rideMode!=='bike')return{active:0,load:0,release:0,catchSet:0,u:-9,label:''};
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+ for(const f of terrainFeatures){
+  if(f.kind!=='stepdown')continue;
+  const u=(riderWx-f.x)/Math.max(1,f.width);
+  if(u<-.10||u>1.04)continue;
+  let load=0,release=0,catchSet=0,phase='approach';
+  if(u<0){
+   load=.25*smooth((u+.10)/.10);
+  }else if(u<.28){
+   load=.25+.75*smooth(u/.28);
+   phase='load';
+  }else if(u<.44){
+   load=1-.48*smooth((u-.28)/.16);
+   phase='lip';
+  }else if(u<.72){
+   const t=(u-.44)/.28;
+   release=smooth(t);
+   load=.52*(1-release);
+   phase='release';
+  }else if(u<.86){
+   const t=(u-.72)/.14;
+   release=1-smooth(t);
+   catchSet=smooth(t);
+   phase='catch';
+  }else if(u<=1){
+   catchSet=1-smooth((u-.86)/.14);
+   phase='reconnect';
+  }
+  return{active:1,load,release,catchSet,u,label:f.label||'RIDGE STEP-DOWN',phase};
+ }
+ return{active:0,load:0,release:0,catchSet:0,u:-9,label:'',phase:'none'};
 }
 // v221-A27 higher-refinement gameplay physics: touchdown load is measured relative to the
 // landing surface, not just screen-down velocity. A downhill catch is moving away beneath Jimmy's
@@ -6614,6 +6654,18 @@ function environmentSignaturePass(){
  ctx.restore();
 }
 
+// v221-A200 higher-refinement Environment/Graphics: decorative background signs keep their
+// silhouettes and local color identity but no longer carry readable words. Actual route/section
+// wayfinding renders later at full strength, so text means gameplay information instead of scenery.
+function decorativeBackdropSign(x,y,w,h,rideMode=mode){
+ const palette=rideMode==='snow'?['#d8e9ef','#718a95']:rideMode==='bike'?['#b99d6c','#79684f']:['#557064','#aeb9b1'];
+ ctx.save();ctx.globalAlpha*=.72;ctx.fillStyle=palette[0];ctx.fillRect(x,y,w,h);
+ ctx.strokeStyle=palette[1];ctx.lineWidth=1;
+ const pad=Math.max(3,w*.16),mid=y+h*.48;
+ ctx.beginPath();ctx.moveTo(x+pad,mid);ctx.lineTo(x+w-pad,mid);ctx.stroke();
+ ctx.globalAlpha*=.55;ctx.beginPath();ctx.moveTo(x+pad*1.2,mid+h*.23);ctx.lineTo(x+w-pad*1.45,mid+h*.23);ctx.stroke();
+ ctx.restore();
+}
 function locationLandmarks(){
  // v73 Environment Graphics: low-frequency landmark silhouettes make each location identifiable at a glance.
  // Purely decorative: no collision, scoring, wildlife, or control behavior changes.
@@ -6626,7 +6678,7 @@ function locationLandmarks(){
   ctx.beginPath();ctx.moveTo(x-12,base-34);ctx.lineTo(x+56,base-68);ctx.lineTo(x+124,base-34);ctx.closePath();ctx.fill();
   ctx.fillStyle='#e9c77b99';ctx.fillRect(x+18,base-24,13,9);ctx.fillRect(x+73,base-24,13,9);
   ctx.strokeStyle='#34434b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-82,base);ctx.lineTo(x-82,base-58);ctx.lineTo(x-24,base-58);ctx.lineTo(x-24,base);ctx.stroke();
-  ctx.fillStyle='#d8e9efcc';ctx.fillRect(x-77,base-54,48,15);ctx.fillStyle='#31434c';ctx.font='800 7px system-ui';ctx.textAlign='center';ctx.fillText('SUMMIT',x-53,base-43);
+  decorativeBackdropSign(x-77,base-54,48,15,'snow');
  }else if(mode==='bike'){
   // OC foothills: layered saddle ridge, water-tank silhouette and a tiny trailhead marker.
   const x=W*.73-drift*.10,base=H*.555;ctx.globalAlpha=.60;
@@ -6706,7 +6758,7 @@ function cinematicVisualPass(){
   for(let i=-1;i<Math.ceil(W/520)+2;i++){
    const x=i*520-(world*.31)%520,seed=Math.floor((world*.31+x)/520),base=H*.62;
    if(seed%2===0){
-    ctx.fillStyle='#c94d3f';ctx.fillRect(x,base-42,4,42);ctx.fillStyle='#f4efe6';ctx.fillRect(x-16,base-52,52,18);ctx.fillStyle='#26323a';ctx.font='bold 8px system-ui';ctx.fillText(seed%4===0?'SUMMIT':'PARK',x-10,base-40);
+    ctx.fillStyle='#c94d3f';ctx.fillRect(x,base-42,4,42);decorativeBackdropSign(x-16,base-52,52,18,'snow');
    }
    ctx.strokeStyle='rgba(74,101,118,.17)';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(x+92,base-5);ctx.lineTo(x+190,base+23);ctx.stroke();
   }
@@ -6730,7 +6782,7 @@ function cinematicVisualPass(){
    ctx.fillStyle='#5f666a';ctx.fillRect(x+58,base-28,32,28);ctx.fillStyle='#e9c77799';ctx.fillRect(x+14,base-31,18,10);
    // parked car silhouettes stay decorative, not collision hazards
    if(seed%3===1){ctx.fillStyle='#3c474e';ctx.fillRect(x+128,base-18,62,16);ctx.fillStyle='#56636a';ctx.beginPath();ctx.moveTo(x+140,base-18);ctx.lineTo(x+151,base-29);ctx.lineTo(x+174,base-29);ctx.lineTo(x+184,base-18);ctx.fill();ctx.fillStyle='#202428';ctx.beginPath();ctx.arc(x+144,base-1,6,0,Math.PI*2);ctx.arc(x+177,base-1,6,0,Math.PI*2);ctx.fill()}
-   if(seed%4===0){ctx.strokeStyle='#34383c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+224,base);ctx.lineTo(x+224,base-72);ctx.stroke();ctx.fillStyle='#315d4c';ctx.fillRect(x+211,base-66,36,15);ctx.fillStyle='#f2efe1';ctx.font='bold 7px system-ui';ctx.fillText('HILL ST',x+215,base-56)}
+   if(seed%4===0){ctx.strokeStyle='#34383c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+224,base);ctx.lineTo(x+224,base-72);ctx.stroke();decorativeBackdropSign(x+211,base-66,36,15,'board')}
   }
   // overhead wires and warm windshield-like glints
   ctx.strokeStyle='rgba(45,48,51,.42)';ctx.lineWidth=1.2;for(let k=0;k<3;k++){ctx.beginPath();ctx.moveTo(0,H*.43+k*8);ctx.quadraticCurveTo(W*.5,H*.46+k*8,W,H*.42+k*8);ctx.stroke()}
@@ -9095,6 +9147,35 @@ function drawSideAdjacentPropCue(o,x,terrainY){
  ctx.beginPath();ctx.ellipse(cx,terrainY+3,ww,3.4,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
 }
 
+// v221-A201 higher-refinement Props/Hazards/Events: true fixed hazards get a restrained,
+// solid contact-footprint cue in SIDE view. Non-colliding scenery keeps A145's pale dashed
+// shoulder ellipse, while crossing actors keep A185's motion trace. This creates a consistent
+// visual grammar without labels, bubbles, physics changes, hitbox changes, or extra spawn logic.
+function isSideFixedHazard(o){
+ return !!(o&&!isCourseAdjacentProp(o)&&!o.event&&!o.maintenance&&!o.wildlife&&!o.companion);
+}
+function sideHazardContactCueProfile(o,rideMode=mode,width=(lastCanvasCssW||W),height=(lastCanvasCssH||H)){
+ const rp=sideReadabilityProfile(width,height),surface=!!o?.surfaceHazard;
+ const rgb=rideMode==='snow'?'31,57,72':rideMode==='bike'?'70,48,31':'54,56,59';
+ return{
+  active:isSideFixedHazard(o),
+  rgb,
+  alpha:rp.phone?(surface?(rp.landscape?.68:.60):(rp.landscape?.78:.68)):(surface?.30:.24),
+  lineWidth:rp.phone?1.8:1.25,
+  tick:rp.phone?3.2:2.4,
+  surface
+ };
+}
+function drawSideHazardContactCue(o,x,terrainY){
+ const p=sideHazardContactCueProfile(o);if(!p.active)return;
+ const span=Math.max(16,Math.min(70,(o.w||30)*(p.surface?.90:.72)));
+ const cx=x+(o.w||30)*.5,y=terrainY+2,left=cx-span*.5,right=cx+span*.5;
+ ctx.save();ctx.globalAlpha=p.alpha;ctx.strokeStyle=`rgba(${p.rgb},.95)`;ctx.lineWidth=p.lineWidth;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(left,y-p.tick);ctx.lineTo(left,y+p.tick);ctx.moveTo(right,y-p.tick);ctx.lineTo(right,y+p.tick);ctx.stroke();
+ ctx.restore();
+}
+
 // v221-A185 higher-refinement Props/Hazards/Events: SIDE now shows the same staged crossing
 // intent CHASE already communicates, but as restrained sport-native marks embedded in the riding
 // surface. The trace is visual only: it changes no collision, actor timing, velocity, scoring,
@@ -9175,6 +9256,7 @@ function drawObstacle(o){
  if(o.advisory)y-=o.visualLift||0;
  if(o.yieldClear)y-=o.yieldLift||10;
  if(courseAdjacent)drawSideAdjacentPropCue(o,x,terrainY);
+ else drawSideHazardContactCue(o,x,terrainY);
 
  // v122 shared advisory treatment: staged warning signs sit on a clearly separate course-info layer.
  // The dashed tether, shoulder shelf, and COURSE INFO tab distinguish them from solid collision props.
@@ -9713,6 +9795,8 @@ function drawPlayer(){
  const rampRollLoad=rampRollPose.load||0,rampRollSettle=rampRollPose.settle||0;
  const tabletopPose=player.onGround?tabletopRideAnimationProfile(riderWx+18):{active:0,load:0,deck:0,release:0};
  const tabletopLoad=tabletopPose.load||0,tabletopDeck=tabletopPose.deck||0,tabletopRelease=tabletopPose.release||0;
+ const stepdownPose=player.onGround?stepdownRideAnimationProfile(riderWx+18,mode):{active:0,load:0,release:0,catchSet:0};
+ const stepdownLoad=stepdownPose.load||0,stepdownRelease=stepdownPose.release||0,stepdownCatch=stepdownPose.catchSet||0;
  // A grounded controlled roll should absorb the lip, not visually fire the launch-extension pose.
  if(rampRollPose.active)launchExtension*=Math.max(0,1-rampRollPose.active);
  const preload=Math.pow(Math.max(0,Math.min(1,launchApproach)),1.35);
@@ -9773,21 +9857,21 @@ function drawPlayer(){
  }
  const pumpLean=player.onGround?(pumpRelease*.055-pumpLoad*.025):0;
  const speedLean=player.onGround?(1-brakePose)*speedStance*(mode==='snow'?.025:mode==='bike'?.035:.050):0;
- const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean-(rampRollLoad*.018)+(rampRollSettle*.008)-(tabletopLoad*.014)+(tabletopRelease*.016)+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+rampReleaseProfile.bodyLean;
+ const baseLean=(-.10*brakePose)+(.11*sendPose)+speedLean+pumpLean-(rampRollLoad*.018)+(rampRollSettle*.008)-(tabletopLoad*.014)+(tabletopRelease*.016)-(stepdownLoad*.012)+(stepdownRelease*.018)-(stepdownCatch*.008)+airPose*Math.max(-.16,Math.min(.16,player.vy*.009))+rampReleaseProfile.bodyLean;
  // The head stays calmer than the chassis/body and progressively re-levels as the landing
  // comes into range, creating a visible "eyes on the exit" cue without impossible neck motion.
  // v129 Jimmy & animation: Jimmy now looks through turns and his expression follows what he is
  // actually doing: focused on setup/landing, committed under SEND IT, and composed under braking.
  // This is visual-only and never changes steering, speed, stability, collision, or scoring state.
  const groundedLook=player.onGround?(-carve*(mode==='snow'?.055:mode==='bike'?.042:.035)*pace*(1-speedStance*.42)):0;
- const setupLook=player.onGround?(-.035*preload-.026*naturalLoad+.012*naturalExtension-.010*crestCatchSet-.024*rampRead):0;
+ const setupLook=player.onGround?(-.035*preload-.026*naturalLoad+.012*naturalExtension-.010*crestCatchSet-.024*rampRead-.016*stepdownLoad+.010*stepdownRelease-.006*stepdownCatch):0;
  const headSpotAngle=airborne
   ?Math.max(-.24,Math.min(.24,-(player.rot+baseLean)*(.18+.48*landingSpot)))
   :groundedLook+setupLook;
  const faceBrace=Math.max(landingReady?(.42+.58*landingBrace+.12*absorbSet):0,airBack,brakePose);
  const faceCommit=Math.max(airForward,sendPose,speedStance*.72);
  const faceFloat=(airFloat&&!landingReady&&airBack<.18)?Math.min(1,airTime/.65):0;
- const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+rampRollLoad*.72+rampRollSettle*.18+tabletopLoad*.42+tabletopDeck*.18+tabletopRelease*.20+naturalLoad*.58+naturalExtension*.20+crestCatchSet*.30+linePose*.32+speedStance*.24+rampRead*.76));
+ const faceFocus=Math.max(faceBrace,Math.min(1,preload*.9+launchExtension*.28+rampRollLoad*.72+rampRollSettle*.18+tabletopLoad*.42+tabletopDeck*.18+tabletopRelease*.20+stepdownLoad*.52+stepdownRelease*.22+stepdownCatch*.34+naturalLoad*.58+naturalExtension*.20+crestCatchSet*.30+linePose*.32+speedStance*.24+rampRead*.76));
  const carveLean=player.onGround?carve*(mode==='snow'?.075:mode==='bike'?.045:.025)*pace:0;
  ctx.save();
  ctx.translate(player.x+18,player.y+26+bob+squash*.22);
@@ -9945,7 +10029,7 @@ function drawPlayer(){
 
  }else if(mode==='bike'){
   // MTB: elbows and knees stay active, body moves independently from the bike, suspension compresses on impact.
-  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(rampRead*1.05)+(preload*4.2)-(launchExtension*3.7)+(rampRollLoad*4.8)-(rampRollSettle*1.3)+(naturalLoad*3.6)-(naturalExtension*3.1)+(crestCatchSet*2.9)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(absorbSet*3.35)+(airLanding?.40:0)-(rampReleaseProfile.vertical*3.5)+(rampReleaseProfile.compact*1.2)+(quickPopTuck*5.2)-(quickPopExtension*3.6)-(quickPopReopen*.9)+(tabletopLoad*3.2)-(tabletopRelease*2.2);
+  const compression=squash*1.05+(speedStance*1.8)+(brakePose*2.6)+(linePose*1.2)+(rampRead*1.05)+(preload*4.2)-(launchExtension*3.7)+(rampRollLoad*4.8)-(rampRollSettle*1.3)+(naturalLoad*3.6)-(naturalExtension*3.1)+(crestCatchSet*2.9)+(pumpLoad*5.8)-(pumpRelease*1.8)+(recoveryLoad*3.2)-(recoveryFlow*1.8)-(recoveryAbsorb*.5)+(landingSpot*1.25)+(landingBrace*4.35)+(absorbSet*3.35)+(airLanding?.40:0)-(rampReleaseProfile.vertical*3.5)+(rampReleaseProfile.compact*1.2)+(quickPopTuck*5.2)-(quickPopExtension*3.6)-(quickPopReopen*.9)+(tabletopLoad*3.2)-(tabletopRelease*2.2)+(stepdownLoad*3.8)-(stepdownRelease*2.7)+(stepdownCatch*2.6);
   const rear={x:-16,y:25},front={x:20,y:25};
   const bikePitch=airborne?Math.max(-.10,Math.min(.08,-player.vy*.004-rampReleaseProfile.equipmentPitch)):0;
   ctx.save();ctx.rotate(bikePitch);
@@ -9956,6 +10040,7 @@ function drawPlayer(){
   ctx.restore();
   const groundedHipNeutral=1+speedStance*2.0;
   let groundedHip=groundedHipNeutral+(-5-groundedHipNeutral)*brakePose;groundedHip+=(4-groundedHip)*sendPose;
+  groundedHip+=stepdownRelease*1.8-stepdownLoad*.9-stepdownCatch*.7;
   const airHip=-1+5*airForward-5*airBack+rampReleaseProfile.forward*2.8-rampReleaseProfile.vertical*.8;
   const quickBikeShift=quickPop.active?(quickPopExtension*2.8-quickPopTuck*1.8+quickPopReopen*.8):0;
   const hipX=landingReady?(-3.2-landingBrace*2.2-absorbSet*.9):airborne?airHip+quickBikeShift:groundedHip;
@@ -9963,6 +10048,7 @@ function drawPlayer(){
   const recoveryDrive=recoveryFlow*3.0-recoveryCorrection*1.4;
   const groundedShoulderNeutral=4+speedStance*2.8;
   let groundedShoulder=groundedShoulderNeutral+(-2-groundedShoulderNeutral)*brakePose;groundedShoulder+=(7-groundedShoulder)*sendPose;
+  groundedShoulder+=stepdownRelease*2.5-stepdownLoad*.7-stepdownCatch*1.0;
   const airShoulder=4+4*airForward-6*airBack+rampReleaseProfile.forward*4.0-rampReleaseProfile.vertical*1.2;
   const quickBikeReach=quickPop.active?(quickPopExtension*4.4-quickPopTuck*1.4+quickPopReopen*1.2):0;
   const hipY=7+compression*.34, shoulderX=(airborne?airShoulder+quickBikeReach:groundedShoulder)+pumpHipDrive+recoveryDrive, shoulderY=-8+compression*.22;
@@ -9970,7 +10056,7 @@ function drawPlayer(){
   limb(shoulderX, -12+compression*.18, shoulderX, shoulderY,4.5);torso(shoulderX,shoulderY,hipX,hipY,4.8);
   // both hands stay on bars; elbows flare more under braking and in rough landings
   let elbowBase;if(landingReady)elbowBase=4.8+landingBrace*4.0+absorbSet*2.2;else if(airborne)elbowBase=2-airForward+5*airBack;else{const neutralElbow=4+speedStance*1.8;elbowBase=neutralElbow+(7-neutralElbow)*brakePose;}
-  const elbowDrop=elbowBase+(landingSpot*1.4)-(rampReleaseProfile.armOpen*2.4)+(rampReleaseProfile.compact*1.6)+(rampRollLoad*3.2)-(rampRollSettle*.9)+(naturalLoad*2.1)-(naturalExtension*.8)+(crestCatchSet*1.5)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2)+(quickPopTuck*2.8)-(quickPopExtension*2.0);
+  const elbowDrop=elbowBase+(landingSpot*1.4)-(rampReleaseProfile.armOpen*2.4)+(rampReleaseProfile.compact*1.6)+(rampRollLoad*3.2)-(rampRollSettle*.9)+(naturalLoad*2.1)-(naturalExtension*.8)+(crestCatchSet*1.5)+(stepdownLoad*2.4)-(stepdownRelease*1.6)+(stepdownCatch*1.8)+(recoveryCorrection*4.2)+(recoveryAbsorb*1.8)-(recoveryFlow*1.2)+(quickPopTuck*2.8)-(quickPopExtension*2.0);
   limb(shoulderX,shoulderY,11,shoulderY+elbowDrop,4);limb(11,shoulderY+elbowDrop,18,7,3.8);
   limb(shoulderX-1,shoulderY,-4,shoulderY+elbowDrop+1,4);limb(-4,shoulderY+elbowDrop+1,15,7,3.8);
   // pedals / knees
@@ -10250,6 +10336,23 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A183 validation hook: late crash rotation decelerates while preserving its final angle.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.crashTumbleEnvelope=(progress=.82)=>({...crashTumbleEnvelope(progress)});
+}
+// v221-A201 validation probe: SIDE visual grammar keeps collidable fixed hazards solid-grounded,
+// adjacent scenery dashed, and crossing actors on their existing intent-trace path.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.sideHazardContactCue=(type='rock',flags={},rideMode=mode,width=844,height=390)=>{
+  const o=Object.assign({type,w:40,h:28,event:false,maintenance:false,wildlife:false,companion:false,decor:false,advisory:false,surfaceHazard:false},flags);
+  return{type,rideMode,fixed:isSideFixedHazard(o),adjacent:isCourseAdjacentProp(o),...sideHazardContactCueProfile(o,rideMode,width,height)};
+ };
+}
+// v221-A200 validation probe: scenery no longer contains readable sign copy while the real
+// named-section wayfinding pass still owns readable text.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.decorativeSignSeparation=()=>{
+  const scenic=locationLandmarks.toString()+cinematicVisualPass.toString();
+  const wayfinding=namedSectionWayfindingPass.toString();
+  return{decorativeReadableWords:/SUMMIT|PARK|HILL ST/.test(scenic),wayfindingHasText:/fillText/.test(wayfinding),helperPresent:typeof decorativeBackdropSign==='function'};
+ };
 }
 // v221-A184 validation hooks: SIDE background atmosphere must preserve a strict far/mid/near
 // hierarchy on phones while leaving desktop rendering at full strength.
@@ -10620,6 +10723,21 @@ if(window.CRASHN_JIMMY_QA){
 // v221-A158 validation probe: ramp foundation remains stabilized through the catch/recovery handoff.
 if(window.CRASHN_JIMMY_QA){
  window.CRASHN_JIMMY_QA.rampFoundationHandoffOverlap=(rideMode=mode)=>rampFoundationHandoffOverlap(rideMode);
+}
+// v221-A199 validation probe: the step-down body sequence is visual-only and exposes each
+// authored phase so mobile/desktop QA can confirm load -> lip -> release -> catch -> reconnect.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.stepdownRidePose=(u=.44)=>{
+  const fake={kind:'stepdown',x:0,width:100,label:'RIDGE STEP-DOWN'};
+  const prior=terrainFeatures;terrainFeatures=[fake];
+  const out=stepdownRideAnimationProfile(u*100,'bike');
+  terrainFeatures=prior;return out;
+ };
+}
+// v221-A198 validation probe: step-down fallaway keeps the authored midpoint depth while
+// both the lip release and feature exit approach zero local slope.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.stepdownTerrainShape=(u=.44,A=.064)=>stepdownTerrainShape(u,A);
 }
 // v221-A197 validation probe: BRAKE wins simultaneous ground input without mutating the
 // underlying SEND IT hold, so drive resumes cleanly after BRAKE release.
