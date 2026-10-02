@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A210</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A212</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -177,6 +177,22 @@ button:active{transform:translateY(1px)}
 .result-summary .stats{margin-top:6px}
 .result-summary .result-actions{margin-bottom:0}
 .jimmy-note{margin:5px 0 0!important;color:#dfe4e9}.jimmy-read{display:block;margin-bottom:3px;color:#aeb8c2;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.jimmy-next{display:block;margin-top:4px;padding-top:4px;border-top:1px solid #ffffff18;color:#cbd2d9;font-size:9px;line-height:1.3}.jimmy-next b{color:#f2b84b}
+/* v221-A211 UI/Sound/Polish: the expanded cause-aware Jimmy debrief can now be sampled again
+   on the same crash. This compact control rotates both the diagnosis and next-lap correction
+   through their existing no-repeat shuffle decks without replaying the run or changing scoring. */
+.jimmy-copy{display:block;min-width:0}
+.jimmy-note .debrief-refresh{display:inline-block;margin:6px 0 0;min-height:30px;padding:5px 9px;border:1px solid #46515d;border-radius:7px;background:#151b22;color:#dfe4e9;font-size:7px;font-weight:950;letter-spacing:.08em;line-height:1;box-shadow:none;text-shadow:none;touch-action:manipulation}
+.jimmy-note .debrief-refresh:active{transform:translateY(1px)}
+.jimmy-note .debrief-refresh:focus-visible{outline:2px solid #dff8ff;outline-offset:1px}
+@media(max-width:560px){.jimmy-note .debrief-refresh{min-height:34px;padding:6px 10px}}
+/* v221-A212 QA/mobile: A211's extra crash-debrief control should not consume another full row
+   on short iPhone landscape. Keep portrait unchanged, but park ANOTHER READ beside the debrief
+   copy in the short-landscape result card so more of the diagnosis stays above the sticky actions. */
+@media(max-width:900px) and (orientation:landscape) and (max-height:500px){
+ #app.postrun #card .jimmy-note{display:grid;grid-template-columns:minmax(0,1fr) 92px;column-gap:8px;align-items:start}
+ #app.postrun #card .jimmy-copy{grid-column:1;grid-row:1;min-width:0}
+ #app.postrun #card .debrief-refresh{grid-column:2;grid-row:1;align-self:start;width:92px;min-height:34px;margin:0;padding:5px 6px;white-space:normal;line-height:1.08}
+}
 #section.section-enter{animation:sectionEnter .62s cubic-bezier(.18,.72,.28,1)}
 @keyframes sectionEnter{0%{transform:translateY(-4px) scale(.94);filter:brightness(1.65);box-shadow:0 0 0 1px rgba(242,184,75,.55),0 0 16px rgba(242,184,75,.24)}55%{transform:translateY(0) scale(1.04);filter:brightness(1.18)}100%{transform:none;filter:none;box-shadow:none}}
 .scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.board{background:#141820;border-radius:11px;padding:10px}.board h3{color:var(--accent)}
@@ -378,7 +394,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A210';
+const BUILD_VERSION='v221-A212';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -6322,10 +6338,17 @@ function results(crashed,injury,hit,snapshot=null){
  const crashRead=snapshot?.crashRead||crashContextReadout(crashContext);
  let jimmyCrash=snapshot?.jimmyCrash||crashLine(hit,crashContext),jimmyNext=crashed?(snapshot?.jimmyNext||crashNextLapLine(hit)):'',impact=impactReadout(hit);
  card.innerHTML=`<div class="location">${MODES[mode].name} — ${MODES[mode].tag}</div><h2>${crashed?'RUN TERMINATED':'JIMMY LIVES'}</h2>
- <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneReplayMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><p class="jimmy-note"><span class="jimmy-read">${crashRead}</span><b>Jimmy debrief:</b> “${jimmyCrash}”<span class="jimmy-next"><b>Next lap:</b> “${jimmyNext}”</span></p>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
+ <div class="result-layout"><div class="result-story">${mode==='snow'&&retroSnow?`<div class="location">RETRO JIMMY · EARLY ’90s KIT</div>`:''}<div class="quote">“${q}”</div>${crashed?`${crashSceneReplayMarkup(hit,sceneVariant)}<div class="impact-card"><b>${impact[0]}</b><span>${impact[1]} · ${injury}.</span></div><div class="jimmy-note" aria-live="polite"><div class="jimmy-copy"><span class="jimmy-read">${crashRead}</span><b>Jimmy debrief:</b> <span id="jimmyCrashLine">“${jimmyCrash}”</span><span class="jimmy-next"><b>Next lap:</b> <span id="jimmyNextLine">“${jimmyNext}”</span></span></div><button type="button" class="debrief-refresh" id="debriefRefresh">ANOTHER READ</button></div>`:`<div class="impact-card"><b>RUN COMPLETE</b><span>Suspiciously intact. Jimmy says the line has more in it.</span></div>`}</div>
  <div class="result-summary"><div class="run-rating${precisionAdvanced?' precision-rankup':''}">MASTERY <b>${title}</b><span>${rating.name} RUN · ${signature.complete?'SIGNATURE CLEARED':signature.name+' OPEN'}${runLineBalance.points?' · '+runLineBalance.label+' +'+runLineBalance.points:''}${finishBonus.points?' · '+finishBonus.label+' +'+finishBonus.points:''}${varietyBonus.points?' · '+varietyBonus.label+' +'+varietyBonus.points:''}${terrainBonus.points?' · '+terrainBonus.label+' +'+terrainBonus.points:''}${tacticalBonus.points?' · '+tacticalBonus.label+' +'+tacticalBonus.points:''}${completeBonus.points?' · '+completeBonus.label+' +'+completeBonus.points:''}${runLineTime?' · COMPLETE LINE TIME '+formatCourseTime(runLineTime)+(lineTimeNew?' PB':''):''}${runPrecision.tier?' · PRECISION '+runPrecision.title:''}${runChaseReads?' · OTS READS '+runChaseReads+' +'+runChaseReadPoints:''}${runRampLines?' · DIALED RAMPS '+runRampLines+' +'+runRampLinePoints:''} · ${streakStatus} · ${priorBest<=0?'FIRST RECORDED SCORE':isNewBest?'PB +'+pbDelta.toLocaleString():tiedBest?'PB TIED':Math.abs(pbDelta).toLocaleString()+' TO PB'}${linecraftAdvanced?' · LINECRAFT UP: '+linecraftAfter.title:''}${riderRangeAdvanced?' · RIDER RANGE UP: '+riderRangeAfter.title:''}${finishPassportAdvanced?' · RIDE THE MAP STAMP '+finishPassportAfter.count+'/3':''}${completeTourAdvanced?' · COMPLETE LINE STAMP '+completeTourAfter.count+'/3':''}${tacticalTourAdvanced?' · TACTICAL PACE STAMP '+tacticalTourAfter.count+'/3':''}${consistencyTourAdvanced?' · CONSISTENCY TOUR UP: '+consistencyTourAfter.title:''}${routeRangeAdvanced?' · ROUTE RANGE UP: '+routeRangeAfter.title:''}${adaptationAdvanced?' · ADAPTATION UP: '+adaptationAfter.title:''}${precisionAdvanced?' · PRECISION UP: '+precisionAfter.title:''}</span></div><div class="stats"><div class="stat">${isNewBest?'NEW PB':tiedBest?'TIED PB':'Score'}<b>${final}</b></div><div class="stat${lineTimeNew?' line-time-hit':''}">${lineTimeNew?'NEW LINE PB':'Best Flow'}<b>${lineTimeNew?formatCourseTime(runLineTime):'x'+(1+Math.max(0,bestFlowChain-1)*.25).toFixed(2)}</b></div><div class="stat">Airtime<b>${totalAir.toFixed(1)} sec</b></div><div class="stat">Tricks Landed<b>${tricksLanded}</b></div></div>
  <div class="result-actions"><button id="again">ONE MORE RUN</button><button id="menu">${rideMapNext?'NEXT: '+MODES[rideMapNext].name:'CHANGE SPORT'}</button><button id="details">FULL RUN STATS</button><button id="share">DECLARE VICTORY</button></div></div></div>`;
  $('again').onclick=()=>{appEl.classList.remove('postrun');overlay.style.display='none';resize();reset(false)};$('menu').onclick=()=>rideMapNext?begin(rideMapNext):start();
+ if(crashed&&$('debriefRefresh'))$('debriefRefresh').onclick=()=>{
+  jimmyCrash=crashLine(hit,crashContext);jimmyNext=crashNextLapLine(hit);
+  const crashLineEl=$('jimmyCrashLine'),nextLineEl=$('jimmyNextLine');
+  if(crashLineEl)crashLineEl.textContent='“'+jimmyCrash+'”';
+  if(nextLineEl)nextLineEl.textContent='“'+jimmyNext+'”';
+  sfx('camera');
+ };
  $('details').onclick=()=>showRunDetails({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,terrainBonus,tacticalBonus,completeBonus,composedHazards:runComposedHazards,fastLineClears:runFastLineClears,controlLineClears:runControlLineClears,jimmyCrash,jimmyNext,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,finishPassportBefore,finishPassportAfter,finishPassportAdvanced,completeTourBefore,completeTourAfter,completeTourAdvanced,tacticalTourBefore,tacticalTourAfter,tacticalTourAdvanced,consistencyTourBefore,consistencyTourAfter,consistencyTourAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,precisionRun:runPrecision,precisionBefore,precisionAfter,precisionAdvanced,closeCalls:runCloseCalls,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak,rampLines:runRampLines,rampLinePoints:runRampLinePoints,brakeSetLandings:runBrakeSetLandings,brakeSetPoints:runBrakeSetPoints,lineTime:runLineTime,priorLineTime,bestLineTime,lineTimeNew});
  $('share').onclick=()=>showShareCard({crashed,injury,hit,q,final,title,rating,signature,lineBalance:runLineBalance,finishBonus,varietyBonus,terrainBonus,tacticalBonus,completeBonus,composedHazards:runComposedHazards,fastLineClears:runFastLineClears,controlLineClears:runControlLineClears,jimmyCrash,jimmyNext,crashContext,crashRead,priorBest,isNewBest,tiedBest,pbDelta,sceneVariant,linecraftBefore,linecraftAfter,linecraftAdvanced,riderRangeBefore,riderRangeAfter,riderRangeAdvanced,finishPassportBefore,finishPassportAfter,finishPassportAdvanced,completeTourBefore,completeTourAfter,completeTourAdvanced,tacticalTourBefore,tacticalTourAfter,tacticalTourAdvanced,consistencyTourBefore,consistencyTourAfter,consistencyTourAdvanced,consistencyBefore,consistencyAfter,consistencyAdvanced,routeRangeBefore,routeRangeAfter,routeRangeAdvanced,adaptationBefore,adaptationAfter,adaptationAdvanced,precisionRun:runPrecision,precisionBefore,precisionAfter,precisionAdvanced,closeCalls:runCloseCalls,streakStatus,surfaceReads:runSurfaceReads,surfaceReadPoints:runSurfaceReadPoints,lineShots:runLineShots,lineShotPoints:runLineShotPoints,expertTransfers:runExpertTransfers,expertTransferPoints:runExpertTransferPoints,trafficReads:runTrafficReads,trafficReadPoints:runTrafficReadPoints,chaseReads:runChaseReads,chaseReadPoints:runChaseReadPoints,bestChaseReadStreak:runBestChaseReadStreak,rampLines:runRampLines,rampLinePoints:runRampLinePoints,brakeSetLandings:runBrakeSetLandings,brakeSetPoints:runBrakeSetPoints,lineTime:runLineTime,priorLineTime,bestLineTime,lineTimeNew});
  if(crashed)bindCrashSceneReplay(hit,sceneVariant);
