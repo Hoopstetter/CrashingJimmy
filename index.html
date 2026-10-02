@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>JIMMY — Fast Lines, Great Stories — v221-A205</title>
+<title>JIMMY — Fast Lines, Great Stories — v221-A206</title>
 <style>
 :root{
  --bg:#101319;--panel:#1b2028;--text:#f7f8fa;--muted:#d6dbe2;--accent:#f2b84b;
@@ -378,7 +378,7 @@ button:active{transform:translateY(1px)}
 </div>
 <script>
 (()=>{
-const BUILD_VERSION='v221-A205';
+const BUILD_VERSION='v221-A206';
 // CJ_REBASE_MILESTONE: v221-A6 · Pose Continuity Layer.
 // Recovery lineage: v221-A6 Pose Continuity Layer layered cumulatively on v221-A5.
 // BUILD METADATA START — machine-readable foundation for Version Museum / Jim's Cut / cameo archive.
@@ -3018,6 +3018,15 @@ function rampCatchProfile(f){
  }
  return p;
 }
+// v221-A206 higher-refinement Terrain/Course: the RIDGE STEP-DOWN catch bench now
+// uses a squared-sine relief. It preserves the established midpoint depth but brings local
+// slope back to zero at both bench seams, so a grounded MTB reconnect does not hit a hidden
+// grade kink between the catch ramp, short bench and run-out.
+function stepdownCatchBenchRatio(q){
+ q=Math.max(0,Math.min(1,q));
+ const bench=Math.sin(q*Math.PI);
+ return 1-.025*bench*bench;
+}
 function landingApronShape(f,wx){
  if(!f.apron)return 0;
  const start=f.x+f.width;
@@ -3057,7 +3066,7 @@ function landingApronShape(f,wx){
   }
   if(t<.68){
    const q=(t-.46)/.22;
-   return depth*(1-.025*Math.sin(q*Math.PI));
+   return depth*stepdownCatchBenchRatio(q);
   }
   const q=(t-.68)/.32;
   return depth*(1-q*q*(3-2*q));
@@ -10787,6 +10796,11 @@ if(window.CRASHN_JIMMY_QA){
   const out=stepdownRideAnimationProfile(u*100,'bike');
   terrainFeatures=prior;return out;
  };
+}
+// v221-A206 validation probe: the step-down catch bench preserves midpoint depth and
+// approaches zero slope at both seams.
+if(window.CRASHN_JIMMY_QA){
+ window.CRASHN_JIMMY_QA.stepdownCatchBenchRatio=(q=.5)=>stepdownCatchBenchRatio(q);
 }
 // v221-A198 validation probe: step-down fallaway keeps the authored midpoint depth while
 // both the lip release and feature exit approach zero local slope.
