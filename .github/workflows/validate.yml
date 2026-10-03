@@ -2,8 +2,15 @@ name: Validate game
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -14,3 +21,4 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - run: npm run build
