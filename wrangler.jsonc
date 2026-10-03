@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "crashing-jimmy",
+  "compatibility_date": "2026-10-03",
+  "assets": {
+    "directory": "./dist/"
+  },
+  "previews": {}
+}
